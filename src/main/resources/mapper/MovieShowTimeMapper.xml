@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.MovieShowTimeMapper">
+    <resultMap id="movie_show_time_list" type="com.example.backend.response.MovieShowTimeList">
+        <id property="id" column="id"></id>
+        <result property="id" column="id"></result>
+        <result property="start_time" column="startTime"></result>
+        <result property="end_time" column="endTime"></result>
+        <result property="status" column="status"></result>
+        <result property="movie_id" column="movieId"></result>
+        <result property="movie_name" column="movieName"></result>
+        <result property="cinema_id" column="cinameId"></result>
+        <result property="cinema_name" column="cinemaName"></result>
+        <result property="theater_hall_id" column="theaterHallId"></result>
+        <result property="theater_hall_name" column="theaterHallName"></result>
+        <result property="theater_hall_spec" column="theaterHallSpec"></result>
+    </resultMap>
+        <select id="movieShowTimeList" resultMap="movie_show_time_list">
+            SELECT
+                movie_show_time.id,
+                movie_show_time.start_time,
+                movie_show_time.end_time,
+                movie_show_time.status,
+                movie.id AS movie_id,
+                movie.name AS movie_name,
+                cinema.id AS cinema_id,
+                cinema.name AS cinema_name,
+                theater_hall.id AS theater_hall_id,
+                theater_hall.name AS theater_hall_name,
+                theater_hall.spec AS theater_hall_spec
+            FROM movie_show_time
+                LEFT JOIN movie ON movie.id = movie_show_time.id
+                LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id
+                LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id
+        </select>
+</mapper>

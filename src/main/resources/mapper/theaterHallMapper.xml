@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.SelectSeatMapper">
+    <resultMap id="select_seat_response" type="com.example.backend.response.SelectSeatListResponse">
+        <id property="id" column="id"></id>
+        <result property="id" column="id"></result>
+        <result property="name" column="name"></result>
+        <result property="x_axis" column="xAxis"></result>
+        <result property="y_axis" column="yAxis"></result>
+        <result property="z_axis" column="zAxis"></result>
+        <result property="x_name" column="xName"></result>
+        <result property="seat_type" column="seatType"></result>
+        <result property="selected" column="selected"></result>
+
+    </resultMap>
+        <select id="selectSeatList" resultMap="select_seat_response">
+            SELECT
+                seat.id,
+                seat.name,
+                seat.x_axis,
+                seat.y_axis,
+                seat.z_axis,
+                seat.seat_type,
+                seat.x_name,
+                CASE
+                    WHEN select_seat.user_id IS NOT NULL THEN true
+                    ELSE false
+                    END AS selected
+            FROM seat
+                     LEFT JOIN select_seat ON seat.id = select_seat.seat_id
+            WHERE seat.theater_hall_id = #{theater_hall_id}
+            ORDER BY id ASC;
+        </select>
+</mapper>
