@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.MovieMapper">
+    <resultMap id="movieList" type="com.example.backend.response.MovieResponse">
+        <id property="id" column="id"></id>
+        <result property="id" column="id"></result>
+        <result property="name" column="name"></result>
+        <result property="description" column="description"></result>
+        <result property="cover" column="endTime"></result>
+        <result property="original_name" column="original_name"></result>
+        <result property="home_page" column="home_page"></result>
+        <result property="start_date" column="start_date"></result>
+        <result property="end_date" column="end_date"></result>
+        <result property="status" column="status"></result>
+        <result property="time" column="time"></result>
+        <result property="comment_count" column="comment_count"></result>
+        <result property="watched_count" column="watched_count"></result>
+        <result property="want_to_see_count" column="want_to_see_count"></result>
+        <collection property="spec" ofType="com.example.backend.response.Spec">
+            <result property="id" column="spec_id"></result>
+            <result property="name" column="spec_name"></result>
+            <result property="description" column="spec_description"></result>
+        </collection>
+    </resultMap>
+        <select id="movieList" resultMap="movieList">
+            SELECT
+                movie.*,
+                cinema_spec.id AS spec_id,
+                cinema_spec.name AS spec_name,
+                cinema_spec.description AS spec_description
+            FROM
+                movie
+                    LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
+                    LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
+            <where>
+                movie.deleted = 0
+                <if test="query.name != null and !query.name.equals('')">
+                    AND movie.name LIKE concat('%', #{query.name}, '%')
+                </if>
+                <if test="query.releaseStatus != null and !query.releaseStatus.equals('')">
+                    AND movie.status = #{query.releaseStatus}
+                </if>
+            </where>
+            ORDER BY movie.update_time ASC
+        </select>
+    <select id="movieDetail" resultMap="movieList">
+        SELECT
+            movie.*,
+            cinema_spec.id AS spec_id,
+            cinema_spec.name AS spec_name,
+            cinema_spec.description AS spec_description
+        FROM
+            movie
+                LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
+                LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
+        WHERE
+            movie.id = #{id}
+    </select>
+</mapper>

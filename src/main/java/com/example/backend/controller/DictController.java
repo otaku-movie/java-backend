@@ -10,6 +10,7 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.DictItemMapper;
 import com.example.backend.mapper.DictMapper;
+import com.example.backend.query.MovieListQuery;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;

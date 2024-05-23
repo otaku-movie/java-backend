@@ -2,6 +2,8 @@ package com.example.backend.response;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class MovieShowTimeList {
     private Integer id;
@@ -17,4 +19,5 @@ public class MovieShowTimeList {
     private Integer theaterHallSpec;
     private Long seatTotal;
     private long selectedSeatCount;
+    private List<Spec> spec;
 }

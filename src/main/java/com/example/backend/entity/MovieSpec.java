@@ -7,22 +7,13 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("theater_hall")
-public class TheaterHall {
-  @TableId(value = "id", type = IdType.AUTO)
-  Integer id;
+@TableName("movie_spec")
+public class MovieSpec {
+  @TableField("movie_id")
+  Integer movieId;
 
-  @TableField("name")
-  String name;
-
-  @TableField("seat_count")
-  Integer seatCount;
-
-  @TableField("cinema_id")
-  Integer cinemaId;
-
-  @TableField("spec")
-  Integer spec;
+  @TableField("spec_id")
+  Integer specId;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)

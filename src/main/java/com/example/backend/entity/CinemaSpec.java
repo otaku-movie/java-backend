@@ -3,53 +3,20 @@ package com.example.backend.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import org.springframework.context.annotation.Primary;
 
 import java.util.Date;
 
 @Data
-@TableName("movie")
-public class Movie {
+@TableName("cinema_spec")
+public class CinemaSpec {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;
-
-  @TableField("cover")
-  String cover;
 
   @TableField("name")
   String name;
 
-  @TableField("original_name")
-  String originalName;
-
   @TableField("description")
   String description;
-
-  @TableField("home_page")
-  String homePage;
-
-  @TableField("start_date")
-  String startDate;
-
-  @TableField("end_date")
-  String endDate;
-
-  // 1 未上映 2 上映中 3 上映结束
-  @TableField("status")
-  int status;
-
-  // 1 未上映 2 上映中 3 上映结束
-  @TableField("time")
-  int time;
-
-  @TableField("comment_count")
-  int commentCount;
-
-  @TableField("watched_count")
-  int watchedCount;
-
-  @TableField("want_to_see_count")
-  int wantToSeeCount;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
