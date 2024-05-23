@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Utils {
@@ -32,4 +34,15 @@ public class Utils {
                 .build()
             );
     }
+    public static Date getTimestamp (String date, String format) throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        return sdf.parse(date);
+    }
+    public static String format (Date date, String format) throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        return sdf.format(date);
+    }
 }
+

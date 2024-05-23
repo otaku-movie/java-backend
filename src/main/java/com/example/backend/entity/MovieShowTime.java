@@ -23,10 +23,10 @@ public class MovieShowTime {
   Integer theaterHallId;
 
   @TableField("start_time")
-  Date startTimee ;
+  String startTime ;
 
   @TableField("end_time")
-  Date endTime;
+  String endTime;
 
   @TableField("status")
   Integer status;

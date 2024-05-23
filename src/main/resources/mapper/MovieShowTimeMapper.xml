@@ -4,16 +4,16 @@
     <resultMap id="movie_show_time_list" type="com.example.backend.response.MovieShowTimeList">
         <id property="id" column="id"></id>
         <result property="id" column="id"></result>
-        <result property="start_time" column="startTime"></result>
-        <result property="end_time" column="endTime"></result>
+        <result property="start_time" column="start_time"></result>
+        <result property="end_time" column="end_time"></result>
         <result property="status" column="status"></result>
-        <result property="movie_id" column="movieId"></result>
-        <result property="movie_name" column="movieName"></result>
-        <result property="cinema_id" column="cinameId"></result>
-        <result property="cinema_name" column="cinemaName"></result>
-        <result property="theater_hall_id" column="theaterHallId"></result>
-        <result property="theater_hall_name" column="theaterHallName"></result>
-        <result property="theater_hall_spec" column="theaterHallSpec"></result>
+        <result property="movie_id" column="movie_id"></result>
+        <result property="movie_name" column="movie_name"></result>
+        <result property="cinema_id" column="cinema_id"></result>
+        <result property="cinema_name" column="cinema_name"></result>
+        <result property="theater_hall_id" column="theater_hall_id"></result>
+        <result property="theater_hall_name" column="theater_hall_name"></result>
+        <result property="theater_hall_spec" column="theater_hall_spec"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -37,10 +37,11 @@
                 cinema_spec.name AS spec_name,
                 cinema_spec.description AS spec_description
             FROM movie_show_time
-                LEFT JOIN movie ON movie.id = movie_show_time.id
+                LEFT JOIN movie ON movie.id = movie_show_time.movie_id
                 LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
                 LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
                 LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id
                 LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id
+            ORDER BY movie.update_time ASC
         </select>
 </mapper>

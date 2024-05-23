@@ -58,12 +58,12 @@ public class MovieController {
     wrapper.orderByAsc("update_time");
     Page<MovieResponse> page = new Page<>(query.getPage() - 1, query.getPageSize());
 
-    if (query.getReleaseStatus() != null && query.getReleaseStatus() != 0) {
-      wrapper.eq("status", query.getReleaseStatus());
-    }
-    if (query.getName() != null && query.getName() != "") {
-      wrapper.eq("name", query.getName());
-    }
+//    if (query.getReleaseStatus() != null && query.getReleaseStatus() != 0) {
+//      wrapper.eq("status", query.getReleaseStatus());
+//    }
+//    if (query.getName() != null && query.getName() != "") {
+//      wrapper.eq("name", query.getName());
+//    }
 
     IPage<MovieResponse> list = movieMapper.movieList(query, page);
 

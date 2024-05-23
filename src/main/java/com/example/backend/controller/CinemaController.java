@@ -23,6 +23,7 @@ import java.util.Objects;
 class CinemaListQuery {
   private Integer page;
   private Integer pageSize;
+  private Integer id;
   private String name;
 
   public CinemaListQuery() {
@@ -56,6 +57,9 @@ public class CinemaController {
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.eq("name", query.getName());
+    }
+    if (query.getId() != null) {
+      wrapper.eq("id", query.getId());
     }
 
     IPage list = cinemaMapper.selectPage(page, wrapper);

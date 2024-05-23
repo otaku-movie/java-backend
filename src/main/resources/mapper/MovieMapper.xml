@@ -34,11 +34,14 @@
                     LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
             <where>
                 movie.deleted = 0
+                <if test="query.id != null">
+                    AND movie.id = #{query.id}
+                </if>
                 <if test="query.name != null and !query.name.equals('')">
                     AND movie.name LIKE concat('%', #{query.name}, '%')
                 </if>
-                <if test="query.releaseStatus != null and !query.releaseStatus.equals('')">
-                    AND movie.status = #{query.releaseStatus}
+                <if test="query.status != null and !query.status.equals('')">
+                    AND movie.status = #{query.status}
                 </if>
             </where>
             ORDER BY movie.update_time ASC

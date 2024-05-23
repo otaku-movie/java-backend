@@ -6,7 +6,8 @@ import lombok.Data;
 public class MovieListQuery {
   private Integer page;
   private Integer pageSize;
-  private Integer releaseStatus;
+  private Integer id;
+  private Integer status;
   private String name;
 
   public MovieListQuery() {
