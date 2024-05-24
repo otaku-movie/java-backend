@@ -48,7 +48,7 @@
 <!--		jwt -->
 		<dependency>
 			<groupId>cn.dev33</groupId>
-			<artifactId>sa-token-spring-boot-starter</artifactId>
+			<artifactId>sa-token-spring-boot3-starter</artifactId>
 			<version>1.38.0</version>
 		</dependency>
 		<!-- md5-->
