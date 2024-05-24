@@ -72,7 +72,7 @@ public class CinemaController {
 
     Cinema result = cinemaMapper.selectById(id);
 
-    return RestBean.success(result, "删除成功");
+    return RestBean.success(result, "获取成功");
   }
   @PostMapping("/api/cinema/save")
   public RestBean<String> save(@RequestBody @Validated() SaveCinemaQuery query) {
