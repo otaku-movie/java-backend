@@ -4,26 +4,39 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.backend.entity.Api;
-import com.example.backend.entity.RestBean;
-import com.example.backend.entity.Role;
-import com.example.backend.entity.RoleMenu;
+import com.example.backend.entity.*;
 import com.example.backend.mapper.*;
+import com.example.backend.response.ButtonResponse;
+import com.example.backend.service.RoleButtonService;
+import com.example.backend.service.RoleMenuService;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Data
 class RoleSaveQuery {
   Integer id;
   @NotNull
   String name;
+}
+
+@Data
+class RoleConfigQuery {
+  @NotNull
+  Integer roleId;
+  @NotNull
+  List<Integer> menuId;
+  @NotNull
+  List<Integer> buttonId;
 }
 
 @Data
@@ -51,6 +64,12 @@ public class RoleController {
   @Autowired
   private RoleButtonMapper roleButtonMapper;
 
+  @Autowired
+  private RoleMenuService roleMenuService;
+
+  @Autowired
+  private RoleButtonService roleButtonService;
+
   @PostMapping("/api/permission/role/list")
   public RestBean<List<Role>> list(@RequestBody RoleListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
@@ -61,6 +80,46 @@ public class RoleController {
     IPage list = roleMapper.selectPage(page, wrapper);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
+  }
+  @GetMapping("/api/permission/role/permissionList")
+  public RestBean<List<ButtonResponse>> permissionList(@RequestParam Integer id)  {
+    QueryWrapper wrapper = new QueryWrapper<>();
+
+    List list = roleMapper.permissionList(id);
+
+    return RestBean.success(list, "获取成功");
+  }
+  @Transactional
+  @PostMapping("/api/permission/role/config")
+  public RestBean<Null> config(@RequestBody @Validated RoleConfigQuery query)  {
+    QueryWrapper wrapper = new QueryWrapper<>();
+    wrapper.eq("role_id", query.getRoleId());
+    roleMenuService.remove(wrapper);
+    roleButtonService.remove(wrapper);
+
+    roleMenuService.saveBatch(
+      query.menuId.stream()
+        .map(item -> {
+          RoleMenu roleMenu = new RoleMenu();
+          roleMenu.setRoleId(query.getRoleId());
+          roleMenu.setMenuId(item);
+          return roleMenu;
+        })
+        .collect(Collectors.toList())  // Collect to List
+    );
+
+    roleButtonService.saveBatch(
+      query.buttonId.stream()
+        .map(item -> {
+          RoleButton roleButton = new RoleButton();
+          roleButton.setRoleId(query.getRoleId());
+          roleButton.setButtonId(item);
+          return roleButton;
+        })
+        .collect(Collectors.toList())  // Collect to List
+    );
+
+    return RestBean.success(null, "保存成功");
   }
   @GetMapping("/api/permission/role/detail")
   public RestBean<Role> detail (@RequestParam Integer id) {

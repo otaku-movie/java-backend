@@ -16,13 +16,13 @@ public class Button {
   String name;
 
   @TableField("code")
-  String description;
+  String code;
 
   @TableField("menu_id")
   Integer menuId;
 
   @TableField("api_id")
-  Integer api_id;
+  Integer apiId;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)

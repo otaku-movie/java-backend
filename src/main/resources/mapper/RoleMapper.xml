@@ -4,10 +4,64 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.backend.mapper.RoleMapper">
 
-    <resultMap id="BaseResultMap" type="com.example.backend.entity.Role">
-            <id property="id" column="id" jdbcType="INTEGER"/>
-            <result property="name" column="name" jdbcType="VARCHAR"/>
-            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    <resultMap id="permissionList" type="com.example.backend.response.ButtonResponse">
+        <id property="id" column="menu_id" jdbcType="INTEGER"/>
+        <result property="name" column="menu_name" jdbcType="VARCHAR"/>
+        <result property="path" column="menu_path" jdbcType="VARCHAR"/>
+        <result property="path_name" column="menu_path_name" jdbcType="VARCHAR"/>
+        <result property="show" column="menu_show" jdbcType="BOOLEAN"/>
+        <result property="parent_id" column="menu_parent_id" jdbcType="INTEGER"/>
+        <result property="checked" column="menu_checked" jdbcType="BOOLEAN"/>
+        <collection property="children" ofType="com.example.backend.response.Spec">
+            <result property="id" column="spec_id"/>
+            <result property="name" column="spec_name"/>
+            <result property="description" column="spec_description"/>
+        </collection>
+        <collection property="button" ofType="com.example.backend.response.Button">
+            <result property="id" column="button_id" jdbcType="INTEGER"/>
+            <result property="name" column="button_name" jdbcType="VARCHAR"/>
+            <result property="code" column="button_code" jdbcType="VARCHAR"/>
+            <result property="api_id" column="api_id" jdbcType="INTEGER"/>
+            <result property="api_path" column="api_path" jdbcType="VARCHAR"/>
+            <result property="api_name" column="api_name" jdbcType="VARCHAR"/>
+            <result property="checked" column="button_checked" jdbcType="BOOLEAN"/>
+        </collection>
     </resultMap>
+
+    <select id="permissionList" resultMap="permissionList">
+        SELECT
+            menu.id AS menu_id,
+            menu.name AS menu_name,
+            menu.show AS menu_show,
+            menu.path AS menu_path,
+            menu.path_name AS menu_path_name,
+            menu.parent_id AS menu_parent_id,
+            button.id AS button_id,
+            button.name AS button_name,
+            button.code AS button_code,
+            button.api_id AS button_api_id,
+            api.id AS api_id,
+            api.name AS api_name,
+            api.path AS api_path,
+            CASE
+                WHEN role_menu.role_id IS NOT NULL THEN true
+                ELSE false
+                END as menu_checked,
+            CASE
+                WHEN role_button.role_id IS NOT NULL THEN true
+                ELSE false
+                END as button_checked
+        FROM "menu"
+            LEFT JOIN button ON menu.id = button.menu_id
+            LEFT JOIN api ON button.api_id = api.id
+            LEFT JOIN role_menu ON menu.id = role_menu.menu_id AND role_menu.role_id = #{id}
+            LEFT JOIN role_button ON button.id = role_button.button_id AND role_button.role_id = #{id}
+        WHERE
+            role_menu.role_id = #{id} OR
+            role_button.role_id = #{id} OR
+            role_menu.role_id IS NULL OR
+            role_button.role_id IS NULL;
+
+    </select>
+
 </mapper>

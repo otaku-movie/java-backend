@@ -4,10 +4,46 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.backend.mapper.ButtonMapper">
 
-    <resultMap id="BaseResultMap" type="com.example.backend.entity.Button">
+    <resultMap id="buttonList" type="com.example.backend.response.ButtonResponse">
             <id property="id" column="id" jdbcType="INTEGER"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
-            <result property="menuId" column="menu_id" jdbcType="INTEGER"/>
-            <result property="code" column="code" jdbcType="VARCHAR"/>
+            <result property="path" column="path" jdbcType="INTEGER"/>
+            <result property="path_name" column="path_name" jdbcType="VARCHAR"/>
+            <result property="show" column="show" jdbcType="BOOLEAN"/>
+            <result property="parent_id" column="parent_id" jdbcType="INTEGER"/>
+            <collection property="children" ofType="com.example.backend.response.Spec">
+                <result property="id" column="spec_id"></result>
+                <result property="name" column="spec_name"></result>
+                <result property="description" column="spec_description"></result>
+            </collection>
+            <collection property="button" ofType="com.example.backend.response.Button">
+                <result property="id" column="button_id"></result>
+                <result property="name" column="button_name"></result>
+                <result property="code" column="button_code"></result>
+                <result property="api_id" column="api_id"></result>
+                <result property="api_path" column="api_path"></result>
+                <result property="api_name" column="api_name"></result>
+            </collection>
     </resultMap>
+
+    <select id="buttonList" resultMap="buttonList">
+        SELECT
+            menu.id,
+            menu.name,
+            menu.show,
+            menu.path,
+            menu.path_name,
+            menu.parent_id,
+            button.id as button_id,
+            button.name as button_name,
+            button.code as button_code,
+            button.api_id as button_api_id,
+            api.id as api_id,
+            api.name as api_name,
+            api.path as api_path
+        FROM "menu"
+            LEFT JOIN button ON menu.id = button.menu_id
+            LEFT JOIN api ON button.api_id = api.id
+    </select>
+
 </mapper>

@@ -4,6 +4,8 @@ import com.example.backend.entity.Role;
 import com.example.backend.entity.TheaterHall;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
+import java.util.List;
+
 /**
 * @author last order
 * @description 针对表【role】的数据库操作Mapper
@@ -11,7 +13,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @Entity com.example.backend.entity.TheaterHall.Role
 */
 public interface RoleMapper extends BaseMapper<Role> {
-
+  List permissionList(Integer id);
 }
 
 

@@ -6,7 +6,7 @@
 
     <resultMap id="BaseResultMap" type="com.example.backend.entity.RoleButton">
             <id property="roleId" column="role_id" jdbcType="INTEGER"/>
-            <result property="menuId" column="menu_id" jdbcType="INTEGER"/>
+            <result property="buttonId" column="button_id" jdbcType="INTEGER"/>
             <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>

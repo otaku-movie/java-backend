@@ -2,11 +2,10 @@ package com.example.backend.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.entity.Button;
 import com.example.backend.entity.RestBean;
-import com.example.backend.entity.Menu;
-import com.example.backend.mapper.MenuMapper;
+import com.example.backend.mapper.ButtonMapper;
+import com.example.backend.response.ButtonResponse;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -14,30 +13,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Data
-class MenuSaveQuery {
+class ButtonSaveQuery {
   Integer id;
   @NotNull
   String name;
-  String path;
-  String pathName;
-  Boolean show;
-  Integer parentId;
+  String code;
+  Integer menuId;
+  Integer apiId;
 }
 
 @Data
-class MenuListQuery {
+class ButtonListQuery {
   private Integer page;
   private Integer pageSize;
   private String name;
   // 是否平铺
   private Boolean flattern;
 
-  public MenuListQuery() {
+  public ButtonListQuery() {
     this.page = 1; // 默认页数为1
     this.pageSize = 10; // 默认页面大小为10
     this.flattern = true;
@@ -45,84 +42,76 @@ class MenuListQuery {
 }
 
 @RestController
-public class MenuController {
+public class ButtonController {
   @Autowired
-  private MenuMapper menuMapper;
+  private ButtonMapper buttonMapper;
 
-  @PostMapping("/api/permission/menu/list")
-  public RestBean<List<Menu>> list(@RequestBody MenuListQuery query)  {
+  @PostMapping("/api/permission/button/list")
+  public RestBean<List<ButtonResponse>> list(@RequestBody ButtonListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
-    if (query.getFlattern()) {
-      wrapper.orderByDesc("update_time");
+    wrapper.orderByDesc("update_time");
 
-      List list = menuMapper.selectList(wrapper);
+    List list = buttonMapper.buttonList();
 
-      return RestBean.success(list, "获取成功");
-    } else  {
-      List list = menuMapper.selectList(wrapper);
-
-      return RestBean.success(list, "获取成功");
-    }
+    return RestBean.success(list, "获取成功");
   }
-  @GetMapping("/api/permission/menu/detail")
-  public RestBean<Menu> detail (@RequestParam Integer id) {
+  @GetMapping("/api/permission/button/detail")
+  public RestBean<Button> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
-    QueryWrapper<Menu> queryWrapper = new QueryWrapper<>();
+    QueryWrapper<Button> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
-    Menu result = menuMapper.selectOne(queryWrapper);
+    Button result = buttonMapper.selectOne(queryWrapper);
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/permission/menu/remove")
+  @DeleteMapping("/api/permission/button/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
-    menuMapper.deleteById(id);
+    buttonMapper.deleteById(id);
 
     return RestBean.success(null, "删除成功");
   }
-  @PostMapping("/api/permission/menu/save")
-  public RestBean<List<Object>> save(@RequestBody @Validated MenuSaveQuery query)  {
-    Menu data = new Menu();
+  @PostMapping("/api/permission/button/save")
+  public RestBean<List<Object>> save(@RequestBody @Validated ButtonSaveQuery query)  {
+    Button data = new Button();
 
     data.setName(query.getName());
-    data.setPath(query.getPath());
-    data.setPathName(query.getPathName());
-    data.setShow(query.getShow());
-    if (query.getParentId() != null) {
-      data.setParentId(query.getParentId());
-    }
+    data.setCode(query.getCode());
+    data.setMenuId(query.getMenuId());
+    data.setApiId(query.getApiId());
+
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
-      wrapper.eq("name", query.getName());
-      List<Menu> list = menuMapper.selectList(wrapper);
+      wrapper.eq("code", query.getCode());
+      List<Button> list = buttonMapper.selectList(wrapper);
 
       if (list.size() == 0) {
-        menuMapper.insert(data);
+        buttonMapper.insert(data);
         return RestBean.success(null, "success");
       } else {
-        return RestBean.error(0, "当前菜单已经存在");
+        return RestBean.error(0, "当前按钮已经存在");
       }
     } else {
       data.setId(query.getId());
       UpdateWrapper updateQueryWrapper = new UpdateWrapper();
       updateQueryWrapper.eq("id", query.getId());
-      Menu old = menuMapper.selectById(query.getId());
+      Button old = buttonMapper.selectById(query.getId());
 
       if (Objects.equals(old.getName(), query.getName()) && old.getId() == query.getId()) {
-        menuMapper.update(data, updateQueryWrapper);
+        buttonMapper.update(data, updateQueryWrapper);
       } else {
         QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("name", query.getName());
-        Menu find = menuMapper.selectOne(wrapper);
+        wrapper.eq("code", query.getCode());
+        Button find = buttonMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前菜单已经存在");
+          return RestBean.error(0, "当前按钮已经存在");
         } else {
-          menuMapper.update(data, updateQueryWrapper);
+          buttonMapper.update(data, updateQueryWrapper);
         }
       }
 
