@@ -14,6 +14,7 @@ import java.util.List;
 */
 public interface RoleMapper extends BaseMapper<Role> {
   List permissionList(Integer id);
+  List permission(Integer id);
 }
 
 

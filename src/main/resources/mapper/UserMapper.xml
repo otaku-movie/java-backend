@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.UserMapper">
+    <!--  获取用户角色 -->
+    <select id="userRole" resultType="com.example.backend.entity.Role">
+        SELECT
+            role.*
+        FROM role
+            INNER JOIN user_role ON role.id = user_role.role_id
+        WHERE user_role.user_id = #{id}
+    </select>
+</mapper>

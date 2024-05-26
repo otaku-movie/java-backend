@@ -5,12 +5,16 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.RestBean;
+import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.UserListQuery;
 import com.example.backend.query.UserSaveQuery;
+import com.example.backend.response.LoginResponse;
 import com.example.backend.utils.Utils;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -18,6 +22,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
+
+@Data
+class UserLoginQuery {
+  @NotNull
+  String email;
+  @NotNull
+  String password;
+}
 
 @RestController
 public class UserController {
@@ -45,14 +57,33 @@ public class UserController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
+  @PostMapping("/api/user/login")
+  public RestBean<User> login(@RequestBody @Validated UserLoginQuery query) {
+    QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+    queryWrapper.eq("email", query.getEmail());
+    queryWrapper.eq("password", query.getPassword());
+
+    User result = userMapper.selectOne(queryWrapper);
+
+    return RestBean.success( result, "获取成功");
+  }
+
+
   @GetMapping("/api/user/detail")
   public RestBean<User> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
-//    Utils.excludeKeys(User, ["password"]);
     queryWrapper.select("id", "username", "email", "create_time");
     User result = userMapper.selectOne(queryWrapper);
+
+    return RestBean.success(result, "获取成功");
+  }
+  @GetMapping("/api/user/role")
+  public RestBean<List<Role>> role (@RequestParam Integer id) {
+    if(id == null) return RestBean.error(-1, "参数错误");
+
+    List<Role> result = userMapper.userRole(id);
 
     return RestBean.success(result, "获取成功");
   }

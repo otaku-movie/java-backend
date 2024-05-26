@@ -27,7 +27,7 @@
             <result property="checked" column="button_checked" jdbcType="BOOLEAN"/>
         </collection>
     </resultMap>
-
+    <!--    权限配置菜单接口-->
     <select id="permissionList" resultMap="permissionList">
         SELECT
             menu.id AS menu_id,
@@ -56,12 +56,38 @@
             LEFT JOIN api ON button.api_id = api.id
             LEFT JOIN role_menu ON menu.id = role_menu.menu_id AND role_menu.role_id = #{id}
             LEFT JOIN role_button ON button.id = role_button.button_id AND role_button.role_id = #{id}
+    </select>
+    <!--  获取角色权限  -->
+    <select id="permission" resultMap="permissionList">
+        SELECT
+            menu.id AS menu_id,
+            menu.name AS menu_name,
+            menu.show AS menu_show,
+            menu.path AS menu_path,
+            menu.path_name AS menu_path_name,
+            menu.parent_id AS menu_parent_id,
+            button.id AS button_id,
+            button.name AS button_name,
+            button.code AS button_code,
+            button.api_id AS button_api_id,
+            api.id AS api_id,
+            api.name AS api_name,
+            api.path AS api_path,
+            CASE
+                WHEN role_menu.role_id IS NOT NULL THEN true
+                ELSE false
+                END as menu_checked,
+            CASE
+                WHEN role_button.role_id IS NOT NULL THEN true
+                ELSE false
+                END as button_checked
+        FROM "menu"
+                 LEFT JOIN button ON menu.id = button.menu_id
+                 LEFT JOIN api ON button.api_id = api.id
+                 LEFT JOIN role_menu ON menu.id = role_menu.menu_id AND role_menu.role_id = #{id}
+                 LEFT JOIN role_button ON button.id = role_button.button_id AND role_button.role_id = #{id}
         WHERE
             role_menu.role_id = #{id} OR
-            role_button.role_id = #{id} OR
-            role_menu.role_id IS NULL OR
-            role_button.role_id IS NULL;
-
+            role_button.role_id = #{id}
     </select>
-
 </mapper>

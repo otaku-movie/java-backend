@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.*;
 import com.example.backend.mapper.*;
 import com.example.backend.response.ButtonResponse;
+import com.example.backend.response.Button;
 import com.example.backend.service.RoleButtonService;
 import com.example.backend.service.RoleMenuService;
 import jakarta.validation.constraints.NotNull;
@@ -51,18 +52,33 @@ class RoleListQuery {
   }
 }
 
+// 工具类，处理过滤逻辑
+class ButtonResponseProcessor {
+
+  public static ButtonResponse filterButtonResponse(ButtonResponse response) {
+    // 过滤按钮列表，保留 checked 为 true 的按钮
+    List<Button> filteredButtons = response.getButton().stream()
+      .filter(Button::getChecked)
+      .collect(Collectors.toList());
+
+    response.setButton(filteredButtons);
+
+    // 递归处理子节点
+    if (response.getChildren() != null) {
+      List<ButtonResponse> filteredChildren = response.getChildren().stream()
+        .map(ButtonResponseProcessor::filterButtonResponse)
+        .collect(Collectors.toList());
+      response.setChildren(filteredChildren);
+    }
+
+    return response;
+  }
+}
+
 @RestController
 public class RoleController {
   @Autowired
   private RoleMapper roleMapper;
-  @Autowired
-  private UserRoleMapper userRoleMapper;
-
-  @Autowired
-  private RoleMenuMapper roleMenuMapper;
-
-  @Autowired
-  private RoleButtonMapper roleButtonMapper;
 
   @Autowired
   private RoleMenuService roleMenuService;
@@ -88,6 +104,17 @@ public class RoleController {
     List list = roleMapper.permissionList(id);
 
     return RestBean.success(list, "获取成功");
+  }
+  @GetMapping("/api/permission/role/permission")
+  public RestBean<List<ButtonResponse>> permission(@RequestParam Integer id)  {
+    QueryWrapper wrapper = new QueryWrapper<>();
+
+    List<ButtonResponse> list = roleMapper.permission(id);
+    List<ButtonResponse> filteredList = list.stream()
+      .map(ButtonResponseProcessor::filterButtonResponse)
+      .collect(Collectors.toList());
+
+    return RestBean.success(filteredList, "获取成功");
   }
   @Transactional
   @PostMapping("/api/permission/role/config")
