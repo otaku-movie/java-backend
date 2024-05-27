@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.entity.Api;
 import com.example.backend.mapper.ApiMapper;
 import com.example.backend.service.ApiService;
+import com.example.backend.service.CharacterService;
+import com.example.backend.service.PositionService;
 import org.springframework.stereotype.Service;
 
 /**

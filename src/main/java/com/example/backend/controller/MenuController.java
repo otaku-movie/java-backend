@@ -34,13 +34,10 @@ class MenuListQuery {
   private Integer page;
   private Integer pageSize;
   private String name;
-  // 是否平铺
-  private Boolean flattern;
 
   public MenuListQuery() {
     this.page = 1; // 默认页数为1
     this.pageSize = 10; // 默认页面大小为10
-    this.flattern = true;
   }
 }
 
@@ -53,17 +50,9 @@ public class MenuController {
   public RestBean<List<Menu>> list(@RequestBody MenuListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
-    if (query.getFlattern()) {
-      wrapper.orderByDesc("update_time");
+    List list = menuMapper.selectList(wrapper);
 
-      List list = menuMapper.selectList(wrapper);
-
-      return RestBean.success(list, "获取成功");
-    } else  {
-      List list = menuMapper.selectList(wrapper);
-
-      return RestBean.success(list, "获取成功");
-    }
+    return RestBean.success(list, "获取成功");
   }
   @GetMapping("/api/permission/menu/detail")
   public RestBean<Menu> detail (@RequestParam Integer id) {
@@ -97,14 +86,14 @@ public class MenuController {
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
-      wrapper.eq("name", query.getName());
+      wrapper.eq("path", query.getPath());
       List<Menu> list = menuMapper.selectList(wrapper);
 
       if (list.size() == 0) {
         menuMapper.insert(data);
         return RestBean.success(null, "success");
       } else {
-        return RestBean.error(0, "当前菜单已经存在");
+        return RestBean.error(0, "当前路径已经存在");
       }
     } else {
       data.setId(query.getId());
@@ -112,15 +101,15 @@ public class MenuController {
       updateQueryWrapper.eq("id", query.getId());
       Menu old = menuMapper.selectById(query.getId());
 
-      if (Objects.equals(old.getName(), query.getName()) && old.getId() == query.getId()) {
+      if (Objects.equals(old.getPath(), query.getPath()) && old.getId() == query.getId()) {
         menuMapper.update(data, updateQueryWrapper);
       } else {
         QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("name", query.getName());
+        wrapper.eq("path", query.getPath());
         Menu find = menuMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前菜单已经存在");
+          return RestBean.error(0, "当前路径已经存在");
         } else {
           menuMapper.update(data, updateQueryWrapper);
         }
