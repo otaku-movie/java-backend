@@ -10,6 +10,7 @@ import java.util.List;
 public class ButtonResponse {
   Integer id;
   String name;
+  String i18n_key;
   String path;
   String path_name;
   Integer parent_id;

@@ -12,6 +12,9 @@ public class Button {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;
 
+  @TableField("i18n_key")
+  String i18nKey;
+
   @TableField("name")
   String name;
 

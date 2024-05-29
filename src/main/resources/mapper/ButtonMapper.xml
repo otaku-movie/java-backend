@@ -7,6 +7,7 @@
     <resultMap id="buttonList" type="com.example.backend.response.ButtonResponse">
             <id property="id" column="id" jdbcType="INTEGER"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="i18n_key" column="i18n_key" jdbcType="VARCHAR"/>
             <result property="path" column="path" jdbcType="INTEGER"/>
             <result property="path_name" column="path_name" jdbcType="VARCHAR"/>
             <result property="show" column="show" jdbcType="BOOLEAN"/>
@@ -20,6 +21,7 @@
                 <result property="id" column="button_id"></result>
                 <result property="name" column="button_name"></result>
                 <result property="code" column="button_code"></result>
+                <result property="i18n_key" column="button_i18n_key" jdbcType="VARCHAR"/>
                 <result property="api_id" column="api_id"></result>
                 <result property="api_path" column="api_path"></result>
                 <result property="api_name" column="api_name"></result>
@@ -38,6 +40,7 @@
             button.name as button_name,
             button.code as button_code,
             button.api_id as button_api_id,
+            button.i18n_key as button_i18n_key,
             api.id as api_id,
             api.name as api_name,
             api.path as api_path

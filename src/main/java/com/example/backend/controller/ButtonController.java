@@ -21,6 +21,8 @@ class ButtonSaveQuery {
   Integer id;
   @NotNull
   String name;
+  @NotNull
+  String i18nKey;
   String code;
   Integer menuId;
   Integer apiId;
@@ -79,10 +81,10 @@ public class ButtonController {
     Button data = new Button();
 
     data.setName(query.getName());
+    data.setI18nKey(query.getI18nKey());
     data.setCode(query.getCode());
     data.setMenuId(query.getMenuId());
     data.setApiId(query.getApiId());
-
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();

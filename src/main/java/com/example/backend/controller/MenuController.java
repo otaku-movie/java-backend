@@ -23,7 +23,11 @@ class MenuSaveQuery {
   Integer id;
   @NotNull
   String name;
+  @NotNull
+  String i18nKey;
+  @NotNull
   String path;
+  @NotNull
   String pathName;
   Boolean show;
   Integer parentId;
@@ -49,6 +53,8 @@ public class MenuController {
   @PostMapping("/api/permission/menu/list")
   public RestBean<List<Menu>> list(@RequestBody MenuListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
+
+    wrapper.orderByDesc("update_time");
 
     List list = menuMapper.selectList(wrapper);
 
@@ -80,6 +86,7 @@ public class MenuController {
     data.setPath(query.getPath());
     data.setPathName(query.getPathName());
     data.setShow(query.getShow());
+    data.setI18nKey(query.getI18nKey());
     if (query.getParentId() != null) {
       data.setParentId(query.getParentId());
     }
