@@ -32,6 +32,7 @@ class PositionListQuery {
   private Integer page;
   private Integer pageSize;
   private String name;
+  private Integer id;
 
   public PositionListQuery() {
     this.page = 1; // 默认页数为1
@@ -51,6 +52,9 @@ public class PositionController {
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.like("name", query.getName());
+    }
+    if (query.getId() != null && query.getId() != 0) {
+      wrapper.eq("id", query.getId());
     }
     wrapper.orderByDesc("update_time");
 

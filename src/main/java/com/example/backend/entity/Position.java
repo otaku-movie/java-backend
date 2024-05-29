@@ -1,9 +1,6 @@
 package com.example.backend.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -36,8 +33,12 @@ public class Position implements Serializable {
     /**
      * 
      */
-    @TableField(value = "update_time", fill = FieldFill.INSERT)
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
+
+    @TableLogic
+    @TableField(value = "deleted", fill = FieldFill.INSERT)
+    private Integer deleted;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

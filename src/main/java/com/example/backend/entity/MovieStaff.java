@@ -8,39 +8,32 @@ import java.util.Date;
 
 /**
  * 
- * @TableName character
+ * @TableName position
  */
-@TableName(value ="character")
+@TableName(value ="movie_staff")
 @Data
-public class Character implements Serializable {
-    /**
-     * 
-     */
-    @TableId
-    private Integer id;
+public class MovieStaff implements Serializable {
+    @TableField("movie_id")
+    private  Integer movieId;
+
+    @TableField("staff_id")
+    private  Integer staffId;
+
+    @TableField("position_id")
+    private  Integer positionId;
 
     /**
      * 
      */
-    private String name;
-
-    /**
-     * 
-     */
-    private String description;
-
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private Date createTime;
 
     /**
-     *
+     * 
      */
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
 
-    /**
-     * 
-     */
     @TableLogic
     @TableField(value = "deleted", fill = FieldFill.INSERT)
     private Integer deleted;

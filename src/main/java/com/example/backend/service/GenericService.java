@@ -34,15 +34,11 @@ public class GenericService<T> {
 
       if (!validationFunction.validate(old, data)) {
         // 名称发生变化，需要检查新名称是否存在
-        if (mapper.selectCount(queryWrapper) > 0) {
-          return false; // 表示角色已经存在
-        }
+        return mapper.selectCount(queryWrapper) <= 0; // 表示角色已经存在
       }
     } else {
       // 新增操作
-      if (mapper.selectCount(queryWrapper) > 0) {
-        return false; // 表示角色已经存在
-      }
+      return mapper.selectCount(queryWrapper) <= 0; // 表示角色已经存在
     }
     return true;
   }

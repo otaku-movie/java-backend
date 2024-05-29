@@ -66,6 +66,8 @@ public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper,
         .collect(Collectors.toList())
     );
   }
+
+  @Transactional
   public RestBean<Object> saveStaffCharacter(CharacterSaveQuery query) {
     Character data = new Character();
 

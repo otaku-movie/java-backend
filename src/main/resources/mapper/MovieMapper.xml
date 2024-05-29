@@ -59,4 +59,48 @@
         WHERE
             movie.id = #{id}
     </select>
+    <resultMap id="movieStaffList" type="com.example.backend.response.MovieStaffResponse">
+        <result property="id" column="position_id"></result>
+        <result property="name" column="position_name"></result>
+        <collection property="staff" ofType="com.example.backend.response.Staff">
+            <result property="id" column="staff_id"></result>
+            <result property="name" column="staff_name"></result>
+        </collection>
+    </resultMap>
+    <select id="movieStaffList" resultMap="movieStaffList">
+        SELECT
+            position.id as position_id,
+            position.name as position_name,
+            staff.id as staff_id,
+            staff.name as staff_name
+        FROM movie_staff
+            LEFT JOIN position ON movie_staff.position_id = position.id
+            LEFT JOIN staff ON movie_staff.staff_id = staff.id
+        WHERE
+            movie_staff.deleted = 0 AND
+            movie_staff.movie_id = #{id}
+    </select>
+    <resultMap id="movieCharacterList" type="com.example.backend.response.MovieCharacterResponse">
+        <result property="id" column="character_id"></result>
+        <result property="name" column="character_name"></result>
+        <collection property="staff" ofType="com.example.backend.response.Staff">
+            <result property="id" column="staff_id"></result>
+            <result property="name" column="staff_name"></result>
+        </collection>
+    </resultMap>
+    <select id="movieCharacterList" resultMap="movieCharacterList">
+        SELECT
+            character.id as character_id,
+            character.name as character_name,
+            staff.id as staff_id,
+            staff.name as staff_name
+        FROM
+            movie_character
+                LEFT JOIN character ON movie_character.character_id = character.id
+                LEFT JOIN staff_character ON staff_character.character_id = character.id
+                LEFT JOIN staff ON staff_character.staff_id = staff.id
+        WHERE
+            movie_character.deleted = 0 AND
+            movie_character.movie_id = #{id}
+    </select>
 </mapper>

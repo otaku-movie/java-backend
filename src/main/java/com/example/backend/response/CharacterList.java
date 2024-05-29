@@ -27,8 +27,6 @@ public class CharacterList {
   private Date update_time;
 
   private List<Staff> staff;
-  private Integer staff_id;
-  private String staff_name;
   private Integer movie_id;
   private String movie_name;
 }

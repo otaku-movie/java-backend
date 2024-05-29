@@ -39,6 +39,11 @@
             <if test="query.name != null and !query.name.equals('')">
                 AND movie.name LIKE concat('%', #{query.name}, '%')
             </if>
+            <if test="query.id != null and query.id.size() > 0">
+                <foreach collection="query.id" item="id" open="AND character.id IN (" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
         </where>
     </select>
     <select id="characterDetail" resultMap="character">
