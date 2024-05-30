@@ -26,12 +26,12 @@ public class MovieResponse {
   String start_date;
   String end_date;
   // 1 未上映 2 上映中 3 上映结束
-  int status;
+  Integer status;
   // 1 未上映 2 上映中 3 上映结束
-  int time;
-  int comment_count;
-  int watched_count;
-  int want_to_see_count;
+  Integer time;
+  Integer comment_count;
+  Integer watched_count;
+  Integer want_to_see_count;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   Date create_time;

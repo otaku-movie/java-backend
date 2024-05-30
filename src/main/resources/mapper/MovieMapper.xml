@@ -25,13 +25,26 @@
         <select id="movieList" resultMap="movieList">
             SELECT
                 movie.*,
+                COALESCE(comment_counts.comment_count, 0) AS comment_count,
                 cinema_spec.id AS spec_id,
                 cinema_spec.name AS spec_name,
                 cinema_spec.description AS spec_description
             FROM
                 movie
-                    LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
-                    LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
+            LEFT JOIN (
+                SELECT
+                    movie_comment.movie_id,
+                    COUNT(DISTINCT movie_comment.id) + COUNT(DISTINCT movie_reply.id) AS comment_count
+                FROM
+                    movie_comment
+                LEFT JOIN movie_reply ON movie_comment.id = movie_reply.movie_comment_id AND movie_reply.deleted = 0
+                WHERE
+                    movie_comment.deleted = 0
+                GROUP BY
+                    movie_comment.movie_id
+                ) AS comment_counts ON movie.id = comment_counts.movie_id
+            LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
+            LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
             <where>
                 movie.deleted = 0
                 <if test="query.id != null">

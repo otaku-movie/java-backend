@@ -28,7 +28,14 @@
             movie_comment.create_time as create_time,
             movie_comment.update_time as update_time,
             users.username as comment_user_name,
-            (SELECT COUNT(*) FROM movie_reply WHERE movie_reply.movie_comment_id = movie_comment.id) AS reply_count
+            (
+                SELECT
+                    COUNT(*)
+                FROM movie_reply
+                WHERE
+                    movie_reply.movie_comment_id = movie_comment.id AND
+                    movie_reply.deleted = 0
+            ) AS reply_count
         FROM movie_comment
             LEFT JOIN users ON movie_comment.comment_user_id = users.id
         WHERE

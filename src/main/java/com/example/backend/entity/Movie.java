@@ -36,20 +36,17 @@ public class Movie {
 
   // 1 未上映 2 上映中 3 上映结束
   @TableField("status")
-  int status;
+  Integer status;
 
   // 1 未上映 2 上映中 3 上映结束
   @TableField("time")
-  int time;
-
-  @TableField("comment_count")
-  int commentCount;
+  Integer time;
 
   @TableField("watched_count")
-  int watchedCount;
+  Integer watchedCount;
 
   @TableField("want_to_see_count")
-  int wantToSeeCount;
+  Integer wantToSeeCount;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
