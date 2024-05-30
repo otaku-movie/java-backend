@@ -1,9 +1,7 @@
-package com.example.backend.controller;
+package com.example.backend.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Menu;
 import com.example.backend.mapper.MenuMapper;
@@ -14,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,7 +47,7 @@ public class MenuController {
   @Autowired
   private MenuMapper menuMapper;
 
-  @PostMapping("/api/permission/menu/list")
+  @PostMapping("/api/admin/permission/menu/list")
   public RestBean<List<Menu>> list(@RequestBody MenuListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
@@ -60,7 +57,7 @@ public class MenuController {
 
     return RestBean.success(list, "获取成功");
   }
-  @GetMapping("/api/permission/menu/detail")
+  @GetMapping("/api/admin/permission/menu/detail")
   public RestBean<Menu> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper<Menu> queryWrapper = new QueryWrapper<>();
@@ -70,7 +67,7 @@ public class MenuController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/permission/menu/remove")
+  @DeleteMapping("/api/admin/permission/menu/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
@@ -78,7 +75,7 @@ public class MenuController {
 
     return RestBean.success(null, "删除成功");
   }
-  @PostMapping("/api/permission/menu/save")
+  @PostMapping("/api/admin/permission/menu/save")
   public RestBean<List<Object>> save(@RequestBody @Validated MenuSaveQuery query)  {
     Menu data = new Menu();
 

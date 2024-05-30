@@ -70,7 +70,7 @@ public class SpecController {
 
     return RestBean.success(result, "获取成功");
   }
-  @PostMapping("/api/cinema/spec/save")
+  @PostMapping("/api/admin/cinema/spec/save")
   public RestBean<String> save(@RequestBody @Validated() SaveSpecQuery query) {
     CinemaSpec spec = new CinemaSpec();
 
@@ -111,7 +111,7 @@ public class SpecController {
       return RestBean.success(null, "success");
     }
   }
-  @DeleteMapping("/api/cinema/spec/remove")
+  @DeleteMapping("/api/admin/cinema/spec/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 

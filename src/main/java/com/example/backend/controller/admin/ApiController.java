@@ -1,4 +1,4 @@
-package com.example.backend.controller;
+package com.example.backend.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -6,10 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.Api;
 import com.example.backend.entity.RestBean;
-import com.example.backend.entity.Api;
 import com.example.backend.mapper.ApiMapper;
-import com.example.backend.mapper.ApiMapper;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -45,7 +42,7 @@ public class ApiController {
   @Autowired
   private ApiMapper apiMapper;
 
-  @PostMapping("/api/permission/api/list")
+  @PostMapping("/api/admin/permission/api/list")
   public RestBean<List<Object>> list(@RequestBody ApiListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Api> page = new Page<>(query.getPage() - 1, query.getPageSize());
@@ -56,7 +53,7 @@ public class ApiController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/permission/api/detail")
+  @GetMapping("/api/admin/permission/api/detail")
   public RestBean<Api> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper<Api> queryWrapper = new QueryWrapper<>();
@@ -66,7 +63,7 @@ public class ApiController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/permission/api/remove")
+  @DeleteMapping("/api/admin/permission/api/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
@@ -74,7 +71,7 @@ public class ApiController {
 
     return RestBean.success(null, "删除成功");
   }
-  @PostMapping("/api/permission/api/save")
+  @PostMapping("/api/admin/permission/api/save")
   public RestBean<List<Object>> save(@RequestBody @Validated ApiSaveQuery query)  {
     Api data = new Api();
 

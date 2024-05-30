@@ -1,4 +1,4 @@
-package com.example.backend.controller;
+package com.example.backend.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -48,7 +48,7 @@ public class ButtonController {
   @Autowired
   private ButtonMapper buttonMapper;
 
-  @PostMapping("/api/permission/button/list")
+  @PostMapping("/api/admin/permission/button/list")
   public RestBean<List<ButtonResponse>> list(@RequestBody ButtonListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
@@ -58,7 +58,7 @@ public class ButtonController {
 
     return RestBean.success(list, "获取成功");
   }
-  @GetMapping("/api/permission/button/detail")
+  @GetMapping("/api/admin/permission/button/detail")
   public RestBean<Button> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper<Button> queryWrapper = new QueryWrapper<>();
@@ -68,7 +68,7 @@ public class ButtonController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/permission/button/remove")
+  @DeleteMapping("/api/admin/permission/button/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
@@ -76,7 +76,7 @@ public class ButtonController {
 
     return RestBean.success(null, "删除成功");
   }
-  @PostMapping("/api/permission/button/save")
+  @PostMapping("/api/admin/permission/button/save")
   public RestBean<List<Object>> save(@RequestBody @Validated ButtonSaveQuery query)  {
     Button data = new Button();
 

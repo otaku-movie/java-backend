@@ -58,16 +58,4 @@ public class CharacterController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/character/remove")
-  public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
-
-    characterMapper.deleteById(id);
-
-    return RestBean.success(null, "删除成功");
-  }
-  @PostMapping("/api/character/save")
-  public RestBean<Object> save(@RequestBody @Validated CharacterSaveQuery query)  {
-    return  staffCharacterService.saveStaffCharacter(query);
-  }
 }

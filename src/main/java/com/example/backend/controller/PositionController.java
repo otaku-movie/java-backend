@@ -73,7 +73,7 @@ public class PositionController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/position/remove")
+  @DeleteMapping("/api/admin/position/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
@@ -81,7 +81,7 @@ public class PositionController {
 
     return RestBean.success(null, "删除成功");
   }
-  @PostMapping("/api/position/save")
+  @PostMapping("/api/admin/position/save")
   public RestBean<List<Object>> save(@RequestBody @Validated PositionSaveQuery query)  {
     Position data = new Position();
 

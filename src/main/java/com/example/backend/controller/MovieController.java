@@ -38,13 +38,6 @@ public class MovieController {
     wrapper.orderByAsc("update_time");
     Page<MovieResponse> page = new Page<>(query.getPage() - 1, query.getPageSize());
 
-//    if (query.getReleaseStatus() != null && query.getReleaseStatus() != 0) {
-//      wrapper.eq("status", query.getReleaseStatus());
-//    }
-//    if (query.getName() != null && query.getName() != "") {
-//      wrapper.eq("name", query.getName());
-//    }
-
     IPage<MovieResponse> list = movieMapper.movieList(query, page);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
@@ -77,7 +70,7 @@ public class MovieController {
     });
   }
   @Transactional
-  @PostMapping("/api/movie/save")
+  @PostMapping("/api/admin/movie/save")
   public RestBean<Object> save(@RequestBody  @Validated() SaveMovieQuery query)  {
     return movieService.save(query);
   }

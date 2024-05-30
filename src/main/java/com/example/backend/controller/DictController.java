@@ -76,7 +76,7 @@ public class DictController {
     return RestBean.success(result, "获取成功");
   }
   @Transactional
-  @PostMapping("/api/dict/item/edit")
+  @PostMapping("/api/admin/dict/item/edit")
   public RestBean<Null> list(@RequestBody DictItemEditQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("dict_id", query.getDictId());
@@ -93,7 +93,7 @@ public class DictController {
     return RestBean.success(null, "修改成功");
   }
   @Transactional
-  @DeleteMapping("/api/dict/remove")
+  @DeleteMapping("/api/admin/dict/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper wrapper = new QueryWrapper<>();

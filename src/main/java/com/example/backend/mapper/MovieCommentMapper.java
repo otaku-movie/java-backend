@@ -3,12 +3,9 @@ package com.example.backend.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.backend.controller.MovieCommentListQuery;
-import com.example.backend.entity.Button;
+import com.example.backend.query.MovieCommentListQuery;
 import com.example.backend.entity.MovieComment;
 import com.example.backend.response.MovieCommentResponse;
-
-import java.util.List;
 
 /**
 * @author last order

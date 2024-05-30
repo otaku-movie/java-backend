@@ -74,7 +74,7 @@ public class StaffController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/staff/remove")
+  @DeleteMapping("/api/admin/staff/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
@@ -82,7 +82,7 @@ public class StaffController {
 
     return RestBean.success(null, "删除成功");
   }
-  @PostMapping("/api/staff/save")
+  @PostMapping("/api/admin/staff/save")
   public RestBean<List<Object>> save(@RequestBody @Validated StaffSaveQuery query)  {
     Staff data = new Staff();
 

@@ -1,4 +1,4 @@
-package com.example.backend.controller;
+package com.example.backend.query;
 
 import lombok.Data;
 

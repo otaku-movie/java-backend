@@ -1,4 +1,4 @@
-package com.example.backend.controller;
+package com.example.backend.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -86,7 +85,7 @@ public class RoleController {
   @Autowired
   private RoleButtonService roleButtonService;
 
-  @PostMapping("/api/permission/role/list")
+  @PostMapping("/api/admin/permission/role/list")
   public RestBean<List<Role>> list(@RequestBody RoleListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Role> page = new Page<>(query.getPage() - 1, query.getPageSize());
@@ -97,7 +96,7 @@ public class RoleController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/permission/role/permissionList")
+  @GetMapping("/api/admin/permission/role/permissionList")
   public RestBean<List<ButtonResponse>> permissionList(@RequestParam Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
@@ -105,7 +104,7 @@ public class RoleController {
 
     return RestBean.success(list, "获取成功");
   }
-  @GetMapping("/api/permission/role/permission")
+  @GetMapping("/api/admin/permission/role/permission")
   public RestBean<List<ButtonResponse>> permission(@RequestParam Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
@@ -117,7 +116,7 @@ public class RoleController {
     return RestBean.success(filteredList, "获取成功");
   }
   @Transactional
-  @PostMapping("/api/permission/role/config")
+  @PostMapping("/api/admin/permission/role/config")
   public RestBean<Null> config(@RequestBody @Validated RoleConfigQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("role_id", query.getRoleId());
@@ -148,7 +147,7 @@ public class RoleController {
 
     return RestBean.success(null, "保存成功");
   }
-  @GetMapping("/api/permission/role/detail")
+  @GetMapping("/api/admin/permission/role/detail")
   public RestBean<Role> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper<Role> queryWrapper = new QueryWrapper<>();
@@ -158,7 +157,7 @@ public class RoleController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/permission/role/remove")
+  @DeleteMapping("/api/admin/permission/role/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
@@ -166,7 +165,7 @@ public class RoleController {
 
     return RestBean.success(null, "删除成功");
   }
-  @PostMapping("/api/permission/role/save")
+  @PostMapping("/api/admin/permission/role/save")
   public RestBean<List<Object>> save(@RequestBody @Validated RoleSaveQuery query)  {
     Role data = new Role();
 

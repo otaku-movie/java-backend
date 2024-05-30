@@ -5,21 +5,16 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.*;
 import com.example.backend.mapper.*;
+import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
-import com.example.backend.response.MovieResponse;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.service.MovieShowTimeService;
-import com.example.backend.utils.Utils;
-import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Stream;
 
 @RestController
 public class MovieShowTimeController {
@@ -38,12 +33,12 @@ public class MovieShowTimeController {
   private MovieShowTimeService movieShowTimeService;
 
   @PostMapping("/api/movie_show_time/list")
-  public RestBean<List<MovieShowTimeList>> list()  {
-//    QueryWrapper wrapper = new QueryWrapper<>();
-//    Page<TheaterHall> page = new Page<>(query.getPage() - 1, query.getPageSize());
+  public RestBean<List<MovieShowTimeList>> list(MovieShowTimeListQuery query)  {
+    QueryWrapper wrapper = new QueryWrapper<>();
+    Page<MovieShowTime> page = new Page<>(query.getPage() - 1, query.getPageSize());
 
-    List<MovieShowTimeList> list = movieShowTimeMapper.movieShowTimeList();
-    List<MovieShowTimeList> result = list.stream().map(item -> {
+    IPage<MovieShowTimeList> list = movieShowTimeMapper.movieShowTimeList(page, query);
+    List<MovieShowTimeList> result = list.getRecords().stream().map(item -> {
       System.out.println(item);
       QueryWrapper<Seat> seatQueryWrapper = new QueryWrapper<>();
       QueryWrapper<SelectSeat> selectedSeatQueryWrapper = new QueryWrapper<>();
@@ -59,7 +54,9 @@ public class MovieShowTimeController {
       return  item;
     }).toList();
 
-    return RestBean.success(result, "获取成功");
+    list.setRecords(result);
+
+    return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
   @GetMapping("/api/movie_show_time/detail")
   public RestBean<MovieShowTime> detail (@RequestParam Integer id) {
@@ -69,7 +66,7 @@ public class MovieShowTimeController {
 
     return RestBean.success(result, "删除成功");
   }
-  @PostMapping("/api/movie_show_time/save")
+  @PostMapping("/api/admin/movie_show_time/save")
   public RestBean<Object> save(@RequestBody @Validated MovieShowTimeQuery query) throws ParseException {
     String format = "yyyy-MM-dd HH:mm:ss";
     List<MovieShowTime> list = movieShowTimeService.getSortedMovieShowTimes(

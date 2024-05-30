@@ -85,7 +85,7 @@ public class TheaterHallController {
 
     return RestBean.success(list, "获取成功");
   }
-  @PostMapping("/api/theater/hall/save")
+  @PostMapping("/api/admin/theater/hall/save")
   public RestBean<String> save(@RequestBody @Validated() TheaterHallSaveQuery query) {
     TheaterHall theaterHall = new TheaterHall();
 
@@ -126,7 +126,7 @@ public class TheaterHallController {
       return RestBean.success(null, "success");
     }
   }
-  @DeleteMapping("/api/theater/hall/remove")
+  @DeleteMapping("/api/admin/theater/hall/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     return RestBean.success(null, "success");
   }

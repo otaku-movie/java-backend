@@ -1,15 +1,14 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.backend.entity.Api;
 import com.example.backend.entity.MovieComment;
 import com.example.backend.entity.RestBean;
 import com.example.backend.mapper.MovieCommentMapper;
+import com.example.backend.query.MovieCommentListQuery;
 import com.example.backend.response.MovieCommentResponse;
 import com.example.backend.utils.Utils;
 import jakarta.validation.constraints.NotBlank;
@@ -21,7 +20,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @Data
 class MovieCommentSaveQuery {

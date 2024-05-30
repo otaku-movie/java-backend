@@ -70,7 +70,7 @@ public class LevelController {
 
     return RestBean.success(result, "获取成功");
   }
-  @PostMapping("/api/movie/level/save")
+  @PostMapping("/api/admin/movie/level/save")
   public RestBean<String> save(@RequestBody @Validated() SaveLevelQuery query) {
     Level level = new Level();
 
@@ -111,7 +111,7 @@ public class LevelController {
       return RestBean.success(null, "success");
     }
   }
-  @DeleteMapping("/api/movie/level/remove")
+  @DeleteMapping("/api/admin/movie/level/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 

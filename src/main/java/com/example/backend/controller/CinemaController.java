@@ -74,7 +74,7 @@ public class CinemaController {
 
     return RestBean.success(result, "获取成功");
   }
-  @PostMapping("/api/cinema/save")
+  @PostMapping("/api/admin/cinema/save")
   public RestBean<String> save(@RequestBody @Validated() SaveCinemaQuery query) {
     Cinema cinema = new Cinema();
 
@@ -118,7 +118,7 @@ public class CinemaController {
       return RestBean.success(null, "success");
     }
   }
-  @DeleteMapping("/api/cinema/remove")
+  @DeleteMapping("/api/admin/cinema/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
