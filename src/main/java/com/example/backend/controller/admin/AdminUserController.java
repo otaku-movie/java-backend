@@ -36,7 +36,7 @@ public class AdminUserController {
   @PostMapping("/api/admin/user/list")
   public RestBean<List<Object>> list(@RequestBody UserListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<User> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<User> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getEmail() != null && query.getEmail() != "") {
       wrapper.eq("email", query.getEmail());

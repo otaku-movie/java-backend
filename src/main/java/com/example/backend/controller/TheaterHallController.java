@@ -62,7 +62,7 @@ public class TheaterHallController {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("cinema_id", query.getCinemaId());
     wrapper.orderByAsc("update_time");
-    Page<TheaterHall> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<TheaterHall> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage list = theaterHallMapper.selectPage(page, wrapper);
 

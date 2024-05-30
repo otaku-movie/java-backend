@@ -49,7 +49,7 @@ public class SpecController {
   public RestBean<List<Object>> list(@RequestBody SpecListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.orderByDesc("update_time");
-    Page<CinemaSpec> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<CinemaSpec> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.eq("name", query.getName());

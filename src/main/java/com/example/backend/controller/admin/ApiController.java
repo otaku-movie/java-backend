@@ -45,7 +45,7 @@ public class ApiController {
   @PostMapping("/api/admin/permission/api/list")
   public RestBean<List<Object>> list(@RequestBody ApiListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<Api> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<Api> page = new Page<>(query.getPage(), query.getPageSize());
 
     wrapper.orderByDesc("update_time");
 

@@ -49,7 +49,7 @@ public class LevelController {
   public RestBean<List<Object>> list(@RequestBody LevelListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.orderByDesc("update_time");
-    Page<Level> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<Level> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.eq("name", query.getName());

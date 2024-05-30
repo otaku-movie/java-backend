@@ -36,7 +36,7 @@ public class CharacterController {
   @PostMapping("/api/character/list")
   public RestBean<List<CharacterList>> list(@RequestBody CharacterListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<CharacterList> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<CharacterList> page = new Page<>(query.getPage(), query.getPageSize());
 
     wrapper.orderByDesc("update_time");
     if (query.getName() != null && query.getName() != "") {

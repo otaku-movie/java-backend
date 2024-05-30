@@ -49,7 +49,7 @@ public class StaffController {
   @PostMapping("/api/staff/list")
   public RestBean<List<Staff>> list(@RequestBody StaffListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<Staff> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<Staff> page = new Page<>(query.getPage(), query.getPageSize());
 
     wrapper.orderByDesc("update_time");
     if (query.getName() != null && query.getName() != "") {

@@ -53,7 +53,7 @@ public class CinemaController {
   public RestBean<List<Object>> list(@RequestBody CinemaListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.orderByAsc("update_time");
-    Page<Cinema> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<Cinema> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.eq("name", query.getName());

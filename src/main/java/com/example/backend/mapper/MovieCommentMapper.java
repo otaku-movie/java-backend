@@ -14,7 +14,7 @@ import com.example.backend.response.MovieCommentResponse;
 * @Entity com.example.backend.entity.TheaterHall.Button
 */
 public interface MovieCommentMapper extends BaseMapper<MovieComment> {
-  IPage<MovieCommentResponse> commentList(Page page, MovieCommentListQuery query);
+  IPage<MovieCommentResponse> commentList(MovieCommentListQuery query, Page page);
 }
 
 

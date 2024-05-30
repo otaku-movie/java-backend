@@ -35,7 +35,7 @@ public class MovieShowTimeController {
   @PostMapping("/api/movie_show_time/list")
   public RestBean<List<MovieShowTimeList>> list(MovieShowTimeListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<MovieShowTime> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<MovieShowTime> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieShowTimeList> list = movieShowTimeMapper.movieShowTimeList(page, query);
     List<MovieShowTimeList> result = list.getRecords().stream().map(item -> {

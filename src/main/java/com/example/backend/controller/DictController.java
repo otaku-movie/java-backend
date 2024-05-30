@@ -43,7 +43,7 @@ public class DictController {
   @PostMapping("/api/dict/list")
   public RestBean<List<Object>> list(@RequestBody MovieListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<Dict> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<Dict> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage list = dictMapper.selectPage(page, wrapper);
 

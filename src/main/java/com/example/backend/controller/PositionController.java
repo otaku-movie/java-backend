@@ -48,7 +48,7 @@ public class PositionController {
   @PostMapping("/api/position/list")
   public RestBean<List<Position>> list(@RequestBody PositionListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<Position> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<Position> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.like("name", query.getName());

@@ -88,7 +88,7 @@ public class RoleController {
   @PostMapping("/api/admin/permission/role/list")
   public RestBean<List<Role>> list(@RequestBody RoleListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<Role> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<Role> page = new Page<>(query.getPage(), query.getPageSize());
 
     wrapper.orderByDesc("update_time");
 

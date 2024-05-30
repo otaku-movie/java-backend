@@ -36,7 +36,7 @@ public class MovieController {
   public RestBean<List<MovieResponse>> list(@RequestBody MovieListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.orderByAsc("update_time");
-    Page<MovieResponse> page = new Page<>(query.getPage() - 1, query.getPageSize());
+    Page<MovieResponse> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieResponse> list = movieMapper.movieList(query, page);
 
