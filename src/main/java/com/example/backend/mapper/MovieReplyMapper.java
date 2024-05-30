@@ -1,8 +1,14 @@
 package com.example.backend.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.MovieComment;
 import com.example.backend.entity.MovieReply;
+import com.example.backend.query.MovieCommentListQuery;
+import com.example.backend.query.MovieReplyListQuery;
+import com.example.backend.response.MovieCommentResponse;
+import com.example.backend.response.MovieReplyResponse;
 
 import java.util.List;
 
@@ -13,7 +19,7 @@ import java.util.List;
 * @Entity com.example.backend.entity.TheaterHall.Button
 */
 public interface MovieReplyMapper extends BaseMapper<MovieReply> {
-  List<Object> replyList();
+  IPage<MovieReplyResponse> replyList(MovieReplyListQuery query, Page page);
 }
 
 

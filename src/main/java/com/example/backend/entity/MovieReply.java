@@ -15,13 +15,17 @@ public class MovieReply {
   @TableField("content")
   String content;
 
+  // 父级回复id
+  @TableField("parent_reply_id")
+  Integer parentReplyId;
+
   // 回复人
-  @TableField("reply_user_id")
+  @TableField("comment_user_id")
   Integer commentUserId;
 
-  // 回复的回复
-  @TableField("reply_to_reply_user_id")
-  Integer replytUserId;
+  // 评论人
+  @TableField("reply_user_id")
+  Integer replyUserId;
 
   @TableField("movie_comment_id")
   Integer movieCommentId;

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.MovieReplyMapper">
+    <resultMap id="replyList" type="com.example.backend.response.MovieReplyResponse">
+        <result property="id" column="id"/>
+        <result property="content" column="content"/>
+        <result property="reply_user_id" column="reply_user_id"/>
+        <result property="comment_user_id" column="comment_user_id"/>
+        <result property="like" column="like"/>
+        <result property="unlike" column="unlike"/>
+        <result property="like_count" column="like_count"/>
+        <result property="unlike_count" column="unlike_count"/>
+        <result property="comment_user_name" column="comment_user_name"/>
+        <result property="reply_user_name" column="reply_user_name"/>
+        <result property="create_time" column="create_time"/>
+        <result property="update_time" column="update_time"/>
+    </resultMap>
+    <select id="replyList" resultMap="replyList">
+        SELECT
+            movie_reply.id AS id,
+            movie_reply.content AS content,
+            movie_reply.reply_user_id AS reply_user_id, -- 回复评论的用户
+            movie_reply.comment_user_id AS comment_user_id, -- 评论的用户
+            movie_reply.parent_reply_id AS parent_reply_id,
+            movie_reply.like_count AS like_count,
+            movie_reply.unlike_count AS unlike_count,
+            movie_reply.create_time AS create_time,
+            movie_reply.update_time AS update_time,
+            commentUser.username AS comment_user_name, -- 评论用户的用户名
+            replyUser.username AS reply_user_name -- 回复用户的用户名
+        FROM movie_reply
+                 LEFT JOIN users AS commentUser ON movie_reply.comment_user_id = commentUser.id
+                 LEFT JOIN users AS replyUser ON movie_reply.reply_user_id = replyUser.id
+        WHERE
+            movie_reply.deleted = 0
+        ORDER BY movie_reply.update_time DESC
+    </select>
+
+</mapper>

@@ -6,12 +6,14 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class MovieCommentResponse {
+public class MovieReplyResponse {
   Integer id;
   String content;
   Integer comment_user_id;
+  Integer reply_user_id;
   String comment_user_name;
-  Integer movie_id;
+  String reply_user_name;
+  Integer movie_comment_id;
   Boolean like;
   Boolean unlike;
   Integer like_count;
