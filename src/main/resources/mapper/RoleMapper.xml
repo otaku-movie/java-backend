@@ -91,5 +91,6 @@
         WHERE
             role_menu.role_id = #{id} OR
             role_button.role_id = #{id}
+        ORDER BY menu.update_time DESC
     </select>
 </mapper>

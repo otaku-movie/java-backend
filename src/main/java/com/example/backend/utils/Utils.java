@@ -1,4 +1,5 @@
 package com.example.backend.utils;
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.example.backend.config.MinIOConfig;
 import io.minio.PutObjectArgs;
@@ -16,6 +17,12 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Utils {
+    public static Integer getUserId () {
+        String token = StpUtil.getTokenValue();
+        Object id = StpUtil.getLoginIdByToken(token);
+
+        return Integer.valueOf((String) id);
+    }
     public static File MultipartToFile(MultipartFile multipartFile) throws IOException {
         File file = new File(System.getProperty("java.io.tmpdir") + File.separator + multipartFile.getOriginalFilename());
         multipartFile.transferTo(file);

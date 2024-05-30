@@ -36,6 +36,7 @@
             menu.path,
             menu.path_name,
             menu.parent_id,
+            menu.i18n_key,
             button.id as button_id,
             button.name as button_name,
             button.code as button_code,
@@ -47,6 +48,7 @@
         FROM "menu"
             LEFT JOIN button ON menu.id = button.menu_id
             LEFT JOIN api ON button.api_id = api.id
+        ORDER BY menu.update_time DESC
     </select>
 
 </mapper>

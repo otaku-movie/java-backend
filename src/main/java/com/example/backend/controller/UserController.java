@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -16,6 +17,7 @@ import com.example.backend.utils.Utils;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -58,16 +60,27 @@ public class UserController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
   @PostMapping("/api/user/login")
-  public RestBean<User> login(@RequestBody @Validated UserLoginQuery query) {
+  public RestBean<LoginResponse> login(@RequestBody @Validated UserLoginQuery query) {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("email", query.getEmail());
     queryWrapper.eq("password", query.getPassword());
 
+    LoginResponse loginResponse = new LoginResponse();
     User result = userMapper.selectOne(queryWrapper);
 
-    return RestBean.success( result, "获取成功");
-  }
+    BeanUtils.copyProperties(result, loginResponse);
 
+
+    if (result != null) {
+      StpUtil.login(result.getId());
+      System.out.println(StpUtil.getTokenInfo());
+        loginResponse.setToken(StpUtil.getTokenValue());
+
+      return RestBean.success( loginResponse, "登录成功");
+    } else  {
+      return RestBean.error( 0, "用户不存在");
+    }
+  }
 
   @GetMapping("/api/user/detail")
   public RestBean<User> detail (@RequestParam Integer id) {
