@@ -3,6 +3,47 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.backend.mapper.UserMapper">
+    <resultMap id="userList" type="com.example.backend.response.UserListResponse">
+        <id property="id" column="id"></id>
+        <result property="id" column="id"></result>
+        <result property="username" column="username"></result>
+        <result property="cover" column="endTime"></result>
+        <result property="email" column="email"></result>
+        <result property="create_time" column="create_time"/>
+        <result property="update_time" column="update_time"/>
+        <collection property="roles" ofType="com.example.backend.response.Role">
+            <result property="id" column="role_id"></result>
+            <result property="name" column="role_name"></result>
+        </collection>
+    </resultMap>
+    <select id="userList" resultMap="userList">
+        SELECT
+            users.id as id,
+            users.cover as cover,
+            users.username as username,
+            users.email as email,
+            users.create_time as create_time,
+            users.update_time as update_time,
+            role.id as role_id,
+            role.name as role_name
+        FROM users
+            LEFT JOIN user_role ON user_role.user_id = users.id
+            LEFT JOIN role ON user_role.role_id = role.id
+        <where>
+            users.deleted = 0
+            <if test="query.id != null">
+                AND users.id = #{query.id}
+            </if>
+            <if test="query.name != null and !query.name.equals('')">
+                AND users.username LIKE concat('%', #{query.name}, '%')
+            </if>
+            <if test="query.email != null and !query.email.equals('')">
+                AND users.email = #{email}
+            </if>
+        </where>
+
+        ORDER BY users.update_time DESC
+    </select>
     <!--  获取用户角色 -->
     <select id="userRole" resultType="com.example.backend.entity.Role">
         SELECT

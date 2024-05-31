@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -61,12 +62,13 @@ public class UserController {
     }
   }
 
+  @SaCheckLogin
   @GetMapping("/api/user/detail")
-  public RestBean<User> detail (@RequestParam Integer id) {
+  public RestBean<Object> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
-    queryWrapper.select("id", "username", "email", "create_time");
+    queryWrapper.select("id", "cover", "username", "email", "create_time", "update_time");
     User result = userMapper.selectOne(queryWrapper);
 
     return RestBean.success(result, "获取成功");

@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("api")
+@TableName("user_role")
 public class UserRole {
   @TableField("user_id")
   Integer userId;

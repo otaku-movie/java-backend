@@ -31,6 +31,7 @@
                 cinema_spec.description AS spec_description
             FROM
                 movie
+            --- 统计评论数量
             LEFT JOIN (
                 SELECT
                     movie_comment.movie_id,

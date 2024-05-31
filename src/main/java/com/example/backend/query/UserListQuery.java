@@ -1,5 +1,6 @@
 package com.example.backend.query;
 
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 
 @Data
@@ -7,6 +8,7 @@ public class UserListQuery {
   private Integer page;
   private Integer pageSize;
   private Integer id;
+  @Email
   private String email;
   private String name;
 

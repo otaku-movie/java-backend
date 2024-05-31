@@ -8,4 +8,7 @@
             <result property="userId" column="user_id" jdbcType="INTEGER"/>
             <result property="roleId" column="role_id" jdbcType="INTEGER"/>
     </resultMap>
+    <delete id="deleteRole">
+        DELETE FROM user_role WHERE user_role.user_id = #{id}
+    </delete>
 </mapper>

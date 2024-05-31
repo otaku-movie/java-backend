@@ -8,12 +8,6 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class LoginResponse {
-  Integer id;
-  String cover;
-  String username;
-  String email;
+public class LoginResponse extends User {
   String token;
-  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date createTime;
 }

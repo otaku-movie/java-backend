@@ -1,6 +1,6 @@
 package com.example.backend.mapper;
 
-import com.example.backend.entity.TheaterHall;
+import com.example.backend.query.UserRoleConfigQuery;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.backend.entity.UserRole;
 
@@ -11,7 +11,7 @@ import com.example.backend.entity.UserRole;
 * @Entity com.example.backend.entity.TheaterHall.UserRole
 */
 public interface UserRoleMapper extends BaseMapper<UserRole> {
-
+  void deleteRole(Integer id);
 }
 
 

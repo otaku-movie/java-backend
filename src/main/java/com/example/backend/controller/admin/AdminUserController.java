@@ -7,18 +7,25 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
+import com.example.backend.entity.UserRole;
 import com.example.backend.mapper.UserMapper;
+import com.example.backend.mapper.UserRoleMapper;
 import com.example.backend.query.UserListQuery;
+import com.example.backend.query.UserRoleConfigQuery;
 import com.example.backend.query.UserSaveQuery;
+import com.example.backend.response.UserListResponse;
+import com.example.backend.service.UserRoleService;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Data
 class UserLoginQuery {
@@ -33,26 +40,37 @@ public class AdminUserController {
   @Autowired
   private UserMapper userMapper;
 
+  @Autowired
+  UserRoleMapper userRoleMapper;
+
+  @Autowired
+  UserRoleService userRoleService;
+
   @PostMapping("/api/admin/user/list")
-  public RestBean<List<Object>> list(@RequestBody UserListQuery query)  {
+  public RestBean<List<UserListResponse>> list(@RequestBody @Validated  UserListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<User> page = new Page<>(query.getPage(), query.getPageSize());
+    Page<UserListResponse> page = new Page<>(query.getPage(), query.getPageSize());
 
-    if (query.getEmail() != null && query.getEmail() != "") {
-      wrapper.eq("email", query.getEmail());
-    }
-    if (query.getName() != null && query.getName() != "") {
-      wrapper.like("username", query.getName());
-    }
-    if (query.getId() != null) {
-      wrapper.eq("id", query.getId());
-    }
-    wrapper.orderByAsc("update_time");
-    wrapper.select("id", "username", "email", "create_time");
-
-    IPage list = userMapper.selectPage(page, wrapper);
+    IPage<UserListResponse> list = userMapper.userList(query, page);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
+  }
+  @Transactional
+  @PostMapping("/api/admin/user/configRole")
+  public RestBean<List<Role>> role (@RequestBody @Validated  UserRoleConfigQuery query) {
+    userRoleMapper.deleteRole(query.getId());
+    userRoleService.saveBatch(
+      query.getRoleId().stream().map(item -> {
+        UserRole userRole = new UserRole();
+        userRole.setUserId(query.getId());
+        userRole.setRoleId(item);
+
+        return userRole;
+      }).collect(Collectors.toList())
+    );
+
+
+    return RestBean.success(null, "success");
   }
 
   @GetMapping("/api/admin/user/role")
