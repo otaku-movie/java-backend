@@ -25,6 +25,9 @@ public class Movie {
   @TableField("description")
   String description;
 
+  @TableField("level_id")
+  Integer levelId;
+
   @TableField("home_page")
   String homePage;
 

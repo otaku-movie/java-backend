@@ -12,6 +12,7 @@ public class MovieShowTimeList {
     private Integer status;
     private Integer movie_id;
     private String movie_name;
+    private String movie_cover;
     private Integer cinema_id;
     private String cinema_name;
     private Integer theater_hall_id;

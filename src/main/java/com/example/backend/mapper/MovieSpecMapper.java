@@ -8,5 +8,5 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface MovieSpecMapper extends BaseMapper<MovieSpec> {
-
+  void deleteSpec(Integer id);
 }

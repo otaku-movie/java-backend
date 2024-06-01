@@ -9,6 +9,7 @@
         <result property="status" column="status"></result>
         <result property="movie_id" column="movie_id"></result>
         <result property="movie_name" column="movie_name"></result>
+        <result property="movie_cover" column="movie_cover"></result>
         <result property="cinema_id" column="cinema_id"></result>
         <result property="cinema_name" column="cinema_name"></result>
         <result property="theater_hall_id" column="theater_hall_id"></result>
@@ -28,6 +29,7 @@
                 movie_show_time.status,
                 movie.id AS movie_id,
                 movie.name AS movie_name,
+                movie.cover AS movie_cover,
                 cinema.id AS cinema_id,
                 cinema.name AS cinema_name,
                 theater_hall.id AS theater_hall_id,
@@ -42,6 +44,6 @@
                 LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
                 LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id
                 LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id
-            ORDER BY movie.update_time ASC
+            ORDER BY movie.update_time DESC
         </select>
 </mapper>

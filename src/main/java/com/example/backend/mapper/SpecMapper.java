@@ -8,4 +8,5 @@ import org.springframework.boot.autoconfigure.rsocket.RSocketProperties;
 
 @Mapper
 public interface SpecMapper extends BaseMapper<CinemaSpec> {
+
 }

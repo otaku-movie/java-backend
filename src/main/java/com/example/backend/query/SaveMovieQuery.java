@@ -18,6 +18,8 @@ public class SaveMovieQuery {
   private String name;
   @NotEmpty
   private String description;
+  @NotNull
+  private Integer levelId;
   private String startDate;
   private String endDate;
   private Integer status;

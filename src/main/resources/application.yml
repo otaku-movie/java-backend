@@ -48,3 +48,9 @@ sa-token:
   token-style: simple-uuid
   # 是否输出操作日志
   is-log: true
+minio:
+  accessKey: RQXIcweef6ZzjFWFsDrj
+  secretKey: pfASmYyXgqQnR81CHTLyIIaHTt1SoxUcTgYaeR2p
+  endpoint: http://43.154.172.94:9000/
+  previewURL: https://drive.bangumi.xyz/
+  bucket: test-movie

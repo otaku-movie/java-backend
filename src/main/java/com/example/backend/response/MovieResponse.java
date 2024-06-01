@@ -29,6 +29,8 @@ public class MovieResponse {
   Integer status;
   // 1 未上映 2 上映中 3 上映结束
   Integer time;
+  Integer cinema_count;
+  Integer theater_count;
   Integer comment_count;
   Integer watched_count;
   Integer want_to_see_count;

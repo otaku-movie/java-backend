@@ -9,5 +9,5 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface MovieCharacterMapper extends BaseMapper<MovieCharacter> {
-
+  void deleteCharacter(Integer id);
 }

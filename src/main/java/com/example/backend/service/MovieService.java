@@ -4,12 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.entity.*;
 import com.example.backend.entity.Character;
+import com.example.backend.mapper.*;
 import com.example.backend.query.SaveMovieQuery;
-import com.example.backend.mapper.MovieMapper;
 import com.example.backend.query.CharacterSaveQuery;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.stream.Collectors;
 
@@ -27,11 +28,20 @@ public class MovieService {
   private MovieMapper movieMapper;
 
   @Autowired
+  private MovieSpecMapper movieSpecMapper;
+  @Autowired
+  MovieStaffMapper movieStaffMapper;
+
+  @Autowired
+  MovieCharacterMapper movieCharacterMapper;
+
+  @Autowired
   private MovieStaffService movieStaffService;
 
   @Autowired
   private  MovieCharacterService movieCharacterService;
 
+  @Transactional
   public void saveMovie(Movie movie, SaveMovieQuery query) {
     if (query.getId() == null) {
       movieMapper.insert(movie);
@@ -42,10 +52,20 @@ public class MovieService {
       movieMapper.update(movie, updateQueryWrapper);
     }
 
+    if (query.getSpec() != null) {
+      movieSpecMapper.deleteSpec(query.getId());
+
+      query.getSpec().forEach(item -> {
+        MovieSpec movieSpec = new MovieSpec();
+        movieSpec.setSpecId(item);
+        movieSpec.setMovieId(query.getId());
+
+        movieSpecMapper.insert(movieSpec);
+      });
+    }
+    System.out.println(query.getStaffList());
     if (query.getStaffList() != null) {
-      QueryWrapper queryWrapper = new QueryWrapper<>();
-      queryWrapper.eq("movie_id", query.getId());
-      movieStaffService.remove(queryWrapper);
+      movieStaffMapper.deleteStaff(query.getId());
 
       movieStaffService.saveBatch(
         query.getStaffList().stream()
@@ -61,9 +81,7 @@ public class MovieService {
       );
     }
     if (query.getCharacterList() != null) {
-      QueryWrapper queryWrapper = new QueryWrapper<>();
-      queryWrapper.eq("movie_id", query.getId());
-      movieCharacterService.remove(queryWrapper);
+      movieCharacterMapper.deleteCharacter(query.getId());
 
       movieCharacterService.saveBatch(
         query.getCharacterList().stream()
@@ -101,6 +119,11 @@ public class MovieService {
       movie.setTime(query.getTime());
     }
 
+    if (query.getLevelId() != null) {
+      movie.setLevelId(query.getLevelId());
+    }
+
+    movie.setCover(query.getCover());
     movie.setName(query.getName());
     movie.setDescription(query.getDescription());
     movie.setStartDate(query.getStartDate());
