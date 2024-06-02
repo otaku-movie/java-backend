@@ -17,7 +17,9 @@ class  Staff {
 @Data
 public class CharacterList {
   private Integer id;
+  private String cover;
   private String name;
+  private String original_name;
   private String description;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
@@ -27,6 +29,4 @@ public class CharacterList {
   private Date update_time;
 
   private List<Staff> staff;
-  private Integer movie_id;
-  private String movie_name;
 }

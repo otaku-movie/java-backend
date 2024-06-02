@@ -17,9 +17,6 @@ public class StaffCharacter {
   @TableField("character_id")
   Integer  characterId;
 
-  @TableField("movie_id")
-  Integer movieId;
-
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

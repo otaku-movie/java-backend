@@ -25,8 +25,16 @@ public class Staff implements Serializable {
     /**
      * 
      */
+    @TableField(value = "cover")
+    private String cover;
+
+    @TableField(value = "original_name")
+    private String originalName;
+
+    @TableField(value = "name")
     private String name;
 
+    @TableField(value = "description")
     private String description;
 
     /**

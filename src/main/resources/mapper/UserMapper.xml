@@ -6,7 +6,8 @@
     <resultMap id="userList" type="com.example.backend.response.UserListResponse">
         <id property="id" column="id"></id>
         <result property="id" column="id"></result>
-        <result property="username" column="username"></result>
+        <result property="cover" column="cover"></result>
+        <result property="name" column="name"></result>
         <result property="cover" column="endTime"></result>
         <result property="email" column="email"></result>
         <result property="create_time" column="create_time"/>
@@ -20,7 +21,7 @@
         SELECT
             users.id as id,
             users.cover as cover,
-            users.username as username,
+            users.name as name,
             users.email as email,
             users.create_time as create_time,
             users.update_time as update_time,

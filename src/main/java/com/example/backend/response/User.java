@@ -9,7 +9,7 @@ import java.util.Date;
 public class User {
   Integer id;
   String cover;
-  String username;
+  String name;
   String email;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   Date create_time;

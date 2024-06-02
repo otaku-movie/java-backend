@@ -7,12 +7,11 @@
     <resultMap id="character" type="com.example.backend.response.CharacterList">
             <id property="id" column="id" jdbcType="VARCHAR"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="cover" column="cover" jdbcType="VARCHAR"/>
+            <result property="original_name" column="original_name" jdbcType="VARCHAR"/>
             <result property="description" column="description" jdbcType="VARCHAR"/>
             <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
             <result property="update_time" column="update_time" jdbcType="TIMESTAMP"/>
-
-            <result property="movie_id" column="movie_id"/>
-            <result property="movie_name" column="movie_name"/>
             <collection property="staff" ofType="com.example.backend.response.Staff">
                 <result property="id" column="staff_id"/>
                 <result property="name" column="staff_name"/>
@@ -22,18 +21,17 @@
     <select id="characterList" resultMap="character">
         SELECT
             character.id,
+            character.cover,
             character.name,
+            character.original_name,
             character.description,
             character.create_time,
             character.update_time,
             staff.id as staff_id,
-            staff.name as staff_name,
-            movie.id as movie_id,
-            movie.name as movie_name
+            staff.name as staff_name
         FROM character
             LEFT JOIN staff_character ON character.id = staff_character.character_id
             LEFT JOIN staff ON staff_character.staff_id = staff.id
-            LEFT JOIN movie ON staff_character.movie_id = movie.id
         <where>
             character.deleted = 0
             <if test="query.name != null and !query.name.equals('')">
@@ -45,22 +43,22 @@
                 </foreach>
             </if>
         </where>
+        ORDER BY character.update_time DESC
     </select>
     <select id="characterDetail" resultMap="character">
         SELECT
             character.id,
+            character.cover,
             character.name,
+            character.original_name,
             character.description,
             character.create_time,
             character.update_time,
             staff.id as staff_id,
-            staff.name as staff_name,
-            movie.id as movie_id,
-            movie.name as movie_name
+            staff.name as staff_name
         FROM character
                  LEFT JOIN staff_character ON character.id = staff_character.character_id
                  LEFT JOIN staff ON staff_character.staff_id = staff.id
-                 LEFT JOIN movie ON staff_character.movie_id = movie.id
         WHERE
             character.id = #{id}
     </select>

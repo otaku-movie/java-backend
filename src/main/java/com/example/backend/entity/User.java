@@ -16,8 +16,8 @@ public class User {
   @TableField("cover")
   String cover;
 
-  @TableField("username")
-  String username;
+  @TableField("name")
+  String name;
 
   @TableField("password")
   String password;

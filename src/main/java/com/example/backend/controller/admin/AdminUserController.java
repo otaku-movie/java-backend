@@ -94,7 +94,7 @@ public class AdminUserController {
     User user = new User();
 
     user.setCover(query.getCover());
-    user.setUsername(query.getUsername());
+    user.setName(query.getName());
     user.setPassword(query.getPassword());
     user.setEmail(query.getEmail());
 

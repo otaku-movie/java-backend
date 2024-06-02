@@ -53,12 +53,12 @@ public class MovieService {
     }
 
     if (query.getSpec() != null) {
-      movieSpecMapper.deleteSpec(query.getId());
+      movieSpecMapper.deleteSpec(movie.getId());
 
       query.getSpec().forEach(item -> {
         MovieSpec movieSpec = new MovieSpec();
         movieSpec.setSpecId(item);
-        movieSpec.setMovieId(query.getId());
+        movieSpec.setMovieId(movie.getId());
 
         movieSpecMapper.insert(movieSpec);
       });
@@ -105,11 +105,7 @@ public class MovieService {
       movie.setId(query.getId());
     }
 
-    if (query.getOriginalName() == null) {
-      query.setOriginalName(query.getName());
-    } else {
-      movie.setOriginalName(query.getOriginalName());
-    }
+
     if (query.getStatus() == null) {
       movie.setStatus(1);
     } else {
@@ -123,6 +119,7 @@ public class MovieService {
       movie.setLevelId(query.getLevelId());
     }
 
+    movie.setOriginalName(query.getOriginalName());
     movie.setCover(query.getCover());
     movie.setName(query.getName());
     movie.setDescription(query.getDescription());
@@ -132,12 +129,12 @@ public class MovieService {
 
     // 添加的去重查询条件
     QueryWrapper<Movie> queryWrapper = new QueryWrapper<>();
-    queryWrapper.eq("original_name", name);
+    queryWrapper.eq("name", name);
     // 编辑的去重查询条件
 //    UpdateWrapper<Movie> updateWrapper = new UpdateWrapper<>();
 //    updateWrapper.eq("original_name", name);
     // 自定义验证方法
-    ValidationFunction<Movie> validationFunction = (old, newData) -> old.getOriginalName().equals(newData.getOriginalName());
+    ValidationFunction<Movie> validationFunction = (old, newData) -> old.getName().equals(newData.getName());
 
     boolean result = genericService.validate(
       movie, query.getId(), validationFunction, queryWrapper, movieMapper
@@ -145,12 +142,11 @@ public class MovieService {
 
     MovieResponse movieResponse = new MovieResponse();
 
-    movieResponse.setId(movie.getId());
-
     if (query.getId() == null) {
       if (result) {
         saveMovie(movie, query);
-        return RestBean.success(movieResponse, "保存成功");
+        movieResponse.setId(movie.getId());
+        return RestBean.success(movie, "保存成功");
       } else {
         return RestBean.error(0, "数据已存在");
       }
@@ -158,7 +154,7 @@ public class MovieService {
       if (result) {
         movie.setId(query.getId());
         saveMovie(movie, query);
-        return RestBean.success(movieResponse, "保存成功");
+        return RestBean.success(movie, "保存成功");
       } else {
         return RestBean.error(0, "数据已存在");
       }

@@ -40,8 +40,9 @@ public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper,
 
   @Transactional
   public void saveCharacter(Character data, CharacterSaveQuery query) {
+    Integer id = null;
     if (query.getId() == null) {
-      Integer id = characterMapper.insert(data);
+      id = characterMapper.insert(data);
 
       System.out.println(id);
     } else  {
@@ -51,14 +52,13 @@ public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper,
     }
 
     QueryWrapper queryWrapper = new QueryWrapper<>();
-    queryWrapper.eq("movie_id", query.getMovieId());
+    queryWrapper.eq("character_id", query.getId() == null ? id : query.getId());
     staffCharacterMapper.delete(queryWrapper);
 
     this.saveBatch(
       query.getStaffId().stream()
         .map(item -> {
           StaffCharacter staffCharacter = new StaffCharacter();
-          staffCharacter.setMovieId(query.getMovieId());
           staffCharacter.setCharacterId(data.getId());
           staffCharacter.setStaffId(item);
           return staffCharacter;
@@ -71,6 +71,8 @@ public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper,
   public RestBean<Object> saveStaffCharacter(CharacterSaveQuery query) {
     Character data = new Character();
 
+    data.setCover(query.getCover());
+    data.setOriginalName(query.getOriginalName());
     data.setName(query.getName());
     data.setDescription(query.getDescription());
 

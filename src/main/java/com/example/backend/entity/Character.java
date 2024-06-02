@@ -22,6 +22,13 @@ public class Character implements Serializable {
     /**
      * 
      */
+    @TableField(value = "cover")
+    private String cover;
+
+    @TableField(value = "original_name")
+    private String originalName;
+
+    @TableField(value = "name")
     private String name;
 
     /**

@@ -43,4 +43,7 @@ public class MovieResponse {
 
 //  private Integer deleted;
   List<Spec> spec;
+
+  Integer level_id;
+  String level_name;
 }

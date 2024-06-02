@@ -9,7 +9,7 @@ public class UserSaveQuery {
   Integer id;
   String cover;
   @NotNull
-  String username;
+  String name;
   @NotNull
   String password;
   @NotNull

@@ -22,7 +22,8 @@ class StaffSaveQuery {
   Integer id;
   @NotNull
   String name;
-
+  String cover;
+  String originalName;
   @NotNull
   String description;
 }
@@ -88,6 +89,8 @@ public class StaffController {
 
     data.setName(query.getName());
     data.setDescription(query.getDescription());
+    data.setCover(query.getCover());
+    data.setOriginalName(query.getOriginalName());
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
@@ -98,29 +101,43 @@ public class StaffController {
         staffMapper.insert(data);
         return RestBean.success(null, "success");
       } else {
-        return RestBean.error(0, "当前数据已经存在");
+        return RestBean.error(0, "当前名称已经存在");
       }
     } else {
       data.setId(query.getId());
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
-      updateQueryWrapper.eq("id", query.getId());
-      Staff old = staffMapper.selectById(query.getId());
+      QueryWrapper wrapper = new QueryWrapper<>();
+      wrapper.eq("name", query.getName());
+      wrapper.ne("id", query.getId());
 
-      if (Objects.equals(old.getName(), query.getName()) && old.getId() == query.getId()) {
+      Long count = staffMapper.selectCount(wrapper);
+
+      if (count == 0) {
+        UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+        updateQueryWrapper.eq("id", query.getId());
         staffMapper.update(data, updateQueryWrapper);
+        return RestBean.success(null, "success");
       } else {
-        QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("name", query.getName());
-        Staff find = staffMapper.selectOne(wrapper);
-
-        if (find != null) {
-          return RestBean.error(0, "当前数据已经存在");
-        } else {
-          staffMapper.update(data, updateQueryWrapper);
-        }
+        return RestBean.error(0, "当前名称已经存在");
       }
 
-      return RestBean.success(null, "success");
+//
+//
+//
+//      Staff old = staffMapper.selectById(query.getId());
+//
+//      if (old.getId() == query.getId()) {
+//
+//      } else {
+//        QueryWrapper wrapper = new QueryWrapper<>();
+//        wrapper.eq("name", query.getName());
+//        Staff find = staffMapper.selectOne(wrapper);
+//
+//        if (find != null) {
+//
+//        } else {
+//          staffMapper.update(data, updateQueryWrapper);
+//        }
+//      }
     }
   }
 }

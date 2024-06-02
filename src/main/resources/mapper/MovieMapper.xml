@@ -18,6 +18,8 @@
         <result property="comment_count" column="comment_count"></result>
         <result property="watched_count" column="watched_count"></result>
         <result property="want_to_see_count" column="want_to_see_count"></result>
+        <result property="level_id" column="level_id"></result>
+        <result property="level_name" column="level_name"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -30,6 +32,7 @@
                 COALESCE(cinema_counts.cinema_count, 0) AS cinema_count,
                 COALESCE(theater_counts.theater_count, 0) AS theater_count,
                 COALESCE(comment_counts.comment_count, 0) AS comment_count,
+                level.name AS level_name,
                 cinema_spec.id AS spec_id,
                 cinema_spec.name AS spec_name,
                 cinema_spec.description AS spec_description
@@ -72,6 +75,7 @@
                 GROUP BY
                     movie_show_time.movie_id
                 ) AS theater_counts ON movie.id = theater_counts.movie_id
+            LEFT JOIN level ON movie.level_id = level.id
             LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
             LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
             <where>
@@ -91,11 +95,53 @@
     <select id="movieDetail" resultMap="movieList">
         SELECT
             movie.*,
+            COALESCE(cinema_counts.cinema_count, 0) AS cinema_count,
+            COALESCE(theater_counts.theater_count, 0) AS theater_count,
+            COALESCE(comment_counts.comment_count, 0) AS comment_count,
+            level.name AS level_name,
             cinema_spec.id AS spec_id,
             cinema_spec.name AS spec_name,
             cinema_spec.description AS spec_description
         FROM
             movie
+                --- 统计评论数量
+                LEFT JOIN (
+                SELECT
+                    movie_comment.movie_id,
+                    COUNT(DISTINCT movie_comment.id) + COUNT(DISTINCT movie_reply.id) AS comment_count
+                FROM
+                    movie_comment
+                        LEFT JOIN movie_reply ON movie_comment.id = movie_reply.movie_comment_id AND movie_reply.deleted = 0
+                WHERE
+                    movie_comment.deleted = 0
+                GROUP BY
+                    movie_comment.movie_id
+            ) AS comment_counts ON movie.id = comment_counts.movie_id
+                -- 统计独立影院数量
+                LEFT JOIN (
+                SELECT
+                    movie_show_time.movie_id,
+                    COUNT(DISTINCT movie_show_time.cinema_id) AS cinema_count
+                FROM
+                    movie_show_time
+                WHERE
+                    movie_show_time.deleted = 0
+                GROUP BY
+                    movie_show_time.movie_id
+            ) AS cinema_counts ON movie.id = cinema_counts.movie_id
+                -- 统计影院放映次数
+                LEFT JOIN (
+                SELECT
+                    movie_show_time.movie_id,
+                    COUNT(movie_show_time.cinema_id) AS theater_count
+                FROM
+                    movie_show_time
+                WHERE
+                    movie_show_time.deleted = 0
+                GROUP BY
+                    movie_show_time.movie_id
+            ) AS theater_counts ON movie.id = theater_counts.movie_id
+                LEFT JOIN level ON movie.level_id = level.id
                 LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
                 LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
         WHERE

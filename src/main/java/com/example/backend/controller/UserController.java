@@ -44,12 +44,15 @@ public class UserController {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("email", query.getEmail());
     queryWrapper.eq("password", query.getPassword());
+    queryWrapper.select("id", "cover", "name", "email", "create_time");
 
     LoginResponse loginResponse = new LoginResponse();
     User result = userMapper.selectOne(queryWrapper);
-
-    BeanUtils.copyProperties(result, loginResponse);
-
+    loginResponse.setId(result.getId());
+    loginResponse.setName(result.getName());
+    loginResponse.setEmail(result.getEmail());
+    loginResponse.setCreate_time(result.getCreateTime());
+    loginResponse.setCover(result.getCover());
 
     if (result != null) {
       StpUtil.login(result.getId());
@@ -68,7 +71,7 @@ public class UserController {
     if(id == null) return RestBean.error(-1, "参数错误");
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
-    queryWrapper.select("id", "cover", "username", "email", "create_time", "update_time");
+    queryWrapper.select("id", "cover", "name", "email", "create_time", "update_time");
     User result = userMapper.selectOne(queryWrapper);
 
     return RestBean.success(result, "获取成功");

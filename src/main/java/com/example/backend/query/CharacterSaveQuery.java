@@ -10,12 +10,11 @@ public  class CharacterSaveQuery {
   Integer id;
   @NotNull
   String name;
+  String cover;
+  String originalName;
 
   @NotNull
   String description;
-
-  @NotNull
-  Integer movieId;
 
   @NotNull
   List<Integer> staffId;
