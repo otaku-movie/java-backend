@@ -1,5 +1,8 @@
 package com.example.backend.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.secure.SaSecureUtil;
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -31,7 +34,6 @@ import java.util.stream.Collectors;
 class UserLoginQuery {
   @NotNull
   String email;
-  @NotNull
   String password;
 }
 
@@ -81,22 +83,45 @@ public class AdminUserController {
 
     return RestBean.success(result, "获取成功");
   }
+  @Transactional
   @DeleteMapping("/api/admin/user/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 
+    Integer userId = StpUtil.getLoginIdAsInt();
+
     userMapper.deleteById(id);
+    QueryWrapper wrapper = new QueryWrapper();
+
+    wrapper.eq("user_id", id);
+    userRoleService.remove(wrapper);
+
+    if (id == userId) {
+      StpUtil.logout();
+    }
 
     return RestBean.success(null, "删除成功");
   }
+  @SaCheckLogin
   @PostMapping("/api/admin/user/save")
   public RestBean<List<Object>> save(@RequestBody @Validated UserSaveQuery query)  {
     User user = new User();
 
     user.setCover(query.getCover());
     user.setName(query.getName());
-    user.setPassword(query.getPassword());
     user.setEmail(query.getEmail());
+
+    if (query.getId() == null) {
+      if (query.getPassword() == null) {
+        return RestBean.error(0, "密码不能为空");
+      }
+      user.setPassword(SaSecureUtil.md5(query.getPassword()));
+    } else {
+      // 编辑的时候，如果有密码，就修改
+      if (query.getPassword() != null) {
+        user.setPassword(SaSecureUtil.md5(query.getPassword()));
+      }
+    }
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
@@ -107,29 +132,29 @@ public class AdminUserController {
         userMapper.insert(user);
         return RestBean.success(null, "success");
       } else {
-        return RestBean.error(0, "当前用户已经存在");
+        return RestBean.error(0, "当前邮箱已存在");
       }
     } else {
-      user.setId(query.getId());
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
-      updateQueryWrapper.eq("id", query.getId());
-      User old = userMapper.selectById(query.getId());
 
-      if (Objects.equals(old.getEmail(), query.getEmail()) && old.getId() == query.getId()) {
+
+      QueryWrapper wrapper = new QueryWrapper<>();
+      wrapper.eq("email", query.getEmail());
+      wrapper.ne("id", query.getId());
+
+      Long count = userMapper.selectCount(wrapper);
+
+
+      if (count == 0) {
+        UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+        updateQueryWrapper.eq("id", query.getId());
+
+        user.setId(query.getId());
         userMapper.update(user, updateQueryWrapper);
+        return RestBean.success(null, "success");
       } else {
-        QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("name", query.getEmail());
-        User find = userMapper.selectOne(wrapper);
-
-        if (find != null) {
-          return RestBean.error(0, "当前用户已经存在");
-        } else {
-          userMapper.update(user, updateQueryWrapper);
-        }
+        return RestBean.error(0, "当前邮箱已存在");
       }
 
-      return RestBean.success(null, "success");
     }
   }
 }

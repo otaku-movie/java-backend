@@ -10,7 +10,6 @@ public class UserSaveQuery {
   String cover;
   @NotNull
   String name;
-  @NotNull
   String password;
   @NotNull
   @Email

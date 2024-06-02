@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -43,21 +44,22 @@ public class UserController {
   public RestBean<LoginResponse> login(@RequestBody @Validated UserLoginQuery query) {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("email", query.getEmail());
-    queryWrapper.eq("password", query.getPassword());
+
+    queryWrapper.eq("password", SaSecureUtil.md5(query.getPassword()));
     queryWrapper.select("id", "cover", "name", "email", "create_time");
 
     LoginResponse loginResponse = new LoginResponse();
     User result = userMapper.selectOne(queryWrapper);
-    loginResponse.setId(result.getId());
-    loginResponse.setName(result.getName());
-    loginResponse.setEmail(result.getEmail());
-    loginResponse.setCreate_time(result.getCreateTime());
-    loginResponse.setCover(result.getCover());
+
 
     if (result != null) {
       StpUtil.login(result.getId());
-      System.out.println(StpUtil.getTokenInfo());
-        loginResponse.setToken(StpUtil.getTokenValue());
+      loginResponse.setId(result.getId());
+      loginResponse.setName(result.getName());
+      loginResponse.setEmail(result.getEmail());
+      loginResponse.setCreate_time(result.getCreateTime());
+      loginResponse.setCover(result.getCover());
+      loginResponse.setToken(StpUtil.getTokenValue());
 
       return RestBean.success( loginResponse, "登录成功");
     } else  {
