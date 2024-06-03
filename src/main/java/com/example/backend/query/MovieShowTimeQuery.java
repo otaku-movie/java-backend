@@ -12,6 +12,7 @@ public class MovieShowTimeQuery {
   Integer theaterHallId;
   @NotNull
   Integer movieId;
+  Boolean open;
   @NotNull
   String startTime;
   @NotNull

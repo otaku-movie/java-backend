@@ -50,6 +50,7 @@ public class MovieShowTimeImpl implements MovieShowTimeService {
     movieShowTime.setMovieId(query.getMovieId());
     movieShowTime.setStartTime(query.getStartTime());
     movieShowTime.setEndTime(query.getEndTime());
+    movieShowTime.setOpen(query.getOpen());
 
     if (query.getId() == null) {
       movieShowTimeMapper.insert(movieShowTime);

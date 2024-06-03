@@ -7,6 +7,7 @@ import java.util.List;
 @Data
 public class MovieShowTimeList {
     private Integer id;
+    private Boolean open;
     private String start_time;
     private String end_time;
     private Integer status;

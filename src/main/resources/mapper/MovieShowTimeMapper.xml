@@ -4,6 +4,7 @@
     <resultMap id="movie_show_time_list" type="com.example.backend.response.MovieShowTimeList">
         <id property="id" column="id"></id>
         <result property="id" column="id"></result>
+        <result property="open" column="open"></result>
         <result property="start_time" column="start_time"></result>
         <result property="end_time" column="end_time"></result>
         <result property="status" column="status"></result>
@@ -27,6 +28,7 @@
                 movie_show_time.start_time,
                 movie_show_time.end_time,
                 movie_show_time.status,
+                movie_show_time.open,
                 movie.id AS movie_id,
                 movie.name AS movie_name,
                 movie.cover AS movie_cover,
@@ -44,6 +46,7 @@
                 LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
                 LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id
                 LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id
-            ORDER BY movie.update_time DESC
+            WHERE movie_show_time.deleted = 0
+            ORDER BY movie_show_time.update_time DESC
         </select>
 </mapper>

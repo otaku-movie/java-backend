@@ -22,6 +22,9 @@ public class MovieShowTime {
   @TableField("theater_hall_id")
   Integer theaterHallId;
 
+  @TableField("open")
+  Boolean open;
+
   @TableField("start_time")
   String startTime ;
 

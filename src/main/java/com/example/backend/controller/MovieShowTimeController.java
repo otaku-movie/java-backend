@@ -9,7 +9,9 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.service.MovieShowTimeService;
+import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -65,6 +67,19 @@ public class MovieShowTimeController {
     MovieShowTime result = movieShowTimeMapper.selectById(id);
 
     return RestBean.success(result, "删除成功");
+  }
+  @Transactional
+  @DeleteMapping("/api/admin/movie_show_time/remove")
+  public RestBean<Null> remove (@RequestParam Integer id) {
+    if(id == null) return RestBean.error(-1, "参数错误");
+
+    QueryWrapper wrapper = new QueryWrapper<>();
+    wrapper.eq("movie_show_time_id", id);
+
+    movieShowTimeMapper.deleteById(id);
+    selectSeatMapper.delete(wrapper);
+
+    return RestBean.success(null, "删除成功");
   }
   @PostMapping("/api/admin/movie_show_time/save")
   public RestBean<Object> save(@RequestBody @Validated MovieShowTimeQuery query) throws ParseException {
