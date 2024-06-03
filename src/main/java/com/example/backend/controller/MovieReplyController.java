@@ -32,7 +32,9 @@ class MovieReplySaveQuery {
   String content;
   @NotNull
   Integer movieCommentId;
-  Integer parentReplyId;
+  @NotNull
+  Integer movieId;
+  String parentReplyId;
   //  @NotNull
   Integer commentUserId;
   Integer replyUserId;
@@ -77,11 +79,13 @@ public class MovieReplyController {
 
     data.setMovieCommentId(query.getMovieCommentId());
     data.setContent(query.getContent());
+    data.setMovieId(query.getMovieId());
 
 
     if (query.getId() != null && query.getParentReplyId() != null) {
       data.setCommentUserId(query.getCommentUserId());
       data.setReplyUserId(Utils.getUserId());
+      data.setParentReplyId(query.getParentReplyId());
       movieReplyMapper.insert(data);
       return RestBean.success(null, "success");
     } else {

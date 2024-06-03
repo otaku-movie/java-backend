@@ -15,9 +15,12 @@ public class MovieReply {
   @TableField("content")
   String content;
 
+  @TableField("movie_id")
+  Integer movieId;
+
   // 父级回复id
   @TableField("parent_reply_id")
-  Integer parentReplyId;
+  String parentReplyId;
 
   // 回复人
   @TableField("comment_user_id")

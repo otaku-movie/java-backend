@@ -27,7 +27,7 @@
             movie_comment.unlike_count as unlike_count,
             movie_comment.create_time as create_time,
             movie_comment.update_time as update_time,
-            users.username as comment_user_name,
+            users.name as comment_user_name,
             (
                 SELECT
                     COUNT(*)
@@ -39,7 +39,7 @@
         FROM movie_comment
             LEFT JOIN users ON movie_comment.comment_user_id = users.id
         WHERE
-            movie_comment.deleted = 0
+            movie_comment.deleted = 0 AND movie_comment.movie_id = #{query.movieId}
         ORDER BY movie_comment.update_time DESC
     </select>
 </mapper>

@@ -16,6 +16,7 @@
         <result property="reply_user_name" column="reply_user_name"/>
         <result property="create_time" column="create_time"/>
         <result property="update_time" column="update_time"/>
+        <result property="parent_reply_id" column="parent_reply_id"/>
     </resultMap>
     <select id="replyList" resultMap="replyList">
         SELECT
@@ -28,8 +29,9 @@
             movie_reply.unlike_count AS unlike_count,
             movie_reply.create_time AS create_time,
             movie_reply.update_time AS update_time,
-            commentUser.username AS comment_user_name, -- 评论用户的用户名
-            replyUser.username AS reply_user_name -- 回复用户的用户名
+            movie_reply.parent_reply_id AS parent_reply_id,
+            commentUser.name AS comment_user_name, -- 评论用户的用户名
+            replyUser.name AS reply_user_name -- 回复用户的用户名
         FROM movie_reply
                  LEFT JOIN users AS commentUser ON movie_reply.comment_user_id = commentUser.id
                  LEFT JOIN users AS replyUser ON movie_reply.reply_user_id = replyUser.id

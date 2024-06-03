@@ -19,6 +19,7 @@ public class MovieReplyResponse {
   Integer like_count;
   Integer unlike_count;
   Integer reply_count;
+  String parent_reply_id;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   Date create_time;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")

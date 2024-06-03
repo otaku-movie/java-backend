@@ -37,7 +37,7 @@ public class MovieCommentController {
   private MovieCommentMapper movieCommentMapper;
 
   @PostMapping("/api/movie/comment/list")
-  public RestBean<List<MovieCommentResponse>> list(@RequestBody MovieCommentListQuery query)  {
+  public RestBean<List<MovieCommentResponse>> list(@RequestBody @Validated MovieCommentListQuery query)  {
     Page<MovieComment> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieCommentResponse> list = movieCommentMapper.commentList(query, page);
