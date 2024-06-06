@@ -1,9 +1,11 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Level;
 import com.example.backend.entity.RestBean;
 import com.example.backend.mapper.LevelMapper;
@@ -70,6 +72,8 @@ public class LevelController {
 
     return RestBean.success(result, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "level.save")
   @PostMapping("/api/admin/movie/level/save")
   public RestBean<String> save(@RequestBody @Validated() SaveLevelQuery query) {
     Level level = new Level();
@@ -111,6 +115,8 @@ public class LevelController {
       return RestBean.success(null, "success");
     }
   }
+  @SaCheckLogin
+  @CheckPermission(code = "level.remove")
   @DeleteMapping("/api/admin/movie/level/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");

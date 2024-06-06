@@ -4,15 +4,39 @@ import cn.dev33.satoken.util.SaResult;
 import com.example.backend.entity.RestBean;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    Map<String, String> errorResponse = new HashMap<>();
 
-  // 全局异常拦截（拦截项目中的NotLoginException异常）
+    // 最初のエラーを取得
+    FieldError firstError = (FieldError) ex.getBindingResult().getAllErrors().get(0);
+    String fieldName = firstError.getField();
+    String errorMessage = firstError.getDefaultMessage();
+    errorResponse.put(fieldName, errorMessage);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+  @ExceptionHandler(value = Exception.class)
+  public RestBean exception(Exception e) {
+    System.out.println(e);
+    return RestBean.error(0,e.getMessage());
+  }
+
+  // 全局登录异常拦截（拦截项目中的NotLoginException异常）
   @ExceptionHandler(NotLoginException.class)
   public RestBean handlerNotLoginException(
     NotLoginException nle,

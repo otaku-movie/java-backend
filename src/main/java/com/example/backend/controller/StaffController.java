@@ -1,9 +1,11 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Staff;
 import com.example.backend.entity.RestBean;
 import com.example.backend.mapper.StaffMapper;
@@ -75,6 +77,8 @@ public class StaffController {
 
     return RestBean.success(result, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "staff.remove")
   @DeleteMapping("/api/admin/staff/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
@@ -83,6 +87,8 @@ public class StaffController {
 
     return RestBean.success(null, "删除成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "staff.save")
   @PostMapping("/api/admin/staff/save")
   public RestBean<List<Object>> save(@RequestBody @Validated StaffSaveQuery query)  {
     Staff data = new Staff();
@@ -119,25 +125,6 @@ public class StaffController {
       } else {
         return RestBean.error(0, "当前名称已经存在");
       }
-
-//
-//
-//
-//      Staff old = staffMapper.selectById(query.getId());
-//
-//      if (old.getId() == query.getId()) {
-//
-//      } else {
-//        QueryWrapper wrapper = new QueryWrapper<>();
-//        wrapper.eq("name", query.getName());
-//        Staff find = staffMapper.selectOne(wrapper);
-//
-//        if (find != null) {
-//
-//        } else {
-//          staffMapper.update(data, updateQueryWrapper);
-//        }
-//      }
     }
   }
 }

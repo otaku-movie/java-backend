@@ -41,11 +41,12 @@
                 cinema_spec.name AS spec_name,
                 cinema_spec.description AS spec_description
             FROM movie_show_time
-                LEFT JOIN movie ON movie.id = movie_show_time.movie_id
-                LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
-                LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
-                LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id
-                LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id
+                --- 查询未被删掉的数据
+                LEFT JOIN movie ON movie.id = movie_show_time.movie_id AND movie.deleted = 0
+                LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id AND movie_spec.deleted = 0
+                LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id AND cinema_spec.deleted = 0
+                LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id AND cinema.deleted = 0
+                LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id AND theater_hall.deleted = 0
             WHERE movie_show_time.deleted = 0
             ORDER BY movie_show_time.update_time DESC
         </select>

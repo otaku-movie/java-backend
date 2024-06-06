@@ -1,9 +1,11 @@
 package com.example.backend.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.*;
 import com.example.backend.mapper.*;
 import com.example.backend.response.ButtonResponse;
@@ -108,13 +110,15 @@ public class RoleController {
   public RestBean<List<ButtonResponse>> permission(@RequestParam Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
-    List<ButtonResponse> list = roleMapper.permission(id);
+    List<ButtonResponse> list = roleMapper.rolePermission(id);
     List<ButtonResponse> filteredList = list.stream()
       .map(ButtonResponseProcessor::filterButtonResponse)
       .collect(Collectors.toList());
 
     return RestBean.success(filteredList, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "role.configPermission")
   @Transactional
   @PostMapping("/api/admin/permission/role/config")
   public RestBean<Null> config(@RequestBody @Validated RoleConfigQuery query)  {
@@ -157,6 +161,8 @@ public class RoleController {
 
     return RestBean.success(result, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "role.remove")
   @DeleteMapping("/api/admin/permission/role/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
@@ -165,6 +171,8 @@ public class RoleController {
 
     return RestBean.success(null, "删除成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "role.save")
   @PostMapping("/api/admin/permission/role/save")
   public RestBean<List<Object>> save(@RequestBody @Validated RoleSaveQuery query)  {
     Role data = new Role();

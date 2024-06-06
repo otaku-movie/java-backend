@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
@@ -57,6 +58,8 @@ public class AdminUserController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
+  @SaCheckLogin
+  @CheckPermission(code = "user.configRole")
   @Transactional
   @PostMapping("/api/admin/user/configRole")
   public RestBean<List<Role>> role (@RequestBody @Validated  UserRoleConfigQuery query) {
@@ -74,7 +77,7 @@ public class AdminUserController {
 
     return RestBean.success(null, "success");
   }
-
+  @SaCheckLogin
   @GetMapping("/api/admin/user/role")
   public RestBean<List<Role>> role (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
@@ -83,6 +86,8 @@ public class AdminUserController {
 
     return RestBean.success(result, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "user.remove")
   @Transactional
   @DeleteMapping("/api/admin/user/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
@@ -103,6 +108,7 @@ public class AdminUserController {
     return RestBean.success(null, "删除成功");
   }
   @SaCheckLogin
+  @CheckPermission(code = "user.save")
   @PostMapping("/api/admin/user/save")
   public RestBean<List<Object>> save(@RequestBody @Validated UserSaveQuery query)  {
     User user = new User();

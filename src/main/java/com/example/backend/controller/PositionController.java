@@ -1,9 +1,11 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Position;
 import com.example.backend.mapper.PositionMapper;
@@ -73,6 +75,8 @@ public class PositionController {
 
     return RestBean.success(result, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "position.remove")
   @DeleteMapping("/api/admin/position/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
@@ -81,6 +85,8 @@ public class PositionController {
 
     return RestBean.success(null, "删除成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "position.save")
   @PostMapping("/api/admin/position/save")
   public RestBean<List<Object>> save(@RequestBody @Validated PositionSaveQuery query)  {
     Position data = new Position();

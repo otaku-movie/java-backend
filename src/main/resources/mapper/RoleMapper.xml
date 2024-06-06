@@ -23,11 +23,11 @@
             <result property="name" column="button_name" jdbcType="VARCHAR"/>
             <result property="code" column="button_code" jdbcType="VARCHAR"/>
             <result property="api_id" column="api_id" jdbcType="INTEGER"/>
-            <result property="api_path" column="api_path" jdbcType="VARCHAR"/>
             <result property="api_name" column="api_name" jdbcType="VARCHAR"/>
             <result property="checked" column="button_checked" jdbcType="BOOLEAN"/>
         </collection>
     </resultMap>
+
     <!--    权限配置菜单接口-->
     <select id="permissionList" resultMap="permissionList">
         SELECT
@@ -43,7 +43,6 @@
             button.api_id AS button_api_id,
             api.id AS api_id,
             api.name AS api_name,
-            api.path AS api_path,
             CASE
                 WHEN role_menu.role_id IS NOT NULL THEN true
                 ELSE false
@@ -58,8 +57,37 @@
             LEFT JOIN role_menu ON menu.id = role_menu.menu_id AND role_menu.role_id = #{id}
             LEFT JOIN role_button ON button.id = role_button.button_id AND role_button.role_id = #{id}
     </select>
+    <!--    角色的按钮权限 -->
+    <resultMap id="rolePermissionButton" type="com.example.backend.response.RolePermissionButton">
+        <result property="user_id" column="user_id"/>
+        <result property="role_id" column="role_id"/>
+        <result property="button_id" column="button_id"/>
+        <result property="button_name" column="button_name"/>
+        <result property="button_code" column="button_code"/>
+        <result property="api_id" column="api_id"/>
+        <result property="api_code" column="api_code"/>
+        <result property="api_name" column="api_name"/>
+    </resultMap>
+    <select id="rolePermissionButton" resultMap="rolePermissionButton">
+        SELECT
+            user_role.user_id as user_id,
+            user_role.role_id as role_id,
+            role_button.button_id as button_id,
+            button.name as button_name,
+            button.code as button_code,
+            api.id as api_id,
+            api.name as api_name,
+            api.code as api_code
+        FROM user_role
+            LEFT JOIN role_button ON user_role.role_id = role_button.role_id
+            LEFT JOIN button ON role_button.button_id = button.id
+            LEFT JOIN api ON button.api_id = api.id
+        WHERE
+            user_role.role_id = #{roleId} AND
+            user_role.deleted = 0
+    </select>
     <!--  获取角色权限  -->
-    <select id="permission" resultMap="permissionList">
+    <select id="rolePermission" resultMap="permissionList">
         SELECT
             menu.id AS menu_id,
             menu.name AS menu_name,
@@ -74,7 +102,6 @@
             button.api_id AS button_api_id,
             api.id AS api_id,
             api.name AS api_name,
-            api.path AS api_path,
             CASE
                 WHEN role_menu.role_id IS NOT NULL THEN true
                 ELSE false

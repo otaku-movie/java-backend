@@ -23,8 +23,8 @@
                 <result property="code" column="button_code"></result>
                 <result property="i18n_key" column="button_i18n_key" jdbcType="VARCHAR"/>
                 <result property="api_id" column="api_id"></result>
-                <result property="api_path" column="api_path"></result>
                 <result property="api_name" column="api_name"></result>
+                <result property="api_code" column="api_code"></result>
             </collection>
     </resultMap>
 
@@ -44,7 +44,7 @@
             button.i18n_key as button_i18n_key,
             api.id as api_id,
             api.name as api_name,
-            api.path as api_path
+            api.code as api_code
         FROM "menu"
             LEFT JOIN button ON menu.id = button.menu_id
             LEFT JOIN api ON button.api_id = api.id

@@ -1,9 +1,11 @@
 package com.example.backend.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Api;
 import com.example.backend.entity.RestBean;
 import com.example.backend.mapper.ApiMapper;
@@ -21,8 +23,9 @@ import java.util.Objects;
 class ApiSaveQuery {
   Integer id;
   String name;
-  @NotNull
   String path;
+  @NotNull
+  String code;
 }
 
 @Data
@@ -63,6 +66,8 @@ public class ApiController {
 
     return RestBean.success(result, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "api.remove")
   @DeleteMapping("/api/admin/permission/api/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
@@ -71,16 +76,22 @@ public class ApiController {
 
     return RestBean.success(null, "删除成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "api.save")
   @PostMapping("/api/admin/permission/api/save")
   public RestBean<List<Object>> save(@RequestBody @Validated ApiSaveQuery query)  {
     Api data = new Api();
 
     data.setName(query.getName());
-    data.setPath(query.getPath());
+    if (query.getPath() != null) {
+      data.setPath(query.getPath());
+    }
+
+    data.setCode(query.getCode());
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
-      wrapper.eq("path", query.getPath());
+      wrapper.eq("code", query.getPath());
       List<Api> list = apiMapper.selectList(wrapper);
 
       if (list.size() == 0) {
@@ -95,11 +106,11 @@ public class ApiController {
       updateQueryWrapper.eq("id", query.getId());
       Api old = apiMapper.selectById(query.getId());
 
-      if (Objects.equals(old.getPath(), query.getPath()) && old.getId() == query.getId()) {
+      if (Objects.equals(old.getCode(), query.getCode()) && old.getId() == query.getId()) {
         apiMapper.update(data, updateQueryWrapper);
       } else {
         QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("path", query.getPath());
+        wrapper.eq("code", query.getPath());
         Api find = apiMapper.selectOne(wrapper);
 
         if (find != null) {

@@ -3,6 +3,7 @@ package com.example.backend.mapper;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.TheaterHall;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.backend.response.RolePermissionButton;
 
 import java.util.List;
 
@@ -14,7 +15,8 @@ import java.util.List;
 */
 public interface RoleMapper extends BaseMapper<Role> {
   List permissionList(Integer id);
-  List permission(Integer id);
+  List rolePermission(Integer id);
+  List<RolePermissionButton> rolePermissionButton(Integer roleId);
 }
 
 

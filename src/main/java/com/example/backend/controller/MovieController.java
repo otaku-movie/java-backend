@@ -1,9 +1,9 @@
 package com.example.backend.controller;
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.*;
-import com.example.backend.mapper.MovieMapper;
-import com.example.backend.mapper.MovieSpecMapper;
-import com.example.backend.mapper.SpecMapper;
+import com.example.backend.mapper.*;
 import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.SaveMovieQuery;
 import com.example.backend.response.MovieResponse;
@@ -26,7 +26,23 @@ public class MovieController {
 
   @Autowired
   private  MovieService movieService;
-
+  // 电影场次
+  @Autowired
+  private  MovieShowTimeMapper movieShowTimeMapper;
+  // 电影场次的选座
+  private  SelectSeatMapper selectSeatMapper;
+  // 电影评论
+  @Autowired
+  private  MovieCommentMapper movieCommentMapper;
+  // 电影回复
+  private  MovieReplyMapper movieReplyMapper;
+  //电影演员
+  @Autowired
+  private MovieStaffMapper movieStaffMapper;
+  // 电影角色
+  @Autowired
+  private MovieCharacterMapper movieCharacterMapper;
+  // 电影规格
   @Autowired
   private MovieSpecMapper movieSpecMapper;
   @Autowired
@@ -69,6 +85,8 @@ public class MovieController {
       movieSpecMapper.insert(spec);
     });
   }
+  @SaCheckLogin
+  @CheckPermission(code = "movie.save")
   @Transactional
   @PostMapping("/api/admin/movie/save")
   public RestBean<Object> save(@RequestBody  @Validated() SaveMovieQuery query)  {
@@ -90,7 +108,10 @@ public class MovieController {
 
     return RestBean.success(result, "获取成功");
   }
-  @DeleteMapping("/api/movie/remove")
+  @SaCheckLogin
+  @CheckPermission(code = "movie.remove")
+  @Transactional
+  @DeleteMapping("/api/admin/movie/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(-1, "参数错误");
 

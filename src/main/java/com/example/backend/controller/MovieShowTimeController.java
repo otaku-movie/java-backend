@@ -1,8 +1,10 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.*;
 import com.example.backend.mapper.*;
 import com.example.backend.query.MovieShowTimeListQuery;
@@ -68,6 +70,8 @@ public class MovieShowTimeController {
 
     return RestBean.success(result, "删除成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "movieShowTime.remove")
   @Transactional
   @DeleteMapping("/api/admin/movie_show_time/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
@@ -81,6 +85,8 @@ public class MovieShowTimeController {
 
     return RestBean.success(null, "删除成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "movieShowTime.save")
   @PostMapping("/api/admin/movie_show_time/save")
   public RestBean<Object> save(@RequestBody @Validated MovieShowTimeQuery query) throws ParseException {
     String format = "yyyy-MM-dd HH:mm:ss";

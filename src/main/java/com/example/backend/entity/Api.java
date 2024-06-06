@@ -18,6 +18,9 @@ public class Api {
   @TableField("path")
   String path;
 
+  @TableField("code")
+  String code;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

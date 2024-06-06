@@ -1,8 +1,10 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Cinema;
 import com.example.backend.entity.Dict;
 import com.example.backend.entity.DictItem;
@@ -75,8 +77,10 @@ public class DictController {
 
     return RestBean.success(result, "获取成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "dict.item.save")
   @Transactional
-  @PostMapping("/api/admin/dict/item/edit")
+  @PostMapping("/api/admin/dict/item/save")
   public RestBean<Null> list(@RequestBody DictItemEditQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("dict_id", query.getDictId());
@@ -92,6 +96,8 @@ public class DictController {
 
     return RestBean.success(null, "修改成功");
   }
+  @SaCheckLogin
+  @CheckPermission(code = "dict.item.remove")
   @Transactional
   @DeleteMapping("/api/admin/dict/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
