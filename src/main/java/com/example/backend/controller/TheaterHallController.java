@@ -11,10 +11,12 @@ import com.example.backend.entity.Cinema;
 import com.example.backend.entity.Movie;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.TheaterHall;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.SeatMapper;
 import com.example.backend.mapper.SelectSeatMapper;
 import com.example.backend.mapper.TheaterHallMapper;
+import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -42,15 +44,17 @@ class TheaterHallQuery {
 
 @Data
 class TheaterHallSaveQuery {
-  @NotNull(message = "cinemeId 不能为空")
+  @NotNull(message = "{validator.saveTheaterHall.cinemaId.required}")
   private Integer cinemaId;
   private Integer id;
-  @NotNull(message = "name 不能为空")
+  @NotEmpty(message = "{validator.saveTheaterHall.name.required}")
   private String name;
 }
 
 @RestController
 public class TheaterHallController {
+  @Autowired
+  private MessageUtils messageUtils;
   @Autowired
   private TheaterHallMapper theaterHallMapper;
   @Autowired
@@ -72,11 +76,11 @@ public class TheaterHallController {
   }
   @GetMapping("/api/theater/hall/detail")
   public RestBean<TheaterHall> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     TheaterHall result = theaterHallMapper.selectById(id);
 
-    return RestBean.success(result, "删除成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.remove"));
   }
   @GetMapping("/api/theater/hall/seat")
   public RestBean<Object> seatList(@RequestParam Integer theaterHallId) {
@@ -85,7 +89,7 @@ public class TheaterHallController {
 
     List list = seatMapper.selectList(wrapper);
 
-    return RestBean.success(list, "获取成功");
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.save")
@@ -103,9 +107,9 @@ public class TheaterHallController {
 
       if (list.size() == 0) {
         theaterHallMapper.insert(theaterHall);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前数据已存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       theaterHall.setId(query.getId());
@@ -121,19 +125,19 @@ public class TheaterHallController {
         TheaterHall find = theaterHallMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前数据已存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), "name" + MessageUtils.getMessage("error.repeat"));
         } else {
           theaterHallMapper.update(theaterHall, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.remove")
   @DeleteMapping("/api/admin/theater/hall/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    return RestBean.success(null, "success");
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
 }

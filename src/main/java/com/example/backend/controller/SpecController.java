@@ -8,7 +8,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.CinemaSpec;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.SpecMapper;
+import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -45,6 +47,8 @@ class SaveSpecQuery {
 @RestController
 public class SpecController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private SpecMapper specMapper;
 
   @PostMapping("/api/cinema/spec/list")
@@ -66,11 +70,11 @@ public class SpecController {
   }
   @GetMapping("/api/cinema/spec/detail")
   public RestBean<CinemaSpec> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     CinemaSpec result = specMapper.selectById(id);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "spec.save")
@@ -88,9 +92,9 @@ public class SpecController {
 
       if (list.size() == 0) {
         specMapper.insert(spec);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前规格已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       spec.setId(query.getId());
@@ -106,23 +110,23 @@ public class SpecController {
         CinemaSpec find = specMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前规格已经存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           specMapper.update(spec, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
   @SaCheckLogin
   @CheckPermission(code = "spec.remove")
   @DeleteMapping("/api/admin/cinema/spec/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     specMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
 }

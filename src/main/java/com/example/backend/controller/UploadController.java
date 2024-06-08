@@ -1,8 +1,11 @@
 package com.example.backend.controller;
 
 
+import com.amazonaws.services.s3.internal.eventstreaming.Message;
 import com.example.backend.config.MinioConfiguration;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.ResponseCode;
+import com.example.backend.utils.MessageUtils;
 import com.example.backend.utils.Utils;
 import com.fasterxml.uuid.Generators;
 import io.minio.MinioClient;
@@ -92,10 +95,10 @@ public class UploadController {
       map.setPath(path);
       map.setUrl(url);
 
-      return RestBean.success(map, "success");
+      return RestBean.success(map, MessageUtils.getMessage("successs.uploadSuccess"));
     } catch (IOException e) {
       e.printStackTrace();
-      return RestBean.error(0, "upload error");
+      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.uploadError"));
     }
   }
 
@@ -119,6 +122,6 @@ public class UploadController {
 
     s3Client.deleteObject(deleteObjectRequest);
 
-    return RestBean.success(null, "success");
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
 }

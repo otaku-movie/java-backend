@@ -8,7 +8,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Api;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.ApiMapper;
+
+import com.example.backend.utils.MessageUtils;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -24,7 +28,7 @@ class ApiSaveQuery {
   Integer id;
   String name;
   String path;
-  @NotNull
+  @NotEmpty(message = "{validator.saveApi.code.required}")
   String code;
 }
 
@@ -43,6 +47,8 @@ class ApiListQuery {
 @RestController
 public class ApiController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private ApiMapper apiMapper;
 
   @PostMapping("/api/admin/permission/api/list")
@@ -58,23 +64,23 @@ public class ApiController {
   }
   @GetMapping("/api/admin/permission/api/detail")
   public RestBean<Api> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Api> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Api result = apiMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "api.remove")
   @DeleteMapping("/api/admin/permission/api/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     apiMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
   @CheckPermission(code = "api.save")
@@ -96,9 +102,9 @@ public class ApiController {
 
       if (list.size() == 0) {
         apiMapper.insert(data);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前接口已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       data.setId(query.getId());
@@ -114,13 +120,13 @@ public class ApiController {
         Api find = apiMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前接口已经存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           apiMapper.update(data, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
 

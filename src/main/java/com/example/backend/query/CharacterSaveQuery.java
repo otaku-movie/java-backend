@@ -1,5 +1,6 @@
 package com.example.backend.query;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -8,7 +9,7 @@ import java.util.List;
 @Data
 public  class CharacterSaveQuery {
   Integer id;
-  @NotNull
+  @NotEmpty(message = "{validator.saveCharacter.name.required}")
   String name;
   String cover;
   String originalName;

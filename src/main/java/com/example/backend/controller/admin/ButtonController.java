@@ -4,8 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.entity.Button;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.ButtonMapper;
 import com.example.backend.response.ButtonResponse;
+
+import com.example.backend.utils.MessageUtils;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -19,12 +23,13 @@ import java.util.Objects;
 @Data
 class ButtonSaveQuery {
   Integer id;
-  @NotNull
-  String name;
-  @NotNull
+  @NotEmpty(message = "{validator.saveApi.i18nKey.required}")
   String i18nKey;
+  @NotEmpty(message = "{validator.saveApi.code.required}")
   String code;
+  @NotEmpty(message = "{validator.saveApi.menuId.required}")
   Integer menuId;
+  @NotEmpty(message = "{validator.saveApi.apiId.required}")
   Integer apiId;
 }
 
@@ -46,6 +51,8 @@ class ButtonListQuery {
 @RestController
 public class ButtonController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private ButtonMapper buttonMapper;
 
   @PostMapping("/api/admin/permission/button/list")
@@ -56,31 +63,31 @@ public class ButtonController {
 
     List list = buttonMapper.buttonList();
 
-    return RestBean.success(list, "获取成功");
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/admin/permission/button/detail")
   public RestBean<Button> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Button> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Button result = buttonMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @DeleteMapping("/api/admin/permission/button/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     buttonMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @PostMapping("/api/admin/permission/button/save")
   public RestBean<List<Object>> save(@RequestBody @Validated ButtonSaveQuery query)  {
     Button data = new Button();
 
-    data.setName(query.getName());
+//    data.setName(query.getName());
     data.setI18nKey(query.getI18nKey());
     data.setCode(query.getCode());
     data.setMenuId(query.getMenuId());
@@ -93,9 +100,9 @@ public class ButtonController {
 
       if (list.size() == 0) {
         buttonMapper.insert(data);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前按钮已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       data.setId(query.getId());
@@ -103,7 +110,7 @@ public class ButtonController {
       updateQueryWrapper.eq("id", query.getId());
       Button old = buttonMapper.selectById(query.getId());
 
-      if (Objects.equals(old.getName(), query.getName()) && old.getId() == query.getId()) {
+      if (Objects.equals(old.getCode(), query.getCode()) && old.getId() == query.getId()) {
         buttonMapper.update(data, updateQueryWrapper);
       } else {
         QueryWrapper wrapper = new QueryWrapper<>();
@@ -111,13 +118,13 @@ public class ButtonController {
         Button find = buttonMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前按钮已经存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           buttonMapper.update(data, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
 }

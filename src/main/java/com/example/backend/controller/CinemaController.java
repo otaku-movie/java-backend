@@ -9,7 +9,9 @@ import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Movie;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Cinema;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CinemaMapper;
+import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -49,6 +51,8 @@ class SaveCinemaQuery {
 @RestController
 public class CinemaController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private CinemaMapper cinemaMapper;
 
   @PostMapping("/api/cinema/list")
@@ -70,11 +74,11 @@ public class CinemaController {
   }
   @GetMapping("/api/cinema/detail")
   public RestBean<Cinema> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     Cinema result = cinemaMapper.selectById(id);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "cinema.save")
@@ -95,9 +99,9 @@ public class CinemaController {
 
       if (list.size() == 0) {
         cinemaMapper.insert(cinema);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前影院已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       cinema.setId(query.getId());
@@ -113,23 +117,23 @@ public class CinemaController {
         Cinema find = cinemaMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前影院已经存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           cinemaMapper.update(cinema, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
   @SaCheckLogin
   @CheckPermission(code = "cinema.remove")
   @DeleteMapping("/api/admin/cinema/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     cinemaMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
 }

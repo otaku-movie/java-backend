@@ -1,0 +1,97 @@
+success:
+  save: "保存に成功しました。"
+  remove: "削除に成功しました。"
+  get: "データを取得しました。"
+  login: "ログインに成功しました。"
+  uploadSuccess: "アップロードに成功しました。"
+  success: "成功しました。"
+error:
+  systemError: "システムエラーが発生しました。"
+  userNotFound: "ユーザーが見つかりませんでした。"
+  loginExpired: "ログインの有効期限が切れました、再度ログインしてください。"
+  parameterError: "パラメーターエラーが発生しました。"
+  repeat: "このデータは既に存在します。"
+  notPermission: "権限がありません。"
+  timeConflict: "時間が競合しています。"
+  emailRepeat: "このメールアドレスは既に存在します。"
+  uploadError: "アップロードに失敗しました。"
+validator:
+  # ログイン
+  login:
+    password:
+      required: "パスワードを入力してください。"
+    email:
+      required: "メールアドレスを入力してください。"
+      notEmail: "有効なメールアドレスではありません。"
+  # 登録
+  register:
+    name:
+      required: "ユーザー名を入力してください。"
+    password:
+      required: "パスワードを入力してください。"
+    email:
+      required: "メールアドレスを入力してください。"
+      notEmail: "有効なメールアドレスではありません。"
+  # 映画コメント
+  movieComment:
+    movieId:
+      required: "movieIdを入力してください。"
+    content:
+      required: "コメント内容を入力してください。"
+      max: "コメントは1000文字以内で入力してください。"
+  # 映画返信
+  movieReply:
+    movieCommentId:
+      required: "movieCommentIdを入力してください。"
+    content:
+      required: "コメント内容を入力してください。"
+      max: "コメントは1000文字以内で入力してください。"
+  # 職位保存
+  savePosition:
+    name:
+      required: "職位を入力してください。"
+  # 演職員保存
+  saveStaff:
+    name:
+      required: "名前を入力してください。"
+    description:
+      required: "説明を入力してください。"
+  # 劇場保存
+  saveTheaterHall:
+    cinemaId:
+      required: "cinemaIdを入力してください。"
+    name:
+      required: "名前を入力してください。"
+  # API保存
+  saveApi:
+    code:
+      required: "コードを入力してください。"
+  saveButton:
+    i18nKey:
+      required: "i18nKeyを入力してください。"
+    code:
+      required: "コードを入力してください。"
+    menuId:
+      required: "menuIdを入力してください。"
+    apiId:
+      required: "apiIdを入力してください。"
+  saveMenu:
+    name:
+      required: "名前を入力してください。"
+    i18nKey:
+      required: "i18nKeyを入力してください。"
+    path:
+      required: "パスを入力してください。"
+    pathName:
+      required: "パス名を入力してください。"
+  saveCharacter:
+    name:
+      required: "名前を入力してください。"
+  saveUser:
+    name:
+      required: "ユーザー名を入力してください。"
+    password:
+      required: "パスワードを入力してください。"
+    email:
+      required: "メールアドレスを入力してください。"
+      notEmail: "有効なメールアドレスではありません。"

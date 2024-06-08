@@ -1,0 +1,102 @@
+success:
+  save: "保存成功"
+  remove: "删除成功"
+  get: "获取成功"
+  login: "登录成功"
+  uploadSuccess: "上传成功"
+  success: "success"
+error:
+  systemError: "系统错误"
+  userNotFound: "用户不存在"
+  loginExpired: "登录已过期，请重新登录"
+  parameterError: "参数错误"
+  repeat: "{0}已存在"
+  notPermission: "没有权限"
+  timeConflict: "时间冲突"
+  emailRepeat: "邮箱已存在"
+  uploadError: "上传失败"
+repeat:
+  path: "路径"
+validator:
+  # 登录
+  login:
+    password:
+      required: "密码不能为空"
+    email:
+      required: "邮箱不能为空"
+      notEmail: "不是个有效的邮箱地址"
+  #  注册
+  register:
+    name:
+      required: "用户名不能为空"
+    password:
+      required: "密码不能为空"
+    email:
+      required: "邮箱不能为空"
+      notEmail: "不是个有效的邮箱地址"
+  # 电影评论
+  movieComment:
+    movieId:
+      required: "movieId 不能为空"
+    content:
+      required: "评论内容不能为空"
+      max: "评论字数不能超过1000字"
+  # 电影回复
+  movieReply:
+    movieCommentId:
+      required: "movieCommentId 不能为空"
+    content:
+      required: "评论内容不能为空"
+      max: "评论字数不能超过1000字"
+  # 保存职位
+  savePosition:
+    name:
+      required: "职位不能为空"
+  # 保存演职员
+  saveStaff:
+    name:
+      required: "name 不能为空"
+    description:
+      required: "description 不能为空"
+  # 保存影厅
+  saveTheaterHall:
+    cinemaId:
+      required: "cinemaId 不能为空"
+    name:
+      required: "name 不能为空"
+  # 保存api
+  saveApi:
+    code:
+      required: "code 不能为空"
+  saveButton:
+    i18nKey:
+      required: "i18nKey 不能为空"
+    code:
+      required: "code 不能为空"
+    menuId:
+      required: "menuId 不能为空"
+    apiId:
+      required: "apiId 不能为空"
+  saveMenu:
+    name:
+      required: "name 不能为空"
+    i18nKey:
+      required: "i18nKey 不能为空"
+    path:
+      required: "path 不能为空"
+    pathName:
+      required: "pathName 不能为空"
+  saveCharacter:
+    name:
+      required: "name 不能为空"
+  saveUser:
+    name:
+      required: "用户名不能为空"
+    password:
+      required: "密码不能为空"
+    email:
+      required: "邮箱不能为空"
+      notEmail: "不是个有效的邮箱地址"
+
+
+

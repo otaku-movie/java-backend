@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.entity.*;
 import com.example.backend.entity.Character;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.SaveMovieQuery;
+import com.example.backend.utils.MessageUtils;
 import com.example.backend.query.CharacterSaveQuery;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,8 +133,6 @@ public class MovieService {
     QueryWrapper<Movie> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("name", name);
     // 编辑的去重查询条件
-//    UpdateWrapper<Movie> updateWrapper = new UpdateWrapper<>();
-//    updateWrapper.eq("original_name", name);
     // 自定义验证方法
     ValidationFunction<Movie> validationFunction = (old, newData) -> old.getName().equals(newData.getName());
 
@@ -146,17 +146,17 @@ public class MovieService {
       if (result) {
         saveMovie(movie, query);
         movieResponse.setId(movie.getId());
-        return RestBean.success(movie, "保存成功");
+        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "数据已存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       if (result) {
         movie.setId(query.getId());
         saveMovie(movie, query);
-        return RestBean.success(movie, "保存成功");
+        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "数据已存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     }
   }

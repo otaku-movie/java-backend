@@ -8,8 +8,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Staff;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.StaffMapper;
-import jakarta.validation.constraints.NotNull;
+import com.example.backend.utils.MessageUtils;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,16 +19,15 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @Data
 class StaffSaveQuery {
   Integer id;
-  @NotNull
+  @NotEmpty(message = "validator.saveStaff.name.required")
   String name;
   String cover;
   String originalName;
-  @NotNull
+  @NotEmpty(message = "validator.saveStaff.description.required")
   String description;
 }
 
@@ -46,6 +47,8 @@ class StaffListQuery {
 
 @RestController
 public class StaffController {
+  @Autowired
+  private MessageUtils messageUtils;
   @Autowired
   private StaffMapper staffMapper;
 
@@ -69,23 +72,23 @@ public class StaffController {
 
   @GetMapping("/api/staff/detail")
   public RestBean<Staff> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Staff> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Staff result = staffMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "staff.remove")
   @DeleteMapping("/api/admin/staff/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     staffMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
   @CheckPermission(code = "staff.save")
@@ -105,9 +108,9 @@ public class StaffController {
 
       if (list.size() == 0) {
         staffMapper.insert(data);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前名称已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       data.setId(query.getId());
@@ -121,9 +124,9 @@ public class StaffController {
         UpdateWrapper updateQueryWrapper = new UpdateWrapper();
         updateQueryWrapper.eq("id", query.getId());
         staffMapper.update(data, updateQueryWrapper);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前名称已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     }
   }

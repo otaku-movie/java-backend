@@ -1,0 +1,93 @@
+success:
+  save: "Saved successfully"
+  remove: "Removed successfully"
+  get: "Retrieved successfully"
+  login: "Logged in successfully"
+error:
+  systemError: "An error occurred in the system"
+  userNotFound: "User not found"
+  loginExpired: "Your login session has expired. Please log in again"
+validator:
+  # Login
+  login:
+    password:
+      required: "Password is required"
+    email:
+      required: "Email is required"
+      notEmail: "Invalid email address"
+  # Register
+  register:
+    name:
+      required: "Username is required"
+    password:
+      required: "Password is required"
+    email:
+      required: "Email is required"
+      notEmail: "Invalid email address"
+  # Movie comment
+  movieComment:
+    movieId:
+      required: "Movie ID is required"
+    content:
+      required: "Comment is required"
+      max: "Comment must not exceed 1000 characters"
+  # Movie reply
+  movieReply:
+    movieCommentId:
+      required: "Movie comment ID is required"
+    content:
+      required: "Comment is required"
+      max: "Comment must not exceed 1000 characters"
+  # Save position
+  savePosition:
+    name:
+      required: "Position is required"
+  # Save staff
+  saveStaff:
+    name:
+      required: "Name is required"
+    description:
+      required: "Description is required"
+  # Save theater hall
+  saveTheaterHall:
+    cinemaId:
+      required: "Cinema ID is required"
+    name:
+      required: "Name is required"
+  # Save API
+  saveApi:
+    code:
+      required: "Code is required"
+  # Save button
+  saveButton:
+    i18nKey:
+      required: "i18n key is required"
+    code:
+      required: "Code is required"
+    menuId:
+      required: "Menu ID is required"
+    apiId:
+      required: "API ID is required"
+  # Save menu
+  saveMenu:
+    name:
+      required: "Name is required"
+    i18nKey:
+      required: "i18n key is required"
+    path:
+      required: "Path is required"
+    pathName:
+      required: "Path name is required"
+  # Save character
+  saveCharacter:
+    name:
+      required: "Name is required"
+  # Save user
+  saveUser:
+    name:
+      required: "Username is required"
+    password:
+      required: "Password is required"
+    email:
+      required: "Email is required"
+      notEmail: "Invalid email address"

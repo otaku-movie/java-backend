@@ -8,23 +8,25 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Position;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.PositionMapper;
+
+import com.example.backend.utils.MessageUtils;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Data
 class PositionSaveQuery {
   Integer id;
-  @NotNull
+  @NotEmpty(message = "validator.savePosition.name.required")
   String name;
 }
 
@@ -44,6 +46,8 @@ class PositionListQuery {
 
 @RestController
 public class PositionController {
+  @Autowired
+  private MessageUtils messageUtils;
   @Autowired
   private PositionMapper positionMapper;
 
@@ -67,23 +71,23 @@ public class PositionController {
 
   @GetMapping("/api/position/detail")
   public RestBean<Position> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Position> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Position result = positionMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "position.remove")
   @DeleteMapping("/api/admin/position/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     positionMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
   @CheckPermission(code = "position.save")
@@ -100,9 +104,9 @@ public class PositionController {
 
       if (list.size() == 0) {
         positionMapper.insert(data);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前角色已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       data.setId(query.getId());
@@ -118,13 +122,13 @@ public class PositionController {
         Position find = positionMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前角色已经存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           positionMapper.update(data, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
 }

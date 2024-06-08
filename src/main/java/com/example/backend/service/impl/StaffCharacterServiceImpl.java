@@ -6,12 +6,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.entity.Character;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.StaffCharacter;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CharacterMapper;
 import com.example.backend.mapper.StaffCharacterMapper;
 import com.example.backend.query.CharacterSaveQuery;
 import com.example.backend.service.GenericService;
 import com.example.backend.service.StaffCharacterService;
 import com.example.backend.service.ValidationFunction;
+import com.example.backend.utils.MessageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,17 +92,17 @@ public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper,
     if (query.getId() == null) {
       if (result) {
         saveCharacter(data, query);
-        return RestBean.success(null, "角色创建成功");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前角色已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       if (result) {
         data.setId(query.getId());
         saveCharacter(data, query);
-        return RestBean.success(null, "角色更新成功");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前角色已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     }
   }

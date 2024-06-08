@@ -3,12 +3,14 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.*;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.SaveMovieQuery;
 import com.example.backend.response.MovieResponse;
 import com.example.backend.response.MovieStaffResponse;
 import com.example.backend.service.MovieService;
+import com.example.backend.utils.MessageUtils;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,8 @@ import java.util.List;
 
 @RestController
 public class MovieController {
+  @Autowired
+  private MessageUtils messageUtils;
   @Autowired
   private MovieMapper movieMapper;
 
@@ -64,15 +68,15 @@ public class MovieController {
 
     List<CinemaSpec> list = specMapper.selectList(wrapper);
 
-    return RestBean.success(list, "获取成功");
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/movie/detail")
   public RestBean<MovieResponse> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     MovieResponse result = movieMapper.movieDetail(id);
 
-    return RestBean.success(result, "删除成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.remove"));
   }
   public void insertSpec (Integer movieId, List<Integer> specData) {
     QueryWrapper deleteWrapper = new QueryWrapper<>();
@@ -94,29 +98,29 @@ public class MovieController {
   }
   @GetMapping("/api/movie/staff")
   public RestBean<List<MovieStaffResponse>> staff(@RequestParam Integer id)  {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     List<MovieStaffResponse> result = movieMapper.movieStaffList(id);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/movie/character")
   public RestBean<List<MovieStaffResponse>> character(@RequestParam Integer id)  {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     List<MovieStaffResponse> result = movieMapper.movieCharacterList(id);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "movie.remove")
   @Transactional
   @DeleteMapping("/api/admin/movie/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     movieMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
 }

@@ -9,10 +9,12 @@ import com.example.backend.entity.Cinema;
 import com.example.backend.entity.Dict;
 import com.example.backend.entity.DictItem;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.DictItemMapper;
 import com.example.backend.mapper.DictMapper;
 import com.example.backend.query.MovieListQuery;
+import com.example.backend.utils.MessageUtils;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,8 @@ class DictItemEditQuery {
 @RestController
 public class DictController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private DictMapper dictMapper;
   @Autowired
   private DictItemMapper dictItemMapper;
@@ -58,7 +62,7 @@ public class DictController {
 
     List list = dictItemMapper.selectList(wrapper);
 
-    return RestBean.success(list, "获取成功");
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   // 根据 name 获取字典
   @PostMapping("/api/dict/specify")
@@ -75,7 +79,7 @@ public class DictController {
       })
     );
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "dict.item.save")
@@ -94,20 +98,20 @@ public class DictController {
       dictItemMapper.insert(dictItem);
     });
 
-    return RestBean.success(null, "修改成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
   @SaCheckLogin
   @CheckPermission(code = "dict.item.remove")
   @Transactional
   @DeleteMapping("/api/admin/dict/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("dict_id", id);
 
     dictItemMapper.delete(wrapper);
     dictMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
 }

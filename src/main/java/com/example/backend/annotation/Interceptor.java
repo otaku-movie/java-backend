@@ -7,6 +7,7 @@ import com.example.backend.entity.UserRole;
 import com.example.backend.mapper.RoleMapper;
 import com.example.backend.mapper.UserRoleMapper;
 import com.example.backend.response.RolePermissionButton;
+import com.example.backend.utils.MessageUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +69,7 @@ public class Interceptor implements HandlerInterceptor {
           } else {
             System.out.println("no");
             response.setStatus(403);
-            throw new AccessDeniedException("无权限");
+            throw new AccessDeniedException(MessageUtils.getMessage("error.notPermission"));
           }
         }
       }

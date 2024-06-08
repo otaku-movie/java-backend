@@ -8,12 +8,14 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Character;
 import com.example.backend.entity.RoleMenu;
 import com.example.backend.entity.StaffCharacter;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CharacterMapper;
 import com.example.backend.query.CharacterListQuery;
 import com.example.backend.query.CharacterSaveQuery;
 import com.example.backend.response.CharacterList;
 import com.example.backend.response.MovieResponse;
 import com.example.backend.service.StaffCharacterService;
+import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
 
 @RestController
 public class CharacterController {
+  @Autowired
+  private MessageUtils messageUtils;
   @Autowired
   private CharacterMapper characterMapper;
 
@@ -50,12 +54,12 @@ public class CharacterController {
 
   @GetMapping("/api/character/detail")
   public RestBean<CharacterList> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<CharacterList> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     CharacterList result = characterMapper.characterDetail(id);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
 }

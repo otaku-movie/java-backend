@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONWriter;
 //import com.fasterxml.jackson.core.json.JsonWriteFeature;
 //import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.example.backend.utils.MessageUtils;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 
@@ -45,7 +46,7 @@ public class RestBean<T> {
 
 
   public static <T> RestBean<T> success(T data, int page, long total, int pageSize) {
-    return (RestBean<T>) new RestBean<>(200, new Pagination(data, total, page, pageSize), "获取成功");
+    return (RestBean<T>) new RestBean<>(200, new Pagination(data, total, page, pageSize), MessageUtils.getMessage("success.get"));
   }
 
   public static <T> RestBean<T> success(T data, String message) {
@@ -82,10 +83,10 @@ public class RestBean<T> {
 //            total = total,
 //            pageSize = pageSize,
 //            list = data
-//        }, "获取成功");
+//        }, MessageUtils.getMessage("success.get"));
 //    }
 //    public static <T> RestBean<T> success(T data) {
-//        return new RestBean<>(200, data, "获取成功");
+//        return new RestBean<>(200, data, MessageUtils.getMessage("success.get"));
 //    }
 //
 //    public static <T> RestBean<T> failure(int code, String message) {

@@ -7,11 +7,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.*;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.response.ButtonResponse;
 import com.example.backend.response.Button;
 import com.example.backend.service.RoleButtonService;
 import com.example.backend.service.RoleMenuService;
+import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -79,6 +81,8 @@ class ButtonResponseProcessor {
 @RestController
 public class RoleController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private RoleMapper roleMapper;
 
   @Autowired
@@ -104,7 +108,7 @@ public class RoleController {
 
     List list = roleMapper.permissionList(id);
 
-    return RestBean.success(list, "获取成功");
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/admin/permission/role/permission")
   public RestBean<List<ButtonResponse>> permission(@RequestParam Integer id)  {
@@ -115,7 +119,7 @@ public class RoleController {
       .map(ButtonResponseProcessor::filterButtonResponse)
       .collect(Collectors.toList());
 
-    return RestBean.success(filteredList, "获取成功");
+    return RestBean.success(filteredList, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "role.configPermission")
@@ -149,27 +153,27 @@ public class RoleController {
         .collect(Collectors.toList())  // Collect to List
     );
 
-    return RestBean.success(null, "保存成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
   @GetMapping("/api/admin/permission/role/detail")
   public RestBean<Role> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Role> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Role result = roleMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "role.remove")
   @DeleteMapping("/api/admin/permission/role/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     roleMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
   @CheckPermission(code = "role.save")
@@ -186,9 +190,9 @@ public class RoleController {
 
       if (list.size() == 0) {
         roleMapper.insert(data);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前角色已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       data.setId(query.getId());
@@ -204,13 +208,13 @@ public class RoleController {
         Role find = roleMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前角色已经存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           roleMapper.update(data, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
 }

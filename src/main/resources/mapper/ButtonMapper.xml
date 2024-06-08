@@ -6,7 +6,7 @@
 
     <resultMap id="buttonList" type="com.example.backend.response.ButtonResponse">
             <id property="id" column="id" jdbcType="INTEGER"/>
-            <result property="name" column="name" jdbcType="VARCHAR"/>
+<!--            <result property="name" column="name" jdbcType="VARCHAR"/>-->
             <result property="i18n_key" column="i18n_key" jdbcType="VARCHAR"/>
             <result property="path" column="path" jdbcType="INTEGER"/>
             <result property="path_name" column="path_name" jdbcType="VARCHAR"/>

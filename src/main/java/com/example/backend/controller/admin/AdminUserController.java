@@ -12,6 +12,7 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
 import com.example.backend.entity.UserRole;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.mapper.UserRoleMapper;
 import com.example.backend.query.UserListQuery;
@@ -19,6 +20,7 @@ import com.example.backend.query.UserRoleConfigQuery;
 import com.example.backend.query.UserSaveQuery;
 import com.example.backend.response.UserListResponse;
 import com.example.backend.service.UserRoleService;
+import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -28,7 +30,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Data
@@ -40,6 +41,8 @@ class UserLoginQuery {
 
 @RestController
 public class AdminUserController {
+  @Autowired
+  private MessageUtils messageUtils;
   @Autowired
   private UserMapper userMapper;
 
@@ -75,23 +78,23 @@ public class AdminUserController {
     );
 
 
-    return RestBean.success(null, "success");
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
   @SaCheckLogin
   @GetMapping("/api/admin/user/role")
   public RestBean<List<Role>> role (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     List<Role> result = userMapper.userRole(id);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "user.remove")
   @Transactional
   @DeleteMapping("/api/admin/user/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     Integer userId = StpUtil.getLoginIdAsInt();
 
@@ -101,11 +104,11 @@ public class AdminUserController {
     wrapper.eq("user_id", id);
     userRoleService.remove(wrapper);
 
-    if (id == userId) {
+    if (id.equals(userId)) {
       StpUtil.logout();
     }
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
   @CheckPermission(code = "user.save")
@@ -119,7 +122,7 @@ public class AdminUserController {
 
     if (query.getId() == null) {
       if (query.getPassword() == null) {
-        return RestBean.error(0, "密码不能为空");
+        return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage("validator.saveUser.password.required"));
       }
       user.setPassword(SaSecureUtil.md5(query.getPassword()));
     } else {
@@ -136,9 +139,9 @@ public class AdminUserController {
 
       if (list.size() == 0) {
         userMapper.insert(user);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前邮箱已存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.emailRepeat"));
       }
     } else {
 
@@ -156,9 +159,9 @@ public class AdminUserController {
 
         user.setId(query.getId());
         userMapper.update(user, updateQueryWrapper);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前邮箱已存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.emailRepeat"));
       }
 
     }

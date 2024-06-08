@@ -8,7 +8,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.Level;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.LevelMapper;
+import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -45,6 +47,8 @@ class SaveLevelQuery {
 @RestController
 public class LevelController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private LevelMapper levelMapper;
 
   @PostMapping("/api/movie/level/list")
@@ -66,11 +70,11 @@ public class LevelController {
   }
   @GetMapping("/api/movie/level/detail")
   public RestBean<Level> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     Level result = levelMapper.selectById(id);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "level.save")
@@ -88,9 +92,9 @@ public class LevelController {
 
       if (list.size() == 0) {
         levelMapper.insert(level);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前规格已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
       level.setId(query.getId());
@@ -106,23 +110,23 @@ public class LevelController {
         Level find = levelMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(0, "当前规格已经存在");
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           levelMapper.update(level, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, "success");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
   @SaCheckLogin
   @CheckPermission(code = "level.remove")
   @DeleteMapping("/api/admin/movie/level/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     levelMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
 }

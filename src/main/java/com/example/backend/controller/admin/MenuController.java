@@ -4,27 +4,31 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Menu;
+import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.MenuMapper;
-import jakarta.validation.constraints.NotNull;
+
+import com.example.backend.utils.MessageUtils;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
 @Data
 class MenuSaveQuery {
   Integer id;
-  @NotNull
+  @NotEmpty(message = "{validator.saveApi.name.required}")
   String name;
-  @NotNull
+  @NotEmpty(message = "{validator.saveApi.i18nKey.required}")
   String i18nKey;
-  @NotNull
+  @NotEmpty(message = "{validator.saveApi.path.required}")
   String path;
-  @NotNull
+  @NotEmpty(message = "{validator.saveApi.pathName.required}")
   String pathName;
   Boolean show;
   Integer parentId;
@@ -45,6 +49,8 @@ class MenuListQuery {
 @RestController
 public class MenuController {
   @Autowired
+  private MessageUtils messageUtils;
+  @Autowired
   private MenuMapper menuMapper;
 
   @PostMapping("/api/admin/permission/menu/list")
@@ -55,25 +61,25 @@ public class MenuController {
 
     List list = menuMapper.selectList(wrapper);
 
-    return RestBean.success(list, "获取成功");
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/admin/permission/menu/detail")
   public RestBean<Menu> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Menu> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Menu result = menuMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, "获取成功");
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @DeleteMapping("/api/admin/permission/menu/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(-1, "参数错误");
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     menuMapper.deleteById(id);
 
-    return RestBean.success(null, "删除成功");
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @PostMapping("/api/admin/permission/menu/save")
   public RestBean<List<Object>> save(@RequestBody @Validated MenuSaveQuery query)  {
@@ -95,31 +101,31 @@ public class MenuController {
 
       if (list.size() == 0) {
         menuMapper.insert(data);
-        return RestBean.success(null, "success");
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        return RestBean.error(0, "当前路径已经存在");
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
-      data.setId(query.getId());
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
-      updateQueryWrapper.eq("id", query.getId());
-      Menu old = menuMapper.selectById(query.getId());
+      // 判断编辑是否重复，去掉当前的，如果path已存在就算重复
+      QueryWrapper queryWrapper = new QueryWrapper<>();
+      queryWrapper.eq("path", query.getPath());
+      queryWrapper.ne("id", query.getId());
 
-      if (Objects.equals(old.getPath(), query.getPath()) && old.getId() == query.getId()) {
+      List<Menu> menuList = menuMapper.selectList(queryWrapper);
+
+      if (menuList.size() == 0) {
+        data.setId(query.getId());
+        UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+        updateQueryWrapper.eq("id", query.getId());
         menuMapper.update(data, updateQueryWrapper);
+
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("path", query.getPath());
-        Menu find = menuMapper.selectOne(wrapper);
-
-        if (find != null) {
-          return RestBean.error(0, "当前路径已经存在");
-        } else {
-          menuMapper.update(data, updateQueryWrapper);
-        }
+        return RestBean.error(
+          ResponseCode.REPEAT.getCode(),
+          MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.path"))
+        );
       }
-
-      return RestBean.success(null, "success");
     }
   }
 }

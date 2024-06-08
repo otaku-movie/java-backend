@@ -6,7 +6,6 @@
 
     <resultMap id="permissionList" type="com.example.backend.response.ButtonResponse">
         <id property="id" column="menu_id" jdbcType="INTEGER"/>
-        <result property="name" column="menu_name" jdbcType="VARCHAR"/>
         <result property="i18n_key" column="i18n_key" jdbcType="VARCHAR"/>
         <result property="path" column="menu_path" jdbcType="VARCHAR"/>
         <result property="path_name" column="menu_path_name" jdbcType="VARCHAR"/>
@@ -20,7 +19,7 @@
         </collection>
         <collection property="button" ofType="com.example.backend.response.Button">
             <result property="id" column="button_id" jdbcType="INTEGER"/>
-            <result property="name" column="button_name" jdbcType="VARCHAR"/>
+            <result property="i18n_key" column="button_i18n_key" jdbcType="VARCHAR"/>
             <result property="code" column="button_code" jdbcType="VARCHAR"/>
             <result property="api_id" column="api_id" jdbcType="INTEGER"/>
             <result property="api_name" column="api_name" jdbcType="VARCHAR"/>
@@ -32,13 +31,13 @@
     <select id="permissionList" resultMap="permissionList">
         SELECT
             menu.id AS menu_id,
-            menu.name AS menu_name,
+            menu.i18n_key AS i18n_key,
             menu.show AS menu_show,
             menu.path AS menu_path,
             menu.path_name AS menu_path_name,
             menu.parent_id AS menu_parent_id,
             button.id AS button_id,
-            button.name AS button_name,
+            button.i18n_key AS button_i18n_key,
             button.code AS button_code,
             button.api_id AS button_api_id,
             api.id AS api_id,
