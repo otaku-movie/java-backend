@@ -106,7 +106,7 @@ public class MenuController {
         return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
-      // 判断编辑是否重复，去掉当前的，如果path已存在就算重复
+      // 判断编辑是否重复，去掉当前的
       QueryWrapper queryWrapper = new QueryWrapper<>();
       queryWrapper.eq("path", query.getPath());
       queryWrapper.ne("id", query.getId());

@@ -8,8 +8,5 @@ public class RolePermissionButton {
   Integer role_id;
   Integer button_id;
   String button_name;
-  String button_code;
-  Integer api_id;
-  String api_name;
   String api_code;
 }

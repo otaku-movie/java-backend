@@ -17,6 +17,10 @@ error:
   uploadError: "上传失败"
 repeat:
   path: "路径"
+  code: "code"
+  roleName: "角色名称"
+  movieTicketTypeName: "电影票类型"
+  theaterHallName: "影厅名称"
 validator:
   # 登录
   login:
@@ -62,21 +66,21 @@ validator:
   saveTheaterHall:
     cinemaId:
       required: "cinemaId 不能为空"
+    cinemaSpecId:
+      required: "cinemaSpecId 不能为空"
+    rowCount:
+      required: "rowCount 不能为空"
+    columnCount:
+      required: "columnCount 不能为空"
     name:
       required: "name 不能为空"
-  # 保存api
-  saveApi:
-    code:
-      required: "code 不能为空"
   saveButton:
     i18nKey:
       required: "i18nKey 不能为空"
-    code:
-      required: "code 不能为空"
     menuId:
       required: "menuId 不能为空"
-    apiId:
-      required: "apiId 不能为空"
+    apiCode:
+      required: "apiCode 不能为空"
   saveMenu:
     name:
       required: "name 不能为空"
@@ -97,6 +101,14 @@ validator:
     email:
       required: "邮箱不能为空"
       notEmail: "不是个有效的邮箱地址"
+  saveMovieTicketType:
+    name:
+      required: "name 不能为空"
+    price:
+      required: "价格不能为空"
+    cinemaId:
+      required: "cinemaId 不能为空"
+
 
 
 

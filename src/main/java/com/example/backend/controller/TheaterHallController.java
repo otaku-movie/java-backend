@@ -7,24 +7,24 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
-import com.example.backend.entity.Cinema;
-import com.example.backend.entity.Movie;
-import com.example.backend.entity.RestBean;
-import com.example.backend.entity.TheaterHall;
+import com.example.backend.entity.*;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.SeatMapper;
 import com.example.backend.mapper.SelectSeatMapper;
 import com.example.backend.mapper.TheaterHallMapper;
+import com.example.backend.service.SeatService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,9 +46,17 @@ class TheaterHallQuery {
 class TheaterHallSaveQuery {
   @NotNull(message = "{validator.saveTheaterHall.cinemaId.required}")
   private Integer cinemaId;
+  @NotNull(message = "{validator.saveTheaterHall.cinemaSpecId.required}")
+  private Integer cinemaSpecId;
   private Integer id;
   @NotEmpty(message = "{validator.saveTheaterHall.name.required}")
   private String name;
+
+  @NotNull(message = "{validator.saveTheaterHall.rowCount.required}")
+  private Integer rowCount;
+
+  @NotNull(message = "{validator.saveTheaterHall.columnCount.required}")
+  private Integer columnCount;
 }
 
 @RestController
@@ -59,6 +67,8 @@ public class TheaterHallController {
   private TheaterHallMapper theaterHallMapper;
   @Autowired
   private SeatMapper seatMapper;
+  @Autowired
+  private SeatService seatService;
 
   @Autowired
   private SelectSeatMapper selectSeatMapper;
@@ -67,7 +77,7 @@ public class TheaterHallController {
   public RestBean<List<TheaterHall>> list(@RequestBody TheaterHallQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("cinema_id", query.getCinemaId());
-    wrapper.orderByAsc("update_time");
+//    wrapper.orderByAsc("update_time");
     Page<TheaterHall> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage list = theaterHallMapper.selectPage(page, wrapper);
@@ -91,48 +101,84 @@ public class TheaterHallController {
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
+  @Transactional
+  public  void buildSeat (Integer id, TheaterHallSaveQuery query) {
+    seatMapper.deleteSeat(id);
+
+    // 创建座位列表
+    List<Seat> seats = new ArrayList<>();
+    for (int i = 1; i <= query.getRowCount(); i++) {
+      for (int j = 1; j <= query.getColumnCount(); j++) {
+        Seat seat = new Seat();
+        seat.setXAxis(i);
+        seat.setYAxis(j);
+        seat.setTheaterHallId(id);
+        seats.add(seat);
+      }
+    }
+
+    // 批量插入座位
+    seatService.saveBatch(seats);
+  }
+
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.save")
+  @Transactional
   @PostMapping("/api/admin/theater/hall/save")
   public RestBean<String> save(@RequestBody @Validated() TheaterHallSaveQuery query) {
-    TheaterHall theaterHall = new TheaterHall();
+    String message = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.theaterHallName"));
+    TheaterHall modal = new TheaterHall();
 
-    theaterHall.setName(query.getName());
-    theaterHall.setCinemaId(query.getCinemaId());
+    modal.setName(query.getName());
+    modal.setCinemaId(query.getCinemaId());
+    modal.setRowCount(query.getRowCount());
+    modal.setColumnCount(query.getColumnCount());
+    modal.setCinemaSpecId(query.getCinemaSpecId());
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
+      wrapper.eq("cinema_id", modal.getCinemaId());
       wrapper.eq("name", query.getName());
-      List<Cinema> list = theaterHallMapper.selectList(wrapper);
+      List<MovieTicketType> list = theaterHallMapper.selectList(wrapper);
 
       if (list.size() == 0) {
-        theaterHallMapper.insert(theaterHall);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        theaterHallMapper.insert(modal);
+        buildSeat(modal.getId(), query);
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), message);
       }
     } else {
-      theaterHall.setId(query.getId());
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
-      updateQueryWrapper.eq("id", query.getId());
-      TheaterHall old = theaterHallMapper.selectById(query.getId());
+      // 判断编辑是否重复，去掉当前的，如果path已存在就算重复
+      QueryWrapper queryWrapper = new QueryWrapper<>();
+      queryWrapper.eq("cinema_id", query.getCinemaId());
+      queryWrapper.eq("name", query.getName());
+      queryWrapper.ne("id", query.getId());
 
-      if (Objects.equals(old.getName(), query.getName())) {
-        theaterHallMapper.update(theaterHall, updateQueryWrapper);
-      } else {
-        QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("name", query.getName());
-        TheaterHall find = theaterHallMapper.selectOne(wrapper);
+      List<Menu> data = theaterHallMapper.selectList(queryWrapper);
+      if (data.size() == 0) {
+        modal.setId(query.getId());
+        // 如果row和columnCount 不相同
+        QueryWrapper oldQueryWrapper = new QueryWrapper();
 
-        if (find != null) {
-          return RestBean.error(ResponseCode.REPEAT.getCode(), "name" + MessageUtils.getMessage("error.repeat"));
-        } else {
-          theaterHallMapper.update(theaterHall, updateQueryWrapper);
+        oldQueryWrapper.eq("id", modal.getId());
+        TheaterHall old = theaterHallMapper.selectOne(oldQueryWrapper);
+
+        // 更新影厅表
+        UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+        updateQueryWrapper.eq("id", query.getId());
+        theaterHallMapper.update(modal, updateQueryWrapper);
+
+        if (old.getRowCount() != query.getRowCount() || old.getColumnCount() != query.getColumnCount()) {
+          buildSeat(modal.getId(), query);
         }
+      } else {
+        return RestBean.error(
+          ResponseCode.REPEAT.getCode(),
+          MessageUtils.getMessage("error.repeat", message)
+        );
       }
-
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.remove")

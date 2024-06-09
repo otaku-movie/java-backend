@@ -3,6 +3,7 @@ package com.example.backend.controller.admin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.entity.Button;
+import com.example.backend.entity.Menu;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.ButtonMapper;
@@ -25,12 +26,10 @@ class ButtonSaveQuery {
   Integer id;
   @NotEmpty(message = "{validator.saveApi.i18nKey.required}")
   String i18nKey;
-  @NotEmpty(message = "{validator.saveApi.code.required}")
-  String code;
-  @NotEmpty(message = "{validator.saveApi.menuId.required}")
+  @NotNull(message = "{validator.saveApi.menuId.required}")
   Integer menuId;
-  @NotEmpty(message = "{validator.saveApi.apiId.required}")
-  Integer apiId;
+  @NotNull(message = "{validator.saveApi.apiCode.required}")
+  String apiCode;
 }
 
 @Data
@@ -87,42 +86,18 @@ public class ButtonController {
   public RestBean<List<Object>> save(@RequestBody @Validated ButtonSaveQuery query)  {
     Button data = new Button();
 
-//    data.setName(query.getName());
     data.setI18nKey(query.getI18nKey());
-    data.setCode(query.getCode());
     data.setMenuId(query.getMenuId());
-    data.setApiId(query.getApiId());
+    data.setApiCode(query.getApiCode());
 
     if (query.getId() == null) {
-      QueryWrapper wrapper = new QueryWrapper<>();
-      wrapper.eq("code", query.getCode());
-      List<Button> list = buttonMapper.selectList(wrapper);
-
-      if (list.size() == 0) {
-        buttonMapper.insert(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
-      } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
-      }
+      buttonMapper.insert(data);
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     } else {
       data.setId(query.getId());
       UpdateWrapper updateQueryWrapper = new UpdateWrapper();
       updateQueryWrapper.eq("id", query.getId());
-      Button old = buttonMapper.selectById(query.getId());
-
-      if (Objects.equals(old.getCode(), query.getCode()) && old.getId() == query.getId()) {
-        buttonMapper.update(data, updateQueryWrapper);
-      } else {
-        QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("code", query.getCode());
-        Button find = buttonMapper.selectOne(wrapper);
-
-        if (find != null) {
-          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
-        } else {
-          buttonMapper.update(data, updateQueryWrapper);
-        }
-      }
+      buttonMapper.update(data, updateQueryWrapper);
 
       return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }

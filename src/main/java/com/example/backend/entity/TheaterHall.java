@@ -15,14 +15,17 @@ public class TheaterHall {
   @TableField("name")
   String name;
 
-  @TableField("seat_count")
-  Integer seatCount;
+  @TableField("row_count")
+  Integer rowCount;
+
+  @TableField("column_count")
+  Integer columnCount;
 
   @TableField("cinema_id")
   Integer cinemaId;
 
-  @TableField("spec")
-  Integer spec;
+  @TableField("cinema_spec_id")
+  Integer cinemaSpecId;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)

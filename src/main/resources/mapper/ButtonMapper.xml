@@ -19,11 +19,7 @@
             </collection>
             <collection property="button" ofType="com.example.backend.response.Button">
                 <result property="id" column="button_id"></result>
-                <result property="name" column="button_name"></result>
-                <result property="code" column="button_code"></result>
                 <result property="i18n_key" column="button_i18n_key" jdbcType="VARCHAR"/>
-                <result property="api_id" column="api_id"></result>
-                <result property="api_name" column="api_name"></result>
                 <result property="api_code" column="api_code"></result>
             </collection>
     </resultMap>
@@ -38,16 +34,10 @@
             menu.parent_id,
             menu.i18n_key,
             button.id as button_id,
-            button.name as button_name,
-            button.code as button_code,
-            button.api_id as button_api_id,
             button.i18n_key as button_i18n_key,
-            api.id as api_id,
-            api.name as api_name,
-            api.code as api_code
+            button.api_code as api_code
         FROM "menu"
             LEFT JOIN button ON menu.id = button.menu_id
-            LEFT JOIN api ON button.api_id = api.id
         ORDER BY menu.update_time DESC
     </select>
 

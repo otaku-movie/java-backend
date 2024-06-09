@@ -20,9 +20,7 @@
         <collection property="button" ofType="com.example.backend.response.Button">
             <result property="id" column="button_id" jdbcType="INTEGER"/>
             <result property="i18n_key" column="button_i18n_key" jdbcType="VARCHAR"/>
-            <result property="code" column="button_code" jdbcType="VARCHAR"/>
-            <result property="api_id" column="api_id" jdbcType="INTEGER"/>
-            <result property="api_name" column="api_name" jdbcType="VARCHAR"/>
+            <result property="api_code" column="api_code" jdbcType="VARCHAR"/>
             <result property="checked" column="button_checked" jdbcType="BOOLEAN"/>
         </collection>
     </resultMap>
@@ -38,10 +36,7 @@
             menu.parent_id AS menu_parent_id,
             button.id AS button_id,
             button.i18n_key AS button_i18n_key,
-            button.code AS button_code,
-            button.api_id AS button_api_id,
-            api.id AS api_id,
-            api.name AS api_name,
+            button.api_code AS api_code,
             CASE
                 WHEN role_menu.role_id IS NOT NULL THEN true
                 ELSE false
@@ -52,7 +47,6 @@
                 END as button_checked
         FROM "menu"
             LEFT JOIN button ON menu.id = button.menu_id
-            LEFT JOIN api ON button.api_id = api.id
             LEFT JOIN role_menu ON menu.id = role_menu.menu_id AND role_menu.role_id = #{id}
             LEFT JOIN role_button ON button.id = role_button.button_id AND role_button.role_id = #{id}
     </select>
@@ -62,25 +56,17 @@
         <result property="role_id" column="role_id"/>
         <result property="button_id" column="button_id"/>
         <result property="button_name" column="button_name"/>
-        <result property="button_code" column="button_code"/>
-        <result property="api_id" column="api_id"/>
         <result property="api_code" column="api_code"/>
-        <result property="api_name" column="api_name"/>
     </resultMap>
     <select id="rolePermissionButton" resultMap="rolePermissionButton">
         SELECT
             user_role.user_id as user_id,
             user_role.role_id as role_id,
             role_button.button_id as button_id,
-            button.name as button_name,
-            button.code as button_code,
-            api.id as api_id,
-            api.name as api_name,
-            api.code as api_code
+            button.api_code as api_code
         FROM user_role
             LEFT JOIN role_button ON user_role.role_id = role_button.role_id
             LEFT JOIN button ON role_button.button_id = button.id
-            LEFT JOIN api ON button.api_id = api.id
         WHERE
             user_role.role_id = #{roleId} AND
             user_role.deleted = 0
@@ -97,10 +83,7 @@
             menu.i18n_key AS i18n_key,
             button.id AS button_id,
             button.name AS button_name,
-            button.code AS button_code,
-            button.api_id AS button_api_id,
-            api.id AS api_id,
-            api.name AS api_name,
+            button.api_code AS api_code,
             CASE
                 WHEN role_menu.role_id IS NOT NULL THEN true
                 ELSE false
@@ -111,7 +94,6 @@
                 END as button_checked
         FROM "menu"
                  LEFT JOIN button ON menu.id = button.menu_id
-                 LEFT JOIN api ON button.api_id = api.id
                  LEFT JOIN role_menu ON menu.id = role_menu.menu_id AND role_menu.role_id = #{id}
                  LEFT JOIN role_button ON button.id = role_button.button_id AND role_button.role_id = #{id}
         WHERE

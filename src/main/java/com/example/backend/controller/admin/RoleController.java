@@ -195,26 +195,26 @@ public class RoleController {
         return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
       }
     } else {
-      data.setId(query.getId());
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
-      updateQueryWrapper.eq("id", query.getId());
-      Role old = roleMapper.selectById(query.getId());
+      // 判断编辑是否重复，去掉当前的
+      QueryWrapper queryWrapper = new QueryWrapper<>();
+      queryWrapper.eq("name", query.getName());
+      queryWrapper.ne("id", query.getId());
 
-      if (Objects.equals(old.getName(), query.getName()) && old.getId() == query.getId()) {
+      List<Menu> menuList = roleMapper.selectList(queryWrapper);
+
+      if (menuList.size() == 0) {
+        data.setId(query.getId());
+        UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+        updateQueryWrapper.eq("id", query.getId());
         roleMapper.update(data, updateQueryWrapper);
+
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
-        QueryWrapper wrapper = new QueryWrapper<>();
-        wrapper.eq("name", query.getName());
-        Role find = roleMapper.selectOne(wrapper);
-
-        if (find != null) {
-          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
-        } else {
-          roleMapper.update(data, updateQueryWrapper);
-        }
+        return RestBean.error(
+          ResponseCode.REPEAT.getCode(),
+          MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.roleName"))
+        );
       }
-
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
 }

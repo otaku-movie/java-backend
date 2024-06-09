@@ -18,14 +18,11 @@ public class Button {
   @TableField("name")
   String name;
 
-  @TableField("code")
-  String code;
-
   @TableField("menu_id")
   Integer menuId;
 
-  @TableField("api_id")
-  Integer apiId;
+  @TableField("api_code")
+  String apiCode;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
