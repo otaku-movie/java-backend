@@ -87,7 +87,7 @@ public class TheaterHallController {
   }
 
   @SaCheckLogin
-  @CheckPermission(code = "theaterHall.seat.save")
+  @CheckPermission(code = "theaterHall.saveSeatConfig")
   @Transactional
   @PostMapping("/api/theater/hall/seat/save")
   public RestBean<String> saveSeat(@RequestBody SaveSeatQuery query) {
@@ -126,9 +126,12 @@ public class TheaterHallController {
 
     modal.setName(query.getName());
     modal.setCinemaId(query.getCinemaId());
-    modal.setRowCount(query.getRowCount());
-    modal.setColumnCount(query.getColumnCount());
     modal.setCinemaSpecId(query.getCinemaSpecId());
+
+    if (query.getId() == null) {
+      modal.setRowCount(query.getRowCount());
+      modal.setColumnCount(query.getColumnCount());
+    }
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
@@ -152,20 +155,10 @@ public class TheaterHallController {
       List<Menu> data = theaterHallMapper.selectList(queryWrapper);
       if (data.size() == 0) {
         modal.setId(query.getId());
-        // 如果row和columnCount 不相同
-        QueryWrapper oldQueryWrapper = new QueryWrapper();
-
-        oldQueryWrapper.eq("id", modal.getId());
-        TheaterHall old = theaterHallMapper.selectOne(oldQueryWrapper);
-
-        // 更新影厅表
+        // 更新
         UpdateWrapper updateQueryWrapper = new UpdateWrapper();
         updateQueryWrapper.eq("id", query.getId());
         theaterHallMapper.update(modal, updateQueryWrapper);
-
-        if (old.getRowCount() != query.getRowCount() || old.getColumnCount() != query.getColumnCount()) {
-          buildSeat(modal.getId(), query);
-        }
       } else {
         return RestBean.error(
           ResponseCode.REPEAT.getCode(),

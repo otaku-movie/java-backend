@@ -4,12 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.controller.TheaterHallSaveQuery;
-import com.example.backend.entity.Seat;
-import com.example.backend.entity.SeatAisle;
-import com.example.backend.entity.SeatArea;
-import com.example.backend.mapper.SeatAisleMapper;
-import com.example.backend.mapper.SeatAreaMapper;
-import com.example.backend.mapper.SeatMapper;
+import com.example.backend.entity.*;
+import com.example.backend.mapper.*;
 import com.example.backend.query.SaveSeatQuery;
 import com.example.backend.query.SeatAreaQuery;
 import com.example.backend.query.SeatQuery;
@@ -34,6 +30,7 @@ import java.util.stream.Collectors;
 
 @Data
 class SeatDetailResponse {
+  Integer maxSelectSeatCount;
   List<SeatResponse> seat;
   List<SeatAisle> aisle;
   List<SeatArea> area;
@@ -51,6 +48,10 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
   SeatAreaService seatAreaService;
   @Autowired
   SeatAisleService seatAisleService;
+  @Autowired
+  CinemaMapper cinemaMapper;
+  @Autowired
+  TheaterHallMapper theaterHallMapper;
 
   @Transactional
   public void saveSeat(SaveSeatQuery query) {
@@ -94,7 +95,6 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
     List<Seat> seatList = query.getSeat().stream().map(item -> {
       Seat seat = new Seat();
 
-//      seat.setId(item.getId());
       seat.setXAxis(item.getX());
       seat.setYAxis(item.getY());
       seat.setSeatPositionGroup(item.getSeatPositionGroup());
@@ -158,7 +158,12 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
       result.add(modal);
     });
 
+    // 查询影院最大选座数量
+    TheaterHall theaterHall = theaterHallMapper.selectById(theaterHallId);
+    Cinema cinema = cinemaMapper.selectById(theaterHall.getCinemaId());
+
     SeatDetailResponse seatDetailResponse = new SeatDetailResponse();
+    seatDetailResponse.setMaxSelectSeatCount(cinema.getMaxSelectSeatCount());
     seatDetailResponse.setAisle(getSeatAisle(theaterHallId));
     seatDetailResponse.setSeat(result);
     seatDetailResponse.setArea(getSeatArea(theaterHallId));

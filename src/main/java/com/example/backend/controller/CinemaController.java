@@ -39,13 +39,16 @@ class CinemaListQuery {
 @Data
 class SaveCinemaQuery {
   private Integer id;
-  @NotNull
-  @NotEmpty
+  @NotEmpty(message = "{validator.saveCinema.name.required}")
   private String name;
+  @NotEmpty(message = "{validator.saveCinema.description.required}")
   private String description;
+  @NotEmpty(message = "{validator.saveCinema.address.required}")
   private String address;
   private String homePage;
+  @NotEmpty(message = "{validator.saveCinema.tel.required}")
   private String tel;
+  private Integer maxSelectSeatCount;
 }
 
 @RestController
@@ -91,6 +94,7 @@ public class CinemaController {
     cinema.setHomePage(query.getHomePage());
     cinema.setTel(query.getTel());
     cinema.setDescription(query.getDescription());
+    cinema.setMaxSelectSeatCount(query.getMaxSelectSeatCount());
 
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();

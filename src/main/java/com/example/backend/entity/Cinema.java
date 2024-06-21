@@ -29,6 +29,9 @@ public class Cinema {
   @TableField("home_page")
   String homePage;
 
+  @TableField("max_select_seat_count")
+  Integer maxSelectSeatCount;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;
