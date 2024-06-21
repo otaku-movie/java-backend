@@ -18,7 +18,7 @@ public class MovieShowTimeList {
     private String cinema_name;
     private Integer theater_hall_id;
     private String theater_hall_name;
-    private Integer theater_hall_spec;
+//    private Integer theater_hall_spec;
     private Long seat_total;
     private long selected_seat_count;
     private List<Spec> spec;

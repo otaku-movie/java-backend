@@ -108,6 +108,9 @@ validator:
       required: "价格不能为空"
     cinemaId:
       required: "cinemaId 不能为空"
+  saveSeat:
+    theaterHallId:
+        required: "影厅id不能为空"
 
 
 

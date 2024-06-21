@@ -13,6 +13,7 @@ import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.SeatMapper;
 import com.example.backend.mapper.SelectSeatMapper;
 import com.example.backend.mapper.TheaterHallMapper;
+import com.example.backend.query.SaveSeatQuery;
 import com.example.backend.service.SeatService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
@@ -40,23 +41,6 @@ class TheaterHallQuery {
     this.page = 1; // 默认页数为1
     this.pageSize = 10; // 默认页面大小为10
   }
-}
-
-@Data
-class TheaterHallSaveQuery {
-  @NotNull(message = "{validator.saveTheaterHall.cinemaId.required}")
-  private Integer cinemaId;
-  @NotNull(message = "{validator.saveTheaterHall.cinemaSpecId.required}")
-  private Integer cinemaSpecId;
-  private Integer id;
-  @NotEmpty(message = "{validator.saveTheaterHall.name.required}")
-  private String name;
-
-  @NotNull(message = "{validator.saveTheaterHall.rowCount.required}")
-  private Integer rowCount;
-
-  @NotNull(message = "{validator.saveTheaterHall.columnCount.required}")
-  private Integer columnCount;
 }
 
 @RestController
@@ -92,14 +76,25 @@ public class TheaterHallController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.remove"));
   }
-  @GetMapping("/api/theater/hall/seat")
+  @GetMapping("/api/theater/hall/seat/detail")
   public RestBean<Object> seatList(@RequestParam Integer theaterHallId) {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("theater_hall_id", theaterHallId);
 
-    List list = seatMapper.selectList(wrapper);
+    Object list = seatService.seatList(theaterHallId);
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
+  }
+
+  @SaCheckLogin
+  @CheckPermission(code = "theaterHall.seat.save")
+  @Transactional
+  @PostMapping("/api/theater/hall/seat/save")
+  public RestBean<String> saveSeat(@RequestBody SaveSeatQuery query) {
+
+    seatService.saveSeat(query);
+
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
   @Transactional
   public  void buildSeat (Integer id, TheaterHallSaveQuery query) {
@@ -107,8 +102,8 @@ public class TheaterHallController {
 
     // 创建座位列表
     List<Seat> seats = new ArrayList<>();
-    for (int i = 1; i <= query.getRowCount(); i++) {
-      for (int j = 1; j <= query.getColumnCount(); j++) {
+    for (int i = 0; i <= query.getRowCount(); i++) {
+      for (int j = 0; j <= query.getColumnCount(); j++) {
         Seat seat = new Seat();
         seat.setXAxis(i);
         seat.setYAxis(j);

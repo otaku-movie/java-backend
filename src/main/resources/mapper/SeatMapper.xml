@@ -4,6 +4,45 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.backend.mapper.SeatMapper">
     <delete id="deleteSeat">
-        DELETE FROM seat WHERE seat.theater_hall_id = #{id}
+        DELETE FROM seat WHERE seat.theater_hall_id = #{id};
     </delete>
+    <resultMap id="seatListResponseMap" type="com.example.backend.response.SeatListResponse">
+        <id property="id" column="id"/>
+        <result property="theaterHallId" column="theater_hall_id"/>
+        <result property="x" column="x_axis"/>
+        <result property="y" column="y_axis"/>
+        <result property="z" column="z_axis"/>
+        <result property="show" column="show"/>
+        <result property="disabled" column="disabled"/>
+        <result property="wheelChair" column="wheel_chair"/>
+        <result property="seatPositionGroup" column="seat_position_group"/>
+        <association property="area" javaType="com.example.backend.response.SeatAreaResponse">
+            <id property="id" column="seat_area_id"/>
+            <result property="name" column="seat_area_name"/>
+            <result property="price" column="seat_area_price"/>
+            <result property="color" column="seat_area_color"/>
+        </association>
+    </resultMap>
+    <select id="seatList" resultMap="seatListResponseMap">
+        SELECT
+            seat.theater_hall_id,
+            seat.id,
+            seat.x_axis,
+            seat.y_axis,
+            seat.z_axis,
+            seat.show,
+            seat.disabled,
+            seat.wheel_chair,
+            seat.seat_position_group,
+            seat.seat_area_id,
+            seat_area.name as seat_area_name,
+            seat_area.price as seat_area_price,
+            seat_area.color as seat_area_color
+        FROM seat
+            LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
+        WHERE
+            seat.theater_hall_id=${id} AND
+            seat.deleted = 0
+        ORDER BY seat.x_axis ASC, seat.y_axis ASC
+    </select>
 </mapper>
