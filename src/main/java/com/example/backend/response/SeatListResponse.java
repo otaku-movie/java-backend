@@ -21,6 +21,7 @@ public class SeatListResponse {
   Integer x;
   Integer y;
   Integer z;
+  Boolean selected;
   Boolean show;
   Boolean disabled;
   // 轮椅座

@@ -1,10 +1,9 @@
 package com.example.backend.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+
+import java.util.Date;
 
 @Data
 @TableName("select_seat")
@@ -15,20 +14,21 @@ public class SelectSeat {
   @TableField("movie_show_time_id")
   Integer movieShowTimeId;
 
-  @TableField("seat_id")
-  Integer seatId;
+  @TableField("theater_hall_id")
+  Integer theaterHallId;
 
-  @TableField("select_seat_type")
-  Integer selectSeatType;
+  @TableField("x")
+  Integer x;
 
+  @TableField("y")
+  Integer y;
 
-//  @TableField(value = "create_time", fill = FieldFill.INSERT)
-//  Date createTime;
-//
-//  @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
-//  Date updateTime;
-//
-//  @TableLogic
-//  @TableField(value = "deleted", fill = FieldFill.INSERT)
-//  private Integer deleted;
+  @TableField(value = "create_time", fill = FieldFill.INSERT)
+  Date createTime;
+
+  @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
+  Date updateTime;
+
+  @TableField(value = "deleted", fill = FieldFill.INSERT)
+  private Integer deleted;
 }

@@ -111,6 +111,17 @@ validator:
   saveSeat:
     theaterHallId:
         required: "影厅id不能为空"
+  saveSelectSeat:
+    movieShowTimeId:
+      required: "电影场次不能为空"
+    theaterHallId:
+      required: "影厅id不能为空"
+    seatPosition:
+      required: "seatPostion 不能为空"
+    x:
+      required: "座位的 x 坐标不能为空"
+    y:
+      required: "座位的 y 坐标不能为空"
   saveCinema:
     name:
       required: "name 不能为空"

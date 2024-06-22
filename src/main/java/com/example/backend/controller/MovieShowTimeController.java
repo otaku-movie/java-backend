@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -12,7 +13,12 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.service.MovieShowTimeService;
+import com.example.backend.service.SeatService;
+import com.example.backend.service.SelectSeatService;
 import com.example.backend.utils.MessageUtils;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +27,25 @@ import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 import java.util.List;
+
+
+@Data
+class SeatPosition {
+  @NotNull(message = "${validator.saveSelectSeat.x.required}")
+  Integer x;
+  @NotNull(message = "${validator.saveSelectSeat.y.required}")
+  Integer y;
+}
+
+@Data
+class SaveSelectSeatQuery {
+  @NotNull(message = "${validator.saveSelectSeat.movieShowTimeId.required}")
+  Integer movieShowTimeId;
+  @NotNull(message = "${validator.saveSelectSeat.theaterHallId.required}")
+  Integer theaterHallId;
+  @NotEmpty(message = "${validator.saveSelectSeat.seatPosition.required}")
+  List<SeatPosition> seatPosition;
+}
 
 @RestController
 public class MovieShowTimeController {
@@ -35,10 +60,16 @@ public class MovieShowTimeController {
   private SelectSeatMapper selectSeatMapper;
 
   @Autowired
+  private SelectSeatService selectSeatService;
+
+  @Autowired
   private MovieShowTimeMapper movieShowTimeMapper;
 
   @Autowired
   private MovieShowTimeService movieShowTimeService;
+
+  @Autowired
+  private SeatService seatService;
 
   @PostMapping("/api/movie_show_time/list")
   public RestBean<List<MovieShowTimeList>> list(MovieShowTimeListQuery query)  {
@@ -101,13 +132,35 @@ public class MovieShowTimeController {
 
     return result ? RestBean.success(null, MessageUtils.getMessage("success.save")) : RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.timeConflict"));
   }
-  @GetMapping("/api/movie_show_time/select_seat/list")
-  public RestBean<Object> selectSeatList(@RequestParam Integer id) {
-    QueryWrapper wrapper = new QueryWrapper<>();
-    wrapper.eq("id", id);
-    MovieShowTime movieShowTime = movieShowTimeMapper.selectOne(wrapper);
-    List list = selectSeatMapper.selectSeatList(movieShowTime.getTheaterHallId());
+  @SaCheckLogin
+  @PostMapping("/api/movie_show_time/select_seat/save")
+  public RestBean<Object> saveSelectSeat(@RequestBody @Validated SaveSelectSeatQuery query) {
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    List<SelectSeat> data = query.getSeatPosition().stream().map(item -> {
+      SelectSeat modal = new SelectSeat();
+      modal.setMovieShowTimeId(query.getMovieShowTimeId());
+      modal.setTheaterHallId(query.getTheaterHallId());
+      modal.setX(item.getX());
+      modal.setY(item.getY());
+      modal.setUserId(StpUtil.getLoginIdAsInt());
+
+      return modal;
+    }).toList();
+    QueryWrapper queryWrapper = new QueryWrapper();
+    queryWrapper.eq("movie_show_time_id", query.getMovieShowTimeId());
+    selectSeatService.remove(queryWrapper);
+
+    selectSeatService.saveBatch(data);
+
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+  }
+  @GetMapping("/api/movie_show_time/select_seat/list")
+  public RestBean<Object> selectSeatList(
+    @RequestParam("movieShowTimeId") Integer movieShowTimeId,
+    @RequestParam("theaterHallId") Integer theaterHallId
+  ) {
+    Object result = selectSeatService.selectSeatList(theaterHallId, movieShowTimeId);
+
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
 }

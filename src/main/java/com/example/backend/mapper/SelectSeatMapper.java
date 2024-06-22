@@ -10,5 +10,5 @@ import java.util.List;
 @Mapper
 public interface SelectSeatMapper extends BaseMapper<SelectSeat> {
 
-  List selectSeatList(Integer theater_hall_id);
+  List selectSeatList(Integer theaterHallId, Integer movieShowTimeId);
 }

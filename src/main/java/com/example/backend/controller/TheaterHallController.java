@@ -57,6 +57,7 @@ public class TheaterHallController {
   @Autowired
   private SelectSeatMapper selectSeatMapper;
 
+
   @PostMapping("/api/theater/hall/list")
   public RestBean<List<TheaterHall>> list(@RequestBody TheaterHallQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
