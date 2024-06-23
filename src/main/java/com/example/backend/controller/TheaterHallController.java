@@ -14,6 +14,7 @@ import com.example.backend.mapper.SeatMapper;
 import com.example.backend.mapper.SelectSeatMapper;
 import com.example.backend.mapper.TheaterHallMapper;
 import com.example.backend.query.SaveSeatQuery;
+import com.example.backend.response.TheaterHallList;
 import com.example.backend.service.SeatService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
@@ -29,19 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-
-@Data
-class TheaterHallQuery {
-  private Integer page;
-  private Integer pageSize;
-  private Integer cinemaId;
-  private String name;
-
-  public TheaterHallQuery() {
-    this.page = 1; // 默认页数为1
-    this.pageSize = 10; // 默认页面大小为10
-  }
-}
 
 @RestController
 public class TheaterHallController {
@@ -59,13 +47,10 @@ public class TheaterHallController {
 
 
   @PostMapping("/api/theater/hall/list")
-  public RestBean<List<TheaterHall>> list(@RequestBody TheaterHallQuery query)  {
-    QueryWrapper wrapper = new QueryWrapper<>();
-    wrapper.eq("cinema_id", query.getCinemaId());
-//    wrapper.orderByAsc("update_time");
+  public RestBean<List<TheaterHallList>> list(@RequestBody TheaterHallQuery query)  {
     Page<TheaterHall> page = new Page<>(query.getPage(), query.getPageSize());
 
-    IPage list = theaterHallMapper.selectPage(page, wrapper);
+    IPage list = theaterHallMapper.theaterHallList(query, page);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
@@ -173,6 +158,10 @@ public class TheaterHallController {
   @CheckPermission(code = "theaterHall.remove")
   @DeleteMapping("/api/admin/theater/hall/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    QueryWrapper queryWrapper = new QueryWrapper<>();
+
+    queryWrapper.eq("id", id);
+    theaterHallMapper.delete(queryWrapper);
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
 }

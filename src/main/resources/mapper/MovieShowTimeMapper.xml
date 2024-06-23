@@ -15,13 +15,41 @@
         <result property="cinema_name" column="cinema_name"></result>
         <result property="theater_hall_id" column="theater_hall_id"></result>
         <result property="theater_hall_name" column="theater_hall_name"></result>
-<!--        <result property="theater_hall_spec" column="theater_hall_spec"></result>-->
+        <result property="theater_hall_spec" column="theater_hall_spec"></result>
+        <result property="seat_count" column="seat_count"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
             <result property="description" column="spec_description"></result>
         </collection>
     </resultMap>
+    <select id="userSelectSeat" resultType="com.example.backend.response.UserSelectSeat">
+        SELECT
+            select_seat.user_id,
+            select_seat.movie_show_time_id,
+            select_seat.theater_hall_id,
+            select_seat.x,
+            select_seat.y,
+            seat_area.price as area_price,
+            seat_area.name as area_name,
+            movie.id as movie_id,
+            movie.name as movie_name,
+            movie.cover as movie_poster
+        FROM
+            select_seat
+                LEFT JOIN seat ON
+                        seat.theater_hall_id = select_seat.theater_hall_id AND
+                        seat.x_axis = select_seat.x AND
+                        seat.y_axis = select_seat.y AND
+                        seat.deleted = 0
+                LEFT JOIN movie_show_time ON select_seat.movie_show_time_id = movie_show_time.id
+                LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+                LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
+        WHERE
+            select_seat.user_id = #{userId} AND
+            select_seat.movie_show_time_id = #{movieShowTimeId} AND
+            select_seat.deleted = 0
+    </select>
         <select id="movieShowTimeList" resultMap="movie_show_time_list">
             SELECT
                 movie_show_time.id,
@@ -36,18 +64,30 @@
                 cinema.name AS cinema_name,
                 theater_hall.id AS theater_hall_id,
                 theater_hall.name AS theater_hall_name,
---                 theater_hall.spec AS theater_hall_spec,
+                (
+                    SELECT
+                        COUNT(seat.show)
+                    FROM seat
+                    WHERE
+                        seat.deleted = 0 AND
+                        seat.theater_hall_id = theater_hall.id AND
+                        seat.show = TRUE
+                ) AS seat_count,
                 cinema_spec.id AS spec_id,
                 cinema_spec.name AS spec_name,
-                cinema_spec.description AS spec_description
-            FROM movie_show_time
-                --- 查询未被删掉的数据
-                LEFT JOIN movie ON movie.id = movie_show_time.movie_id AND movie.deleted = 0
-                LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id AND movie_spec.deleted = 0
-                LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id AND cinema_spec.deleted = 0
-                LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id AND cinema.deleted = 0
-                LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id AND theater_hall.deleted = 0
-            WHERE movie_show_time.deleted = 0
-            ORDER BY movie_show_time.update_time DESC
+                cinema_spec.description AS spec_description,
+                cs2.name as theater_hall_spec
+            FROM
+                movie_show_time
+                    LEFT JOIN movie ON movie.id = movie_show_time.movie_id AND movie.deleted = 0
+                    LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id AND movie_spec.deleted = 0
+                    LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id AND cinema_spec.deleted = 0
+                    LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id AND cinema.deleted = 0
+                    LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id AND theater_hall.deleted = 0
+                    LEFT JOIN cinema_spec cs2 ON theater_hall.cinema_spec_id = cs2.id AND cs2.deleted = 0
+            WHERE
+                movie_show_time.deleted = 0
+            ORDER BY
+                movie_show_time.update_time DESC
         </select>
 </mapper>

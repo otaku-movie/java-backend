@@ -39,13 +39,13 @@
                 ELSE false
                 END AS selected
         FROM seat
-            LEFT JOIN select_seat ON
+                 LEFT JOIN select_seat ON
                     seat.theater_hall_id = select_seat.theater_hall_id AND
                     seat.x_axis = select_seat.x AND
                     seat.y_axis = select_seat.y AND
                     select_seat.deleted = 0 AND
                     select_seat.movie_show_time_id = ${movieShowTimeId}
-            LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
+                 LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
         WHERE
             seat.theater_hall_id=${theaterHallId} AND
             seat.deleted = 0

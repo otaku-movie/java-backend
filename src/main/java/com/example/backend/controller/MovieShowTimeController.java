@@ -12,6 +12,7 @@ import com.example.backend.mapper.*;
 import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
+import com.example.backend.response.UserSelectSeat;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.service.SeatService;
 import com.example.backend.service.SelectSeatService;
@@ -84,10 +85,8 @@ public class MovieShowTimeController {
       seatQueryWrapper.eq("theater_hall_id", item.getTheater_hall_id());
       selectedSeatQueryWrapper.eq("movie_show_time_id", item.getId());
 
-      long seatTotal = seatMapper.selectCount(seatQueryWrapper);
       long selectedSeatCount = selectSeatMapper.selectCount(selectedSeatQueryWrapper);
 
-      item.setSeat_total(seatTotal);
       item.setSelected_seat_count(selectedSeatCount);
 
       return  item;
@@ -153,6 +152,15 @@ public class MovieShowTimeController {
     selectSeatService.saveBatch(data);
 
     return RestBean.success(null, MessageUtils.getMessage("success.save"));
+  }
+  @SaCheckLogin
+  @GetMapping("/api/movie_show_time/user_select_seat")
+  public RestBean<List<Object>> selectSeatList(
+    @RequestParam("movieShowTimeId") Integer movieShowTimeId
+  ) {
+    List<Object> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId);
+
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/movie_show_time/select_seat/list")
   public RestBean<Object> selectSeatList(

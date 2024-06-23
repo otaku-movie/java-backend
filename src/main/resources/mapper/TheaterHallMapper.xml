@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.TheaterHallMapper">
+    <resultMap id="theaterHallList" type="com.example.backend.response.TheaterHallList">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="row_count" column="row_count"/>
+        <result property="column_count" column="column_count"/>
+        <result property="cinema_id" column="cinema_id"/>
+        <result property="cinema_spec_id" column="cinema_spec_id"/>
+        <result property="cinema_spec_name" column="cinema_spec_name"/>
+        <result property="seat_count" column="seat_count"/>
+    </resultMap>
+    <select id="theaterHallList" resultMap="theaterHallList">
+        SELECT
+            theater_hall.id,
+            theater_hall.name,
+            theater_hall.row_count,
+            theater_hall.column_count,
+            theater_hall.cinema_id,
+            theater_hall.cinema_spec_id,
+            cinema_spec.name AS cinema_spec_name,
+            (
+            SELECT
+                COUNT(seat.show)
+            FROM seat
+            WHERE
+                seat.deleted = 0 AND
+                seat.theater_hall_id = theater_hall.id AND
+                seat.show = TRUE
+            ) AS seat_count
+        FROM theater_hall
+        LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+        <where>
+            theater_hall.deleted = 0
+            <if test="query.name != null and !query.name.equals('')">
+                AND theater_hall.name LIKE concat('%', #{query.name}, '%')
+            </if>
+            <if test="query.id != null and !query.id.equals('')">
+                AND theater_hall.id = #{query.id}
+            </if>
+        </where>
+    </select>
+</mapper>

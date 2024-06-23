@@ -10,12 +10,6 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-class Spec {
-  Integer id;
-  String name;
-  String description;
-}
-@Data
 public class MovieResponse {
   Integer id;
   String cover;
