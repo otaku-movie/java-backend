@@ -3,6 +3,8 @@ package com.example.backend.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class UserSelectSeat {
   @JsonProperty("user_id")
@@ -18,7 +20,7 @@ public class UserSelectSeat {
   private Integer y;
 
   @JsonProperty("area_price")
-  private Integer areaPrice;
+  private BigDecimal areaPrice;
 
   @JsonProperty("area_name")
   private String areaName;
@@ -31,4 +33,10 @@ public class UserSelectSeat {
 
   @JsonProperty("movie_poster")
   private String moviePoster;
+
+  @JsonProperty("spec_name")
+  private String specName;
+
+  @JsonProperty("plus_price")
+  private BigDecimal plusPrice;
 }

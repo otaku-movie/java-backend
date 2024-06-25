@@ -11,6 +11,12 @@ public class SelectSeat {
   @TableField("user_id")
   Integer userId;
 
+  @TableField("movie_order_id")
+  Integer movieOrderId;
+
+  @TableField("movie_ticket_type_id")
+  Integer movieTicketTypeId;
+
   @TableField("movie_show_time_id")
   Integer movieShowTimeId;
 

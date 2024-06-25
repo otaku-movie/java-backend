@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.MovieOrderMapper">
+    <resultMap id="orderList" type="com.example.backend.response.order.OrderListResponse">
+        <result property="id" column="id"></result>
+        <result property="order_total" column="order_total"></result>
+        <result property="order_state" column="order_state"></result>
+        <result property="order_time" column="order_time"></result>
+        <result property="pay_method" column="pay_method"></result>
+        <result property="pay_state" column="pay_state"></result>
+        <result property="pay_total" column="pay_total"></result>
+        <result property="pay_number" column="pay_number"></result>
+        <result property="pay_time" column="pay_time"></result>
+        <result property="start_time" column="start_time"></result>
+        <result property="end_time" column="end_time"></result>
+        <result property="status" column="status"></result>
+        <result property="movie_name" column="movie_name"></result>
+        <result property="movie_poster" column="movie_poster"></result>
+        <result property="cinema_name" column="cinema_name"></result>
+        <result property="theater_hall_name" column="theater_hall_name"></result>
+        <result property="theater_hall_spec_name" column="theater_hall_spec_name"></result>
+        <collection property="seat" ofType="com.example.backend.response.order.Seat">
+            <result property="seat_x" column="seat_x"></result>
+            <result property="seat_y" column="seat_y"></result>
+        </collection>
+    </resultMap>
+    <select id="orderList" resultMap="orderList">
+        SELECT
+            movie_order.id,
+            movie_order.order_total,
+            movie_order.order_state,
+            movie_order.pay_method,
+            movie_order.pay_state,
+            movie_order.pay_total,
+            movie_order.pay_time,
+            movie_order.pay_number,
+            movie_order.create_time AS order_time,
+            movie_show_time.start_time,
+            movie_show_time.end_time,
+            movie.name as movie_name,
+            movie.cover as movie_poster,
+            cinema.name as cinema_name,
+            theater_hall.name as theater_hall_name,
+            cinema_spec.name as theater_hall_spec_name,
+            select_seat.x as seat_x,
+            select_seat.y as seat_y
+        FROM movie_order
+            LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+            LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+            LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+            LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+            LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+            LEFT JOIN select_seat ON select_seat.movie_order_id = movie_order.id AND select_seat.deleted = 0
+        <where>
+            movie_order.deleted = 0
+            <if test="query.movieId != null and !query.movieId.equals('')">
+                AND movie.id = #{query.movieId}
+            </if>
+            <if test="query.cinemaId != null and !query.cinemaId.equals('')">
+                AND cinema.id = #{query.cinemaId}
+            </if>
+            <if test="query.theaterHallId != null and !query.theaterHallId.equals('')">
+                AND theater_hall.id = #{query.theaterHallId}
+            </if>
+            <if test="query.id != null and !query.id.equals('')">
+                AND movie_order.id = #{query.id}
+            </if>
+            <if test="query.orderState != null and !query.orderState.equals('')">
+                AND movie_order.order_state = #{query.orderState}
+            </if>
+            <if test="query.payState != null and !query.payState.equals('')">
+                AND movie_order.pay_state = #{query.payState}
+            </if>
+        </where>
+    </select>
+</mapper>

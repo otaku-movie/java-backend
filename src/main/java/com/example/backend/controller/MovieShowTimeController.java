@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.*;
+import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.MovieShowTimeListQuery;
@@ -77,22 +78,8 @@ public class MovieShowTimeController {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<MovieShowTime> page = new Page<>(query.getPage(), query.getPageSize());
 
-    IPage<MovieShowTimeList> list = movieShowTimeMapper.movieShowTimeList(page, query);
-    List<MovieShowTimeList> result = list.getRecords().stream().map(item -> {
-      System.out.println(item);
-      QueryWrapper<Seat> seatQueryWrapper = new QueryWrapper<>();
-      QueryWrapper<SelectSeat> selectedSeatQueryWrapper = new QueryWrapper<>();
-      seatQueryWrapper.eq("theater_hall_id", item.getTheater_hall_id());
-      selectedSeatQueryWrapper.eq("movie_show_time_id", item.getId());
+    IPage<MovieShowTimeList> list = movieShowTimeMapper.movieShowTimeList(query, OrderState.order_succeed.getCode(), page);
 
-      long selectedSeatCount = selectSeatMapper.selectCount(selectedSeatQueryWrapper);
-
-      item.setSelected_seat_count(selectedSeatCount);
-
-      return  item;
-    }).toList();
-
-    list.setRecords(result);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
@@ -155,10 +142,10 @@ public class MovieShowTimeController {
   }
   @SaCheckLogin
   @GetMapping("/api/movie_show_time/user_select_seat")
-  public RestBean<List<Object>> selectSeatList(
+  public RestBean<List<UserSelectSeat>> selectSeatList(
     @RequestParam("movieShowTimeId") Integer movieShowTimeId
   ) {
-    List<Object> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId);
+    List<UserSelectSeat> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId);
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }

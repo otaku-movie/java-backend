@@ -14,6 +14,6 @@ import java.util.List;
 
 @Mapper
 public interface MovieShowTimeMapper extends BaseMapper<MovieShowTime> {
-  List<Object> userSelectSeat(Integer userId, Integer movieShowTimeId);
-  IPage<MovieShowTimeList> movieShowTimeList(Page<MovieShowTime> page, MovieShowTimeListQuery query);
+  List<UserSelectSeat> userSelectSeat(Integer userId, Integer movieShowTimeId);
+  IPage<MovieShowTimeList> movieShowTimeList(MovieShowTimeListQuery query, Integer orderState, Page<MovieShowTime> page);
 }
