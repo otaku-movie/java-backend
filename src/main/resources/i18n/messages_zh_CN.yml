@@ -117,7 +117,7 @@ validator:
     theaterHallId:
       required: "影厅id不能为空"
     seatPosition:
-      required: "seatPostion 不能为空"
+      required: "seatPosition 不能为空"
     x:
       required: "座位的 x 坐标不能为空"
     y:
@@ -131,6 +131,11 @@ validator:
       required: "address 不能为空"
     tel:
       required: "tel 不能为空"
+  saveDict:
+    name:
+      required: "name 不能为空"
+    code:
+      required: "code 不能为空"
 
 
 

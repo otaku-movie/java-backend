@@ -53,4 +53,32 @@
             INNER JOIN user_role ON role.id = user_role.role_id
         WHERE user_role.user_id = #{id}
     </select>
+    <resultMap id="StatisticsOfDailyRegisteredUsers" type="com.example.backend.response.chart.StatisticsUserCount">
+        <result property="create_date" column="create_date"></result>
+        <result property="user_count" column="user_count"></result>
+    </resultMap>
+    <select id="StatisticsOfDailyRegisteredUsers" resultMap="StatisticsOfDailyRegisteredUsers">
+        --  统计每日注册用户数
+        WITH grouped_data AS (
+            SELECT
+                TO_CHAR(users.create_time, 'YYYY-MM-DD') AS create_date,
+                COUNT(*) AS user_count
+            FROM
+                users
+            WHERE
+                users.deleted = 0
+            GROUP BY
+                create_date
+            ORDER BY
+                create_date DESC
+            LIMIT 30
+        )
+        SELECT
+            create_date,
+            user_count
+        FROM
+            grouped_data
+        ORDER BY
+            create_date;
+    </select>
 </mapper>

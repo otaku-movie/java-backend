@@ -54,7 +54,7 @@
         WHERE
             select_seat.user_id = #{userId} AND
             select_seat.movie_show_time_id = #{movieShowTimeId} AND
-            select_seat.movie_order_id IS NOT NULL AND
+            select_seat.movie_order_id IS NULL AND
             select_seat.deleted = 0
     </select>
         <select id="movieShowTimeList" resultMap="movie_show_time_list">
@@ -118,4 +118,51 @@
             ORDER BY
                 movie_show_time.update_time DESC
         </select>
+    <resultMap id="StatisticsOfDailyMovieScreenings" type="com.example.backend.response.chart.StatisticsOfDailyMovieScreenings">
+        <result property="start_time" column="start_time"></result>
+        <result property="total_count" column="total_count"></result>
+        <collection property="movie" ofType="com.example.backend.response.chart.Movie">
+            <result property="movie_id" column="movie_id"></result>
+            <result property="movie_name" column="movie_name"></result>
+            <result property="movie_count" column="movie_count"></result>
+        </collection>
+    </resultMap>
+
+    <select id="StatisticsOfDailyMovieScreenings" resultMap="StatisticsOfDailyMovieScreenings">
+        --- 统计每日上映场次，以及前10名上映电影的场次数
+        WITH daily_total AS (
+            SELECT
+                TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), 'YYYY-MM-DD') AS start_time,
+                COUNT(*) AS total_count
+            FROM movie_show_time
+            WHERE movie_show_time.deleted = 0
+            GROUP BY DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS'))
+        ),
+        daily_movie_count AS (
+            SELECT
+                TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), 'YYYY-MM-DD') AS start_time,
+                movie.name AS movie_name,
+                movie.id AS movie_id,
+                COUNT(*) AS movie_count,
+                ROW_NUMBER() OVER (PARTITION BY TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), 'YYYY-MM-DD') ORDER BY COUNT(*) DESC) AS rn
+            FROM movie_show_time
+            LEFT JOIN
+                movie ON movie_show_time.movie_id = movie.id
+            WHERE
+                movie_show_time.deleted = 0
+            GROUP BY DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), movie.name, movie.id
+        )
+        SELECT
+            dt.start_time,
+            dt.total_count,
+            dmc.movie_id,
+            dmc.movie_name,
+            dmc.movie_count
+        FROM daily_total dt
+        LEFT JOIN
+            daily_movie_count dmc ON dt.start_time = dmc.start_time
+        WHERE
+            dmc.rn &lt; 10 OR dmc.rn IS NULL
+        ORDER BY dt.start_time ASC, dmc.movie_count DESC;
+    </select>
 </mapper>

@@ -19,6 +19,9 @@
             <result property="color" column="seat_area_color"/>
         </association>
     </resultMap>
+    <delete id="deleteSeat">
+        DELETE FROM select_seat WHERE select_seat.movie_order_id IS NULL AND select_seat.movie_show_time_id = #{movieShowTimeId}
+    </delete>
     <select id="selectSeatList" resultMap="seatListResponseMap">
         SELECT
             seat.theater_hall_id,

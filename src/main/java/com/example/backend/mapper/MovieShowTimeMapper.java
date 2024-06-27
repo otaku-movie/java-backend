@@ -7,6 +7,7 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.entity.MovieShowTime;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.response.UserSelectSeat;
+import com.example.backend.response.chart.StatisticsOfDailyMovieScreenings;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -16,4 +17,5 @@ import java.util.List;
 public interface MovieShowTimeMapper extends BaseMapper<MovieShowTime> {
   List<UserSelectSeat> userSelectSeat(Integer userId, Integer movieShowTimeId);
   IPage<MovieShowTimeList> movieShowTimeList(MovieShowTimeListQuery query, Integer orderState, Page<MovieShowTime> page);
+  List<StatisticsOfDailyMovieScreenings>  StatisticsOfDailyMovieScreenings();
 }

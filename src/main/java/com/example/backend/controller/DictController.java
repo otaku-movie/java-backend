@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
@@ -14,11 +15,14 @@ import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.DictItemMapper;
 import com.example.backend.mapper.DictMapper;
 import com.example.backend.query.MovieListQuery;
+import com.example.backend.query.dict.DictListQuery;
 import com.example.backend.utils.MessageUtils;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -37,6 +41,15 @@ class DictItemEditQuery {
   private List<DictItem> dictItem;
 }
 
+@Data
+class SaveDictQuery {
+  Integer id;
+  @NotEmpty(message = "{validator.saveDict.name.required}")
+  String name;
+  @NotEmpty(message = "{validator.saveDict.code.required}")
+  String code;
+}
+
 @RestController
 public class DictController {
   @Autowired
@@ -47,9 +60,17 @@ public class DictController {
   private DictItemMapper dictItemMapper;
 
   @PostMapping("/api/dict/list")
-  public RestBean<List<Object>> list(@RequestBody MovieListQuery query)  {
+  public RestBean<List<Object>> list(@RequestBody DictListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Dict> page = new Page<>(query.getPage(), query.getPageSize());
+
+    if (query.getName() != null && query.getName() != "") {
+      wrapper.eq("name", query.getName());
+    }
+
+    if (query.getCode() != null && query.getCode() != "") {
+      wrapper.eq("code", query.getCode());
+    }
 
     IPage list = dictMapper.selectPage(page, wrapper);
 
@@ -101,7 +122,28 @@ public class DictController {
     return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
   @SaCheckLogin
-  @CheckPermission(code = "dict.item.remove")
+  @CheckPermission(code = "dict.save")
+  @PostMapping("/api/admin/dict/save")
+  public RestBean<Null> dictSave (@RequestBody @Validated SaveDictQuery query) {
+    Dict dict = new Dict();
+
+    dict.setName(query.getName());
+    dict.setCode(query.getCode());
+
+    if (query.getId() == null) {
+      dictMapper.insert(dict);
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    } else {
+      dict.setId(query.getId());
+      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+      updateQueryWrapper.eq("id", query.getId());
+      dictMapper.update(dict, updateQueryWrapper);
+
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    }
+  }
+  @SaCheckLogin
+  @CheckPermission(code = "dict.remove")
   @Transactional
   @DeleteMapping("/api/admin/dict/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {

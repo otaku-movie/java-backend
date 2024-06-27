@@ -97,11 +97,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     movieOrderMapper.insert(movieOrder);
 
     // 移除旧的选座信息
-    QueryWrapper queryWrapper = new QueryWrapper();
-
-    queryWrapper.eq("movie_show_time_id", query.getMovieShowTimeId());
-    queryWrapper.eq("movie_order_id", null);
-    selectSeatMapper.delete(queryWrapper);
+    selectSeatMapper.deleteSeat(query.getMovieShowTimeId());
 
     // 更新用户选座信息
     List<SelectSeat> newSelectSeat = data.stream().map(item -> {

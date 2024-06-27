@@ -35,6 +35,7 @@ public class SelectSeat {
   @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
   Date updateTime;
 
+  @TableLogic
   @TableField(value = "deleted", fill = FieldFill.INSERT)
   private Integer deleted;
 }

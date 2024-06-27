@@ -24,11 +24,11 @@ import java.util.Objects;
 @Data
 class ButtonSaveQuery {
   Integer id;
-  @NotEmpty(message = "{validator.saveApi.i18nKey.required}")
+  @NotEmpty(message = "{validator.saveButton.i18nKey.required}")
   String i18nKey;
-  @NotNull(message = "{validator.saveApi.menuId.required}")
+  @NotNull(message = "{validator.saveButton.menuId.required}")
   Integer menuId;
-  @NotNull(message = "{validator.saveApi.apiCode.required}")
+  @NotEmpty(message = "{validator.saveButton.apiCode.required}")
   String apiCode;
 }
 

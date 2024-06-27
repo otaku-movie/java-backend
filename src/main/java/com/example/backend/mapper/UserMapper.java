@@ -9,6 +9,7 @@ import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.UserListQuery;
 import com.example.backend.response.MovieResponse;
 import com.example.backend.response.UserListResponse;
+import com.example.backend.response.chart.StatisticsUserCount;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -18,4 +19,6 @@ import java.util.List;
 public interface UserMapper extends BaseMapper<User> {
   IPage<UserListResponse> userList(UserListQuery query, IPage<UserListResponse> page);
   List<Role> userRole(Integer id);
+
+  List<StatisticsUserCount> StatisticsOfDailyRegisteredUsers();
 }

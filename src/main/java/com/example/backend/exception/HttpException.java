@@ -39,7 +39,7 @@ public class HttpException {
   @ExceptionHandler(Exception.class)
   public ResponseEntity<RestBean<Null>> handleException(Exception ex) {
     ex.printStackTrace();  // 打印异常栈信息
-    RestBean<Null> result = RestBean.error(HttpStatus.FORBIDDEN.value(), MessageUtils.getMessage("error.systemError"));
+    RestBean<Null> result = RestBean.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), MessageUtils.getMessage("error.systemError"));
     return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 

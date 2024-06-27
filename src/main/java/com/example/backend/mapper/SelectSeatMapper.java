@@ -11,4 +11,5 @@ import java.util.List;
 public interface SelectSeatMapper extends BaseMapper<SelectSeat> {
 
   List selectSeatList(Integer theaterHallId, Integer movieShowTimeId);
+  void  deleteSeat(Integer movieShowTimeId);
 }
