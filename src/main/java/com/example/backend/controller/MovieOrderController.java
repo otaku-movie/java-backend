@@ -8,16 +8,14 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.mapper.MovieOrderMapper;
 import com.example.backend.query.order.MovieOrderListQuery;
 import com.example.backend.query.order.MovieOrderSaveQuery;
+import com.example.backend.query.order.UpdateOrderStateQuery;
 import com.example.backend.response.order.OrderListResponse;
 import com.example.backend.service.MovieOrderService;
 import com.example.backend.utils.MessageUtils;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,14 +28,13 @@ public class MovieOrderController {
   MovieOrderMapper movieOrderMapper;
 
   @SaCheckLogin
-  @PostMapping("/api/order/create")
+  @PostMapping("/api/movieOrder/create")
   public RestBean<Null> createOrder(@RequestBody @Validated MovieOrderSaveQuery query) {
     movieOrderService.createOrder(query);
 
     return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
-  @SaCheckLogin
-  @PostMapping("/api/order/list")
+  @PostMapping("/api/admin/movieOrder/list")
   public RestBean<List<OrderListResponse>> orderList(@RequestBody MovieOrderListQuery query) {
     Page<OrderListResponse> page = new Page<>(query.getPage(), query.getPageSize());
     IPage<OrderListResponse> list = movieOrderMapper.orderList(query, page);
@@ -45,8 +42,16 @@ public class MovieOrderController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
   @SaCheckLogin
+  @CheckPermission(code ="movieOrder.updateOrderState")
+  @PostMapping("/api/admin/movieOrder/updateOrderState")
+  public RestBean<Null> updateOrderState(@RequestBody UpdateOrderStateQuery query) {
+    movieOrderService.updateOrderState(query);
+
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+  }
+  @SaCheckLogin
   @CheckPermission(code ="movieOrder.remove")
-  @PostMapping("/api/order/remove")
+  @DeleteMapping("/api/admin/movieOrder/remove")
   public RestBean<Null> removeOrder(@RequestParam("id") Integer id) {
     movieOrderMapper.deleteById(id);
 

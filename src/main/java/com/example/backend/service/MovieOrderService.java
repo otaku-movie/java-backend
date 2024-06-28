@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.entity.MovieOrder;
 import com.example.backend.entity.MovieTicketType;
@@ -14,6 +15,7 @@ import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.mapper.MovieTicketTypeMapper;
 import com.example.backend.mapper.SelectSeatMapper;
 import com.example.backend.query.order.MovieOrderSaveQuery;
+import com.example.backend.query.order.UpdateOrderStateQuery;
 import com.example.backend.response.UserSelectSeat;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -122,4 +125,85 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     selectSeatService.saveBatch(newSelectSeat);
   }
 
+  List<SelectSeat> findSelectSeat (Integer movieOrderId) {
+    QueryWrapper querySelectSeatWrapper = new QueryWrapper();
+    querySelectSeatWrapper.eq("movie_order_id", movieOrderId);
+
+    List<SelectSeat> userSeatList = selectSeatMapper.selectList(querySelectSeatWrapper);
+
+    return userSeatList;
+  }
+  void removeSeat (List<SelectSeat> userSeatList) {
+    SelectSeat seatItem = userSeatList.get(0);
+    List<Integer> x = userSeatList.stream().map(item -> item.getX()).toList();
+    List<Integer> y = userSeatList.stream().map(item -> item.getY()).toList();
+
+    selectSeatMapper.deleteSeat(seatItem.getMovieShowTimeId(), seatItem.getTheaterHallId(), seatItem.getUserId(), x, y);
+  }
+  @Transactional
+  public  void updateOrderState(UpdateOrderStateQuery query) {
+    MovieOrder movieOrder = movieOrderMapper.selectById(query.getId());
+
+    // 订单已创建
+    if (movieOrder.getOrderState() == OrderState.order_created.getCode()) {
+      // 订单已完成 (修改订单状态为已完成，座位状态为已售出，支付状态为已完成)
+      if (query.getOrderState() == OrderState.order_succeed.getCode()) {
+        // 查询之前的选座
+        List<SelectSeat> userSeatList = findSelectSeat(query.getId());
+
+        // 删除旧的选座
+        this.removeSeat(userSeatList);
+
+        // 创建新的选座
+        List<SelectSeat> newSeatData = userSeatList.stream().map(item -> {
+          item.setSelectSeatState(SeatState.sold.getCode());
+
+          return item;
+        }).toList();
+
+        selectSeatService.saveBatch(newSeatData);
+
+        // 更新订单状态
+        movieOrder.setId(query.getId());
+        movieOrder.setOrderState(OrderState.order_succeed.getCode());
+        movieOrder.setPayState(PayState.payment_successful.getCode());
+        movieOrder.setPayTime(new Date());
+        movieOrder.setUpdateTime(new Date());
+
+        movieOrderMapper.updateById(movieOrder);
+      }
+      // 订单失败
+      if (query.getOrderState() == OrderState.order_failed.getCode()) {
+
+      }
+      // 取消订单 删除选座，设置订单状态为取消订单
+      if (query.getOrderState() == OrderState.canceled_order.getCode()) {
+        movieOrder.setId(query.getId());
+        movieOrder.setOrderState(OrderState.canceled_order.getCode());
+
+        movieOrderMapper.updateById(movieOrder);
+
+        // 查询之前的选座
+        List<SelectSeat> userSeatList = findSelectSeat(query.getId());
+
+        // 删除旧的选座
+        QueryWrapper deleteQueryWrapper = new QueryWrapper();
+        deleteQueryWrapper.eq("movie_order_id", query.getId());
+
+        selectSeatMapper.delete(deleteQueryWrapper);
+      }
+      // 订单超时 删除选座，设置订单为超时订单
+      if (query.getOrderState() == OrderState.order_timeout.getCode()) {
+        movieOrder.setId(query.getId());
+        movieOrder.setOrderState(OrderState.order_timeout.getCode());
+
+        // 查询之前的选座
+        List<SelectSeat> userSeatList = findSelectSeat(query.getId());
+
+        // 删除旧的选座
+        this.removeSeat(userSeatList);
+      }
+    }
+
+  }
 }

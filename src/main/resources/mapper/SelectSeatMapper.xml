@@ -27,7 +27,7 @@
             <where>
                 select_seat.movie_show_time_id = #{movieShowTimeId} AND
                 select_seat.theater_hall_id = #{theaterHallId} AND
-                select_seat.user_id = #{userId} AND
+                select_seat.user_id = #{userId}
                 <if test="x != null and x.size() > 0">
                     <foreach collection="x" item="x" open="AND select_seat.x IN (" separator="," close=")">
                         #{x}
@@ -55,9 +55,9 @@
             seat_area.name as seat_area_name,
             seat_area.price as seat_area_price,
             seat_area.color as seat_area_color,
-            -- 判断当前用户是否选中
+            -- 判断当前用户是否选中，只处理未支付的，已支付的不考虑
             CASE
-                WHEN select_seat.user_id = #{userId} THEN true
+                WHEN select_seat.user_id = #{userId} AND select_seat.select_seat_state != #{selectSeatState} THEN true
                 ELSE false
                 END AS selected,
             COALESCE(select_seat.select_seat_state, 1) AS select_seat_state

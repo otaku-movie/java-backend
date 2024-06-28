@@ -20,7 +20,9 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
         System.out.println(new Date().getTime());
         this.strictInsertFill(metaObject, "createTime", Date.class, new Date());
         this.strictInsertFill(metaObject, "updateTime", Date.class, new Date());
+        Object deletedField = getFieldValByName("deleted", metaObject);
         this.strictInsertFill(metaObject, "deleted", Integer.class, 0);
+
     }
 
     @Override

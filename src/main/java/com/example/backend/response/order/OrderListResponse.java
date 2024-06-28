@@ -11,6 +11,7 @@ import java.util.List;
 class Seat {
   Integer seat_x;
   Integer seat_y;
+  String movie_ticket_type_name;
 }
 
 @Data

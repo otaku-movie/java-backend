@@ -22,9 +22,6 @@ public class MovieOrder implements Serializable {
   @TableField(value = "movie_show_time_id")
   private Integer movieShowTimeId;
 
-  @TableField(value = "movie_id")
-  private Integer movieId;
-
   // 订单总价
   @TableField(value = "order_total")
   private BigDecimal orderTotal;
@@ -40,7 +37,7 @@ public class MovieOrder implements Serializable {
   private Integer payState;
 
   @TableField(value = "pay_time")
-  private Integer payTime;
+  private Date payTime;
 
   @TableField(value = "pay_method")
   private Integer orderMethod;

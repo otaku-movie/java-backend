@@ -22,6 +22,7 @@
         <collection property="seat" ofType="com.example.backend.response.order.Seat">
             <result property="seat_x" column="seat_x"></result>
             <result property="seat_y" column="seat_y"></result>
+            <result property="movie_ticket_type_name" column="movie_ticket_type_name"></result>
         </collection>
     </resultMap>
     <select id="orderList" resultMap="orderList">
@@ -43,14 +44,16 @@
             theater_hall.name as theater_hall_name,
             cinema_spec.name as theater_hall_spec_name,
             select_seat.x as seat_x,
-            select_seat.y as seat_y
+            select_seat.y as seat_y,
+            movie_ticket_type.name as movie_ticket_type_name
         FROM movie_order
             LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
             LEFT JOIN movie ON movie_show_time.movie_id = movie.id
             LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
             LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
             LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
-            LEFT JOIN select_seat ON select_seat.movie_order_id = movie_order.id AND select_seat.deleted = 0
+            LEFT JOIN select_seat ON select_seat.movie_order_id = movie_order.id
+            LEFT JOIN movie_ticket_type ON select_seat.movie_ticket_type_id = movie_ticket_type.id
         <where>
             movie_order.deleted = 0
             <if test="query.movieId != null and !query.movieId.equals('')">
