@@ -37,7 +37,8 @@
             movie.name as movie_name,
             movie.cover as movie_poster,
             cinema_spec.name as spec_name,
-            cinema_spec_spec.plus_price
+            cinema_spec_spec.plus_price,
+            select_seat.movie_ticket_type_id
         FROM
             select_seat
                 LEFT JOIN seat ON
@@ -54,7 +55,7 @@
         WHERE
             select_seat.user_id = #{userId} AND
             select_seat.movie_show_time_id = #{movieShowTimeId} AND
-            select_seat.movie_order_id IS NULL AND
+            select_seat.select_seat_state = #{seatState} AND
             select_seat.deleted = 0
     </select>
         <select id="movieShowTimeList" resultMap="movie_show_time_list">

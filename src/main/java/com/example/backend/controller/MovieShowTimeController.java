@@ -9,6 +9,7 @@ import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
+import com.example.backend.enumerate.SeatState;
 import com.example.backend.mapper.*;
 import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
@@ -121,7 +122,35 @@ public class MovieShowTimeController {
   @SaCheckLogin
   @PostMapping("/api/movie_show_time/select_seat/save")
   public RestBean<Object> saveSelectSeat(@RequestBody @Validated SaveSelectSeatQuery query) {
+    // 判断当前座位是否可选
+    QueryWrapper queryWrapper = new QueryWrapper();
+    List<Integer> queryX = query.getSeatPosition().stream().map(item -> item.getX()).toList();
+    List<Integer> queryY = query.getSeatPosition().stream().map(item -> item.getY()).toList();
 
+    queryWrapper.in("x", queryX);
+    queryWrapper.in("y", queryY);
+    queryWrapper.eq("theater_hall_id", query.getTheaterHallId());
+
+    List<SelectSeat> list = selectSeatMapper.selectList(queryWrapper);
+
+    for (SeatPosition item : query.getSeatPosition()) {
+      for (SelectSeat children : list) {
+        // 判断选择的座位是否已经存在
+        if (
+          query.getTheaterHallId() == children.getTheaterHallId() &&
+          item.getX() == children.getX() &&
+          item.getY() == children.getY()
+        ) {
+          // 如果存在的话，判断是否是同一个人选的
+          if (StpUtil.getLoginIdAsInt() != children.getUserId()) {
+            // 不是同一个人，报错座位冲突
+            return RestBean.error(ResponseCode.ERROR.getCode(), "座位冲突，冲突的座位为：" + item.getX() + "," + item.getY());
+          }
+        }
+      }
+    }
+
+    // 保存选座信息
     List<SelectSeat> data = query.getSeatPosition().stream().map(item -> {
       SelectSeat modal = new SelectSeat();
       modal.setMovieShowTimeId(query.getMovieShowTimeId());
@@ -129,13 +158,14 @@ public class MovieShowTimeController {
       modal.setX(item.getX());
       modal.setY(item.getY());
       modal.setUserId(StpUtil.getLoginIdAsInt());
+      modal.setSelectSeatState(SeatState.locked.getCode());
 
       return modal;
     }).toList();
-    QueryWrapper queryWrapper = new QueryWrapper();
-    queryWrapper.eq("movie_show_time_id", query.getMovieShowTimeId());
-    selectSeatService.remove(queryWrapper);
+    List<Integer> x = query.getSeatPosition().stream().map(item -> item.getX()).toList();
+    List<Integer> y = query.getSeatPosition().stream().map(item -> item.getY()).toList();
 
+    selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), query.getTheaterHallId(), StpUtil.getLoginIdAsInt(), x, y);
     selectSeatService.saveBatch(data);
 
     return RestBean.success(null, MessageUtils.getMessage("success.save"));
@@ -145,7 +175,7 @@ public class MovieShowTimeController {
   public RestBean<List<UserSelectSeat>> selectSeatList(
     @RequestParam("movieShowTimeId") Integer movieShowTimeId
   ) {
-    List<UserSelectSeat> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId);
+    List<UserSelectSeat> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId,SeatState.locked.getCode() );
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }

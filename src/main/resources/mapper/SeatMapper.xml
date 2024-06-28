@@ -8,14 +8,14 @@
     </delete>
     <resultMap id="seatListResponseMap" type="com.example.backend.response.SeatListResponse">
         <id property="id" column="id"/>
-        <result property="theaterHallId" column="theater_hall_id"/>
+        <result property="theater_hall_id" column="theater_hall_id"/>
         <result property="x" column="x_axis"/>
         <result property="y" column="y_axis"/>
         <result property="z" column="z_axis"/>
         <result property="show" column="show"/>
         <result property="disabled" column="disabled"/>
-        <result property="wheelChair" column="wheel_chair"/>
-        <result property="seatPositionGroup" column="seat_position_group"/>
+        <result property="wheel_chair" column="wheel_chair"/>
+        <result property="seat_position_group" column="seat_position_group"/>
         <association property="area" javaType="com.example.backend.response.SeatAreaResponse">
             <id property="id" column="seat_area_id"/>
             <result property="name" column="seat_area_name"/>

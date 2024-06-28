@@ -163,7 +163,6 @@ public class AdminUserController {
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.emailRepeat"));
       }
-
     }
   }
 }

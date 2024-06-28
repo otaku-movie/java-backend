@@ -13,6 +13,9 @@ public class UserSelectSeat {
   @JsonProperty("movie_show_time_id")
   private Integer movieShowTimeId;
 
+  @JsonProperty("movie_ticket_type_id")
+  private Integer movieTicketTypeId;
+
   @JsonProperty("theater_hall_id")
   private Integer theaterHallId;
 

@@ -17,7 +17,7 @@ class SeatAreaResponse {
 @Data
 public class SeatListResponse {
   Integer id;
-  Integer theaterHallId;
+  Integer theater_hall_id;
   Integer x;
   Integer y;
   Integer z;
@@ -25,8 +25,8 @@ public class SeatListResponse {
   Boolean show;
   Boolean disabled;
   // 轮椅座
-  Boolean wheelChair;
-  String seatPositionGroup;
-  Integer seatType;
+  Boolean wheel_chair;
+  String seat_position_group;
   SeatAreaResponse area;
+  Integer select_seat_state;
 }

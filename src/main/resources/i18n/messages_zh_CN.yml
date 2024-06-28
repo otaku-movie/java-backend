@@ -15,6 +15,7 @@ error:
   timeConflict: "时间冲突"
   emailRepeat: "邮箱已存在"
   uploadError: "上传失败"
+  get: "{0}不能为空"
 repeat:
   path: "路径"
   code: "code"

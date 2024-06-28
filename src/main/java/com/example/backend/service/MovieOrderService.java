@@ -8,6 +8,7 @@ import com.example.backend.entity.MovieTicketType;
 import com.example.backend.entity.SelectSeat;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.PayState;
+import com.example.backend.enumerate.SeatState;
 import com.example.backend.mapper.MovieOrderMapper;
 import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.mapper.MovieTicketTypeMapper;
@@ -53,7 +54,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   @Transactional
   public void createOrder(MovieOrderSaveQuery query) {
     Integer movieShowTimeId = query.getMovieShowTimeId();
-    List<UserSelectSeat> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId);
+    List<UserSelectSeat> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId, SeatState.locked.getCode());
 
     List<SeatGroupQuery> data = query.getSeat().stream().map(item -> {
       SeatGroupQuery modal = new SeatGroupQuery();
@@ -91,13 +92,15 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     movieOrder.setMovieShowTimeId(query.getMovieShowTimeId());
     movieOrder.setOrderState(OrderState.order_created.getCode());
     movieOrder.setOrderTotal(total);
-//    movieOrder.setPayTotal(total);
     movieOrder.setPayState(PayState.waiting_for_payment.getCode());
 
     movieOrderMapper.insert(movieOrder);
 
+    List<Integer> x = data.stream().map(item -> item.getX()).toList();
+    List<Integer> y = data.stream().map(item -> item.getY()).toList();
+
     // 移除旧的选座信息
-    selectSeatMapper.deleteSeat(query.getMovieShowTimeId());
+    selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), data.get(0).getTheaterHallId(), StpUtil.getLoginIdAsInt(), x, y);
 
     // 更新用户选座信息
     List<SelectSeat> newSelectSeat = data.stream().map(item -> {
@@ -110,6 +113,8 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
       userSelectSeat.setY(item.getY());
       userSelectSeat.setMovieTicketTypeId(item.getMovieTicketTypeId());
       userSelectSeat.setMovieOrderId(movieOrder.getId());
+      userSelectSeat.setSelectSeatState(SeatState.locked.getCode());
+      userSelectSeat.setMovieTicketTypeId(item.getMovieTicketTypeId());
 
       return  userSelectSeat;
     }).toList();

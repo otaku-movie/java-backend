@@ -1,5 +1,6 @@
 package com.example.backend.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.entity.*;
 import com.example.backend.mapper.*;
@@ -42,7 +43,8 @@ public class SelectSeatService extends ServiceImpl<SelectSeatMapper, SelectSeat>
   SeatService seatService;
 
   public Object selectSeatList(Integer theaterHallId, Integer movieShowTimeId) {
-    List<SeatListResponse> seatList = selectSeatMapper.selectSeatList(theaterHallId, movieShowTimeId);
+    System.out.println("loginId:" + StpUtil.getLoginIdAsInt());
+    List<SeatListResponse> seatList = selectSeatMapper.selectSeatList(theaterHallId, movieShowTimeId, StpUtil.getLoginIdAsInt());
 
     List result = new ArrayList();
 

@@ -103,7 +103,10 @@ public class RoleController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
   @GetMapping("/api/admin/permission/role/permissionList")
-  public RestBean<List<ButtonResponse>> permissionList(@RequestParam Integer id)  {
+  public RestBean<List<ButtonResponse>> permissionList(@RequestParam @Validated  Integer id)  {
+    if (id == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage("error.parameterError"));
+    }
     QueryWrapper wrapper = new QueryWrapper<>();
 
     List list = roleMapper.permissionList(id);
@@ -111,7 +114,7 @@ public class RoleController {
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/admin/permission/role/permission")
-  public RestBean<List<ButtonResponse>> permission(@RequestParam Integer id)  {
+  public RestBean<List<ButtonResponse>> permission(@RequestParam @Validated @NotNull(message = "{validator.error.get}") Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
     List<ButtonResponse> list = roleMapper.rolePermission(id);

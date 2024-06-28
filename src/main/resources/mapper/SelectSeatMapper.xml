@@ -3,15 +3,16 @@
 <mapper namespace="com.example.backend.mapper.SelectSeatMapper">
     <resultMap id="seatListResponseMap" type="com.example.backend.response.SeatListResponse">
         <id property="id" column="id"/>
-        <result property="theaterHallId" column="theater_hall_id"/>
+        <result property="theater_hall_id" column="theater_hall_id"/>
         <result property="x" column="x_axis"/>
         <result property="y" column="y_axis"/>
         <result property="z" column="z_axis"/>
         <result property="selected" column="selected"/>
         <result property="show" column="show"/>
         <result property="disabled" column="disabled"/>
-        <result property="wheelChair" column="wheel_chair"/>
-        <result property="seatPositionGroup" column="seat_position_group"/>
+        <result property="wheel_chair" column="wheel_chair"/>
+        <result property="seat_position_group" column="seat_position_group"/>
+        <result property="select_seat_state" column="select_seat_state"/>
         <association property="area" javaType="com.example.backend.response.SeatAreaResponse">
             <id property="id" column="seat_area_id"/>
             <result property="name" column="seat_area_name"/>
@@ -20,7 +21,24 @@
         </association>
     </resultMap>
     <delete id="deleteSeat">
-        DELETE FROM select_seat WHERE select_seat.movie_order_id IS NULL AND select_seat.movie_show_time_id = #{movieShowTimeId}
+        DELETE
+            FROM
+                select_seat
+            <where>
+                select_seat.movie_show_time_id = #{movieShowTimeId} AND
+                select_seat.theater_hall_id = #{theaterHallId} AND
+                select_seat.user_id = #{userId} AND
+                <if test="x != null and x.size() > 0">
+                    <foreach collection="x" item="x" open="AND select_seat.x IN (" separator="," close=")">
+                        #{x}
+                    </foreach>
+                </if>
+                <if test="y != null and y.size() > 0">
+                    <foreach collection="y" item="y" open="AND select_seat.y IN (" separator="," close=")">
+                        #{y}
+                    </foreach>
+                </if>
+            </where>
     </delete>
     <select id="selectSeatList" resultMap="seatListResponseMap">
         SELECT
@@ -37,10 +55,12 @@
             seat_area.name as seat_area_name,
             seat_area.price as seat_area_price,
             seat_area.color as seat_area_color,
+            -- 判断当前用户是否选中
             CASE
-                WHEN select_seat.user_id IS NOT NULL THEN true
+                WHEN select_seat.user_id = #{userId} THEN true
                 ELSE false
-                END AS selected
+                END AS selected,
+            COALESCE(select_seat.select_seat_state, 1) AS select_seat_state
         FROM seat
                  LEFT JOIN select_seat ON
                     seat.theater_hall_id = select_seat.theater_hall_id AND

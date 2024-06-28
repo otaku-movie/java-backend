@@ -3,6 +3,7 @@ package com.example.backend.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.enumerate.SeatState;
 import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.entity.MovieShowTime;
 import com.example.backend.response.MovieShowTimeList;
@@ -15,7 +16,7 @@ import java.util.List;
 
 @Mapper
 public interface MovieShowTimeMapper extends BaseMapper<MovieShowTime> {
-  List<UserSelectSeat> userSelectSeat(Integer userId, Integer movieShowTimeId);
+  List<UserSelectSeat> userSelectSeat(Integer userId, Integer movieShowTimeId, Integer seatState);
   IPage<MovieShowTimeList> movieShowTimeList(MovieShowTimeListQuery query, Integer orderState, Page<MovieShowTime> page);
   List<StatisticsOfDailyMovieScreenings>  StatisticsOfDailyMovieScreenings();
 }

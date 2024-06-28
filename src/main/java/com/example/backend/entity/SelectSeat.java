@@ -29,13 +29,15 @@ public class SelectSeat {
   @TableField("y")
   Integer y;
 
+  @TableField("select_seat_state")
+  Integer selectSeatState;
+
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;
 
   @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
   Date updateTime;
 
-  @TableLogic
   @TableField(value = "deleted", fill = FieldFill.INSERT)
   private Integer deleted;
 }
