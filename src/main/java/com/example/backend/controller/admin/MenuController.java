@@ -1,7 +1,9 @@
 package com.example.backend.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Menu;
 import com.example.backend.enumerate.ResponseCode;
@@ -73,6 +75,8 @@ public class MenuController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
+  @SaCheckLogin
+  @CheckPermission(code = "menu.remove")
   @DeleteMapping("/api/admin/permission/menu/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
@@ -81,6 +85,8 @@ public class MenuController {
 
     return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
+  @SaCheckLogin
+  @CheckPermission(code = "menu.save")
   @PostMapping("/api/admin/permission/menu/save")
   public RestBean<List<Object>> save(@RequestBody @Validated MenuSaveQuery query)  {
     Menu data = new Menu();

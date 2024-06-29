@@ -54,7 +54,7 @@ public class LevelController {
   @PostMapping("/api/movie/level/list")
   public RestBean<List<Object>> list(@RequestBody LevelListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    wrapper.orderByDesc("update_time");
+//    wrapper.orderByDesc("update_time");
     Page<Level> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getName() != null && query.getName() != "") {
