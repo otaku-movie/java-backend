@@ -12,4 +12,6 @@ public class ChartResponse {
   Long showTimeCount;
   List<StatisticsUserCount> statisticsUserData;
   List<StatisticsOfDailyMovieScreenings> statisticsOfDailyMovieScreenings;
+  List<DailyOrderStatistics> dailyOrderStatistics;
+  List<DailyTransactionAmount> dailyTransactionAmount;
 }

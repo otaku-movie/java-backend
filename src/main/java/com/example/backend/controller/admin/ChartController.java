@@ -2,6 +2,8 @@ package com.example.backend.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.entity.RestBean;
+import com.example.backend.enumerate.OrderState;
+import com.example.backend.enumerate.PayState;
 import com.example.backend.mapper.*;
 import com.example.backend.response.chart.ChartResponse;
 import com.example.backend.response.chart.StatisticsUserCount;
@@ -41,6 +43,10 @@ public class ChartController {
     chartResponse.setShowTimeCount(movieShowTimeMapper.selectCount(userQueryWrapper));
     chartResponse.setStatisticsUserData(userMapper.StatisticsOfDailyRegisteredUsers());
     chartResponse.setStatisticsOfDailyMovieScreenings(movieShowTimeMapper.StatisticsOfDailyMovieScreenings());
+    // 统计日订单数和订单状态
+    chartResponse.setDailyOrderStatistics(movieOrderMapper.DailyOrderStatistics());
+    // 统计日成交金额
+    chartResponse.setDailyTransactionAmount(movieOrderMapper.DailyTransactionAmount(OrderState.order_succeed.getCode(), PayState.payment_successful.getCode()));
 
     return RestBean.success(chartResponse, MessageUtils.getMessage("success.get"));
   }

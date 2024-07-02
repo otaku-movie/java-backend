@@ -76,4 +76,76 @@
             </if>
         </where>
     </select>
+    <resultMap id="DailyOrderStatistics" type="com.example.backend.response.chart.DailyOrderStatistics">
+        <result property="date" column="date"></result>
+        <result property="count" column="count"></result>
+        <collection property="order_state" ofType="com.example.backend.response.chart.OrderState">
+            <result property="state" column="state"></result>
+            <result property="count" column="count"></result>
+        </collection>
+    </resultMap>
+    <select id="DailyOrderStatistics" resultMap="DailyOrderStatistics">
+        WITH order_total AS (
+            SELECT
+                TO_CHAR(movie_order.create_time, 'YYYY-MM-DD') AS date,
+                COUNT(*) AS count
+            FROM movie_order
+            WHERE movie_order.deleted = 0
+            GROUP BY date
+            ORDER BY date DESC
+            LIMIT 30
+        ),
+        --- 统计每日订单数量
+             order_state_count AS (
+                 SELECT
+                     TO_CHAR(movie_order.create_time, 'YYYY-MM-DD') AS date,
+                     movie_order.order_state,
+                     COUNT(*) AS state_count
+                 FROM movie_order
+                 WHERE movie_order.deleted = 0
+                 GROUP BY date, movie_order.order_state
+             )
+        --- 统计每日不同订单状态的数量
+        SELECT
+            order_total.date,
+            order_total.count,
+            order_state_count.order_state AS state,
+            order_state_count.state_count
+        FROM
+            order_total
+                LEFT JOIN
+            order_state_count
+            ON
+                order_total.date = order_state_count.date
+        ORDER BY
+            order_total.date ASC
+    </select>
+    <resultMap id="DailyTransactionAmount" type="com.example.backend.response.chart.DailyTransactionAmount">
+        <result property="date" column="date"></result>
+        <result property="total_amount" column="total_amount"></result>
+    </resultMap>
+    <select id="DailyTransactionAmount" resultMap="DailyTransactionAmount">
+        WITH daily_transaction_summary AS (
+            SELECT
+                TO_CHAR(movie_order.create_time, 'YYYY-MM-DD') AS date,
+                SUM(movie_order.pay_total) AS total_amount
+            FROM movie_order
+            WHERE
+                    movie_order.deleted = 0 AND
+                    movie_order.order_state = #{orderState} AND
+                    movie_order.pay_state = #{payState}
+            GROUP BY date
+            ORDER BY date DESC
+            LIMIT 30
+        )
+
+        SELECT
+            date,
+            total_amount
+        FROM
+            daily_transaction_summary
+        ORDER BY
+            date ASC
+
+    </select>
 </mapper>
