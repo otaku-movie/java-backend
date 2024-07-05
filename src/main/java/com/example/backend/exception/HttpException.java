@@ -36,12 +36,12 @@ public class HttpException {
   }
 
 
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<RestBean<Null>> handleException(Exception ex) {
-    ex.printStackTrace();  // 打印异常栈信息
-    RestBean<Null> result = RestBean.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), MessageUtils.getMessage("error.systemError"));
-    return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
-  }
+//  @ExceptionHandler(Exception.class)
+//  public ResponseEntity<RestBean<Null>> handleException(Exception ex) {
+//    ex.printStackTrace();  // 打印异常栈信息
+//    RestBean<Null> result = RestBean.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), MessageUtils.getMessage("error.systemError"));
+//    return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
+//  }
 
   // 全局登录异常拦截（拦截项目中的NotLoginException异常）
   @ExceptionHandler(NotLoginException.class)

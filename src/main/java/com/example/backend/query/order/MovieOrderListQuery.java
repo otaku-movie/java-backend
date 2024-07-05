@@ -2,6 +2,8 @@ package com.example.backend.query.order;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class MovieOrderListQuery {
   private Integer page;
@@ -12,6 +14,7 @@ public class MovieOrderListQuery {
   private Integer theaterHallId;
   private Integer orderState;
   private Integer payState;
+  private List<String> orderTime;
 
   public MovieOrderListQuery() {
     this.page = 1; // 默认页数为1

@@ -1,97 +1,139 @@
 success:
-  save: "保存に成功しました。"
-  remove: "削除に成功しました。"
-  get: "データを取得しました。"
-  login: "ログインに成功しました。"
-  uploadSuccess: "アップロードに成功しました。"
-  success: "成功しました。"
+  save: "保存に成功しました"
+  remove: "削除に成功しました"
+  get: "取得に成功しました"
+  login: "ログインに成功しました"
+  uploadSuccess: "アップロードに成功しました"
+  success: "success"
 error:
-  systemError: "システムエラーが発生しました。"
-  userNotFound: "ユーザーが見つかりませんでした。"
-  loginExpired: "ログインの有効期限が切れました、再度ログインしてください。"
-  parameterError: "パラメーターエラーが発生しました。"
-  repeat: "このデータは既に存在します。"
-  notPermission: "権限がありません。"
-  timeConflict: "時間が競合しています。"
-  emailRepeat: "このメールアドレスは既に存在します。"
-  uploadError: "アップロードに失敗しました。"
+  systemError: "システムエラーが発生しました"
+  userNotFound: "ユーザーが見つかりませんでした"
+  loginExpired: "ログインの期限が切れました。再度ログインしてください"
+  parameterError: "パラメーターエラーです"
+  repeat: "{0}は既に存在しています"
+  notPermission: "権限がありません"
+  timeConflict: "時間の衝突があります"
+  emailRepeat: "メールアドレスは既に存在しています"
+  uploadError: "アップロードに失敗しました"
+  get: "{0}は必須です"
+repeat:
+  path: "パス"
+  code: "コード"
+  roleName: "役割名"
+  movieTicketTypeName: "映画チケットの種類"
+  theaterHallName: "シアターホール名"
 validator:
   # ログイン
   login:
     password:
-      required: "パスワードを入力してください。"
+      required: "パスワードは必須です"
     email:
-      required: "メールアドレスを入力してください。"
-      notEmail: "有効なメールアドレスではありません。"
-  # 登録
+      required: "メールアドレスは必須です"
+      notEmail: "有効なメールアドレスではありません"
+  #  登録
   register:
     name:
-      required: "ユーザー名を入力してください。"
+      required: "ユーザー名は必須です"
     password:
-      required: "パスワードを入力してください。"
+      required: "パスワードは必須です"
     email:
-      required: "メールアドレスを入力してください。"
-      notEmail: "有効なメールアドレスではありません。"
+      required: "メールアドレスは必須です"
+      notEmail: "有効なメールアドレスではありません"
   # 映画コメント
   movieComment:
     movieId:
-      required: "movieIdを入力してください。"
+      required: "movieIdは必須です"
     content:
-      required: "コメント内容を入力してください。"
-      max: "コメントは1000文字以内で入力してください。"
+      required: "コメント内容は必須です"
+      max: "コメントは1000文字以内で入力してください"
   # 映画返信
   movieReply:
     movieCommentId:
-      required: "movieCommentIdを入力してください。"
+      required: "movieCommentIdは必須です"
     content:
-      required: "コメント内容を入力してください。"
-      max: "コメントは1000文字以内で入力してください。"
+      required: "コメント内容は必須です"
+      max: "コメントは1000文字以内で入力してください"
   # 職位保存
   savePosition:
     name:
-      required: "職位を入力してください。"
-  # 演職員保存
+      required: "職位は必須です"
+  # スタッフ保存
   saveStaff:
     name:
-      required: "名前を入力してください。"
+      required: "名前は必須です"
     description:
-      required: "説明を入力してください。"
-  # 劇場保存
+      required: "説明は必須です"
+  # シアターホール保存
   saveTheaterHall:
     cinemaId:
-      required: "cinemaIdを入力してください。"
+      required: "cinemaIdは必須です"
+    cinemaSpecId:
+      required: "cinemaSpecIdは必須です"
+    rowCount:
+      required: "行数は必須です"
+    columnCount:
+      required: "列数は必須です"
     name:
-      required: "名前を入力してください。"
-  # API保存
-  saveApi:
-    code:
-      required: "コードを入力してください。"
+      required: "名前は必須です"
   saveButton:
     i18nKey:
-      required: "i18nKeyを入力してください。"
-    code:
-      required: "コードを入力してください。"
+      required: "i18nKeyは必須です"
     menuId:
-      required: "menuIdを入力してください。"
-    apiId:
-      required: "apiIdを入力してください。"
+      required: "menuIdは必須です"
+    apiCode:
+      required: "apiCodeは必須です"
   saveMenu:
     name:
-      required: "名前を入力してください。"
+      required: "名前は必須です"
     i18nKey:
-      required: "i18nKeyを入力してください。"
+      required: "i18nKeyは必須です"
     path:
-      required: "パスを入力してください。"
+      required: "パスは必須です"
     pathName:
-      required: "パス名を入力してください。"
+      required: "パス名は必須です"
   saveCharacter:
     name:
-      required: "名前を入力してください。"
+      required: "名前は必須です"
   saveUser:
     name:
-      required: "ユーザー名を入力してください。"
+      required: "ユーザー名は必須です"
     password:
-      required: "パスワードを入力してください。"
+      required: "パスワードは必須です"
     email:
-      required: "メールアドレスを入力してください。"
-      notEmail: "有効なメールアドレスではありません。"
+      required: "メールアドレスは必須です"
+      notEmail: "有効なメールアドレスではありません"
+  saveMovieTicketType:
+    name:
+      required: "名前は必須です"
+    price:
+      required: "価格は必須です"
+    cinemaId:
+      required: "cinemaIdは必須です"
+  saveSeat:
+    theaterHallId:
+      required: "シアターホールidは必須です"
+  saveSelectSeat:
+    movieShowTimeId:
+      required: "映画の上映時間は必須です"
+    theaterHallId:
+      required: "シアターホールidは必須です"
+    seatPosition:
+      required: "席の位置は必須です"
+    x:
+      required: "座席のx座標は必須です"
+    y:
+      required: "座席のy座標は必須です"
+  saveCinema:
+    name:
+      required: "名前は必須です"
+    description:
+      required: "説明は必須です"
+    address:
+      required: "住所は必須です"
+    tel:
+      required: "電話番号は必須です"
+  saveDict:
+    name:
+      required: "名前は必須です"
+    code:
+      required: "コードは必須です"

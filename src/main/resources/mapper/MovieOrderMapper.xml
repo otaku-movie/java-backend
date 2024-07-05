@@ -74,6 +74,20 @@
             <if test="query.payState != null and !query.payState.equals('')">
                 AND movie_order.pay_state = #{query.payState}
             </if>
+            -- 根据订单时间查询
+            <if test="query.orderTime != null and query.orderTime[0] != null and !query.orderTime[0].isEmpty() and query.orderTime[1] != null and !query.orderTime[1].isEmpty()">
+                AND movie_order.create_time &gt;= TO_TIMESTAMP(#{query.orderTime[0]}, 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE 'UTC'
+                AND movie_order.create_time &lt;= TO_TIMESTAMP(#{query.orderTime[1]}, 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE 'UTC'
+            </if>
+            <!-- 只有 start 时间 -->
+            <if test="query.orderTime != null and query.orderTime[0] != null and !query.orderTime[0].isEmpty() and (query.orderTime[1] == null or query.orderTime[1].isEmpty())">
+                AND movie_order.create_time &gt;= TO_TIMESTAMP(#{query.orderTime[0]}, 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE 'UTC'
+            </if>
+            <!-- 只有 end 时间 -->
+            <if test="query.orderTime != null and query.orderTime[0] == null or query.orderTime[0].isEmpty() and query.orderTime[1] != null and !query.orderTime[1].isEmpty()">
+                AND movie_order.create_time &lt;= TO_TIMESTAMP(#{query.orderTime[1]}, 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE 'UTC'
+            </if>
+
         </where>
     </select>
     <resultMap id="DailyOrderStatistics" type="com.example.backend.response.chart.DailyOrderStatistics">

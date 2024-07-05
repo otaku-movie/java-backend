@@ -9,9 +9,11 @@ import com.example.backend.utils.MessageUtils;
 import com.example.backend.utils.Utils;
 import com.fasterxml.uuid.Generators;
 import io.minio.MinioClient;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Null;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -95,15 +97,16 @@ public class UploadController {
       map.setPath(path);
       map.setUrl(url);
 
-      return RestBean.success(map, MessageUtils.getMessage("successs.uploadSuccess"));
+      return RestBean.success(map, MessageUtils.getMessage("success.uploadSuccess"));
     } catch (IOException e) {
       e.printStackTrace();
       return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.uploadError"));
     }
   }
 
+
   @DeleteMapping("/api/deleteFile")
-  public RestBean<Null> delete(@RequestParam String path) {
+  public RestBean<Null> delete(@Validated @RequestParam @NotEmpty(message = "path 不能为空") String path ) {
     S3Client s3Client = S3Client.builder()
       .region(Region.US_EAST_1)  // 指定区域
       .endpointOverride(URI.create(minioConfiguration.getEndpoint()))
@@ -122,6 +125,6 @@ public class UploadController {
 
     s3Client.deleteObject(deleteObjectRequest);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
 }
