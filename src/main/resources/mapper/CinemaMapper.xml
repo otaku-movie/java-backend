@@ -9,8 +9,10 @@
         <result property="address" column="address"></result>
         <result property="tel" column="tel"></result>
         <result property="home_page" column="home_page"></result>
-        <result property="max_select_seat_count" column="maxSelectSeatCount"></result>
+        <result property="max_select_seat_count" column="max_select_seat_count"></result>
         <result property="theater_count" column="theater_count"></result>
+        <result property="brand_id" column="brand_id"></result>
+        <result property="brand_name" column="brand_name"></result>
         <collection property="spec" ofType="com.example.backend.response.CinemaSpec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -35,9 +37,12 @@
             cinema.description,
             cinema.address,
             cinema.home_page,
+            cinema.tel,
             cinema.max_select_seat_count,
             cinema_spec."id" as spec_id,
             cinema_spec."name" as spec_name,
+            brand.id as brand_id,
+            brand.name as brand_name,
             (
                 SELECT
                     COUNT(theater_hall.cinema_id)
@@ -47,6 +52,7 @@
                         theater_hall.deleted = 0
                 ) AS theater_count
             FROM cinema
+            LEFT JOIN brand ON cinema.brand_id = brand.id
             LEFT JOIN cinema_spec_spec ON cinema_spec_spec.cinema_id = cinema.id
             LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             <where>
@@ -61,24 +67,28 @@
         </select>
         <select id="cinemaDetail" resultMap="cinemaList">
             SELECT
-            cinema.id,
-            cinema.name,
-            cinema.description,
-            cinema.address,
-            cinema.home_page,
-            cinema.max_select_seat_count,
-            cinema_spec.id AS spec_id,
-            cinema_spec.name AS spec_name,
-            cinema_spec_spec.plus_price,
-            (
-            SELECT
-            COUNT(theater_hall.cinema_id)
-            FROM theater_hall
-            WHERE
-            theater_hall.cinema_id = cinema.id AND
-            theater_hall.deleted = 0
-            ) AS theater_count
+                cinema.id,
+                cinema.name,
+                cinema.description,
+                cinema.address,
+                cinema.home_page,
+                cinema.max_select_seat_count,
+                cinema.tel,
+                cinema_spec.id AS spec_id,
+                cinema_spec.name AS spec_name,
+                cinema_spec_spec.plus_price,
+                brand.id as brand_id,
+                brand.name as brand_name,
+                (
+                    SELECT
+                        COUNT(theater_hall.cinema_id)
+                        FROM theater_hall
+                    WHERE
+                        theater_hall.cinema_id = cinema.id AND
+                        theater_hall.deleted = 0
+                ) AS theater_count
             FROM cinema
+            LEFT JOIN brand ON cinema.brand_id = brand.id
             LEFT JOIN cinema_spec_spec ON cinema_spec_spec.cinema_id = cinema.id
             LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             WHERE

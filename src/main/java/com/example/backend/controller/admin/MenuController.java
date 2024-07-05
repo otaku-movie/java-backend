@@ -24,13 +24,11 @@ import java.util.Objects;
 @Data
 class MenuSaveQuery {
   Integer id;
-  @NotEmpty(message = "{validator.saveApi.name.required}")
-  String name;
-  @NotEmpty(message = "{validator.saveApi.i18nKey.required}")
+  @NotEmpty(message = "{validator.saveMenu.name.required}")
   String i18nKey;
-  @NotEmpty(message = "{validator.saveApi.path.required}")
+  @NotEmpty(message = "{validator.saveMenu.path.required}")
   String path;
-  @NotEmpty(message = "{validator.saveApi.pathName.required}")
+  @NotEmpty(message = "{validator.saveMenu.pathName.required}")
   String pathName;
   Boolean show;
   Integer parentId;
@@ -91,7 +89,6 @@ public class MenuController {
   public RestBean<List<Object>> save(@RequestBody @Validated MenuSaveQuery query)  {
     Menu data = new Menu();
 
-    data.setName(query.getName());
     data.setPath(query.getPath());
     data.setPathName(query.getPathName());
     data.setShow(query.getShow());

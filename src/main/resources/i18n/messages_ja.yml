@@ -22,6 +22,11 @@ repeat:
   roleName: "役割名"
   movieTicketTypeName: "映画チケットの種類"
   theaterHallName: "シアターホール名"
+  positionName: "ポジション名"
+  languageCode: "言語コード"
+  brandName: "ブランド名"
+  movieTagName: "タグ名"
+  showTimeTagName: "上映スケジュールタグ名"
 validator:
   # ログイン
   login:
@@ -63,6 +68,20 @@ validator:
       required: "名前は必須です"
     description:
       required: "説明は必須です"
+  saveBrand:
+    name:
+      required: "ブランドは空であってはなりません"
+  saveTag:
+    name:
+      required: "タグは空であってはなりません"
+  saveShowTimeTag:
+    name:
+      required: "上映スケジュールタグ名は空であってはなりません"
+  saveLanguage:
+    name:
+      required: "言語は空であってはなりません"
+    code:
+      required: "コードは空であってはなりません"
   # シアターホール保存
   saveTheaterHall:
     cinemaId:
@@ -126,6 +145,8 @@ validator:
   saveCinema:
     name:
       required: "名前は必須です"
+    brandId:
+      required: "brandIdは必須です"
     description:
       required: "説明は必須です"
     address:

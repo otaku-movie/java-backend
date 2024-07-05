@@ -3,37 +3,17 @@ package com.example.backend.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import net.sf.jsqlparser.expression.DateTimeLiteralExpression;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
-@TableName("cinema")
-public class Cinema {
+@TableName("movie_show_time_tag")
+public class MovieShowTimeTag {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;
 
   @TableField("name")
   String name;
-
-  @TableField("description")
-  String description;
-
-  @TableField("address")
-  String address;
-
-  @TableField("tel")
-  String tel;
-
-  @TableField("home_page")
-  String homePage;
-
-  @TableField("max_select_seat_count")
-  Integer maxSelectSeatCount;
-
-  @TableField("brand_id")
-  Integer brandId;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)

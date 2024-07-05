@@ -20,5 +20,7 @@ public class CinemaResponse {
   String home_page;
   Integer max_select_seat_count;
   Integer theater_count;
+  Integer brand_id;
+  String brand_name;
   List<CinemaSpec> spec;
 }

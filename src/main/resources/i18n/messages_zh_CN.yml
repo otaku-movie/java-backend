@@ -22,6 +22,11 @@ repeat:
   roleName: "角色名称"
   movieTicketTypeName: "电影票类型"
   theaterHallName: "影厅名称"
+  positionName: "职位名称"
+  languageCode: "语言Code"
+  brandName: "品牌名称"
+  movieTagName: "标签名称"
+  showTimeTagName: "场次标签名称"
 validator:
   # 登录
   login:
@@ -57,6 +62,20 @@ validator:
   savePosition:
     name:
       required: "职位不能为空"
+  saveBrand:
+    name:
+      required: "品牌不能为空"
+  saveTag:
+    name:
+      required: "标签不能为空"
+  saveShowTimeTag:
+    name:
+      required: "场次标签名称不能为空"
+  saveLanguage:
+    name:
+      required: "语言不能为空"
+    code:
+      required: "code 不能为空"
   # 保存演职员
   saveStaff:
     name:
@@ -124,6 +143,8 @@ validator:
     y:
       required: "座位的 y 坐标不能为空"
   saveCinema:
+    brandId:
+      required: "brandId 不能为空"
     name:
       required: "name 不能为空"
     description:

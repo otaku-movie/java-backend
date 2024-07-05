@@ -2,18 +2,15 @@ package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.entity.MovieTag;
 import com.example.backend.entity.RestBean;
-import com.example.backend.entity.Position;
 import com.example.backend.enumerate.ResponseCode;
-import com.example.backend.mapper.PositionMapper;
-
+import com.example.backend.mapper.MovieTagMapper;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,40 +18,39 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @Data
-class PositionSaveQuery {
+class MovieTagSaveQuery {
   Integer id;
-  @NotEmpty(message = "validator.savePosition.name.required")
+  @NotEmpty(message = "validator.saveMovieTag.name.required")
   String name;
 }
 
 
 @Data
-class PositionListQuery {
+class MovieTagListQuery {
   private Integer page;
   private Integer pageSize;
   private String name;
   private Integer id;
 
-  public PositionListQuery() {
+  public MovieTagListQuery() {
     this.page = 1; // 默认页数为1
     this.pageSize = 10; // 默认页面大小为10
   }
 }
 
 @RestController
-public class PositionController {
+public class MovieTagController {
   @Autowired
   private MessageUtils messageUtils;
   @Autowired
-  private PositionMapper positionMapper;
+  private MovieTagMapper movieTagMapper;
 
-  @PostMapping("/api/position/list")
-  public RestBean<List<Position>> list(@RequestBody PositionListQuery query)  {
+  @PostMapping("/api/movieTag/list")
+  public RestBean<List<MovieTag>> list(@RequestBody MovieTagListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<Position> page = new Page<>(query.getPage(), query.getPageSize());
+    Page<MovieTag> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.like("name", query.getName());
@@ -64,48 +60,48 @@ public class PositionController {
     }
     wrapper.orderByDesc("update_time");
 
-    IPage list = positionMapper.selectPage(page, wrapper);
+    IPage list = movieTagMapper.selectPage(page, wrapper);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/position/detail")
-  public RestBean<Position> detail (@RequestParam Integer id) {
+  @GetMapping("/api/movieTag/detail")
+  public RestBean<MovieTag> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
-    QueryWrapper<Position> queryWrapper = new QueryWrapper<>();
+    QueryWrapper<MovieTag> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
-    Position result = positionMapper.selectOne(queryWrapper);
+    MovieTag result = movieTagMapper.selectOne(queryWrapper);
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
-  @CheckPermission(code = "position.remove")
-  @DeleteMapping("/api/admin/position/remove")
+  @CheckPermission(code = "movieTag.remove")
+  @DeleteMapping("/api/admin/movieTag/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
-    positionMapper.deleteById(id);
+    movieTagMapper.deleteById(id);
 
     return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
-  @CheckPermission(code = "position.save")
-  @PostMapping("/api/admin/position/save")
-  public RestBean<List<Object>> save(@RequestBody @Validated PositionSaveQuery query) {
-    Position data = new Position();
+  @CheckPermission(code = "movieTag.save")
+  @PostMapping("/api/admin/movieTag/save")
+  public RestBean<List<Object>> save(@RequestBody @Validated MovieTagSaveQuery query) {
+    MovieTag data = new MovieTag();
     data.setName(query.getName());
 
-    QueryWrapper<Position> wrapper = new QueryWrapper<>();
+    QueryWrapper<MovieTag> wrapper = new QueryWrapper<>();
     wrapper.eq("name", query.getName());
 
-    String repeatMessage = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.positionName"));
+    String repeatMessage = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.movieTagName"));
 
     if (query.getId() == null) {
       // 新增操作
-      List<Position> list = positionMapper.selectList(wrapper);
+      List<MovieTag> list = movieTagMapper.selectList(wrapper);
       if (list.isEmpty()) {
-        positionMapper.insert(data);
+        movieTagMapper.insert(data);
         return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
@@ -113,13 +109,13 @@ public class PositionController {
     } else {
       // 更新操作
       wrapper.ne("id", query.getId());
-      Position find = positionMapper.selectOne(wrapper);
+      MovieTag find = movieTagMapper.selectOne(wrapper);
 
       if (find != null) {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       } else {
         data.setId(query.getId());
-        positionMapper.updateById(data);
+        movieTagMapper.updateById(data);
         return RestBean.success(null, MessageUtils.getMessage("success.save"));
       }
     }

@@ -15,6 +15,7 @@ import com.example.backend.response.CinemaResponse;
 import com.example.backend.service.CinemaSpecSpecService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,8 @@ class SaveCinemaQuery {
   private String homePage;
   @NotEmpty(message = "{validator.saveCinema.tel.required}")
   private String tel;
+  @NotNull(message = "{validator.saveCinema.brandId.required}")
+  private Integer brandId;
   private Integer maxSelectSeatCount;
   private List<Spec> spec;
 }
@@ -92,7 +95,9 @@ public class CinemaController {
     cinema.setDescription(query.getDescription());
     cinema.setMaxSelectSeatCount(query.getMaxSelectSeatCount());
 
-
+    if (query.getBrandId() != null) {
+      cinema.setBrandId(query.getBrandId());
+    }
 
     if (query.getId() == null) {
       cinemaMapper.insert(cinema);
@@ -124,8 +129,6 @@ public class CinemaController {
   @Transactional
   @PostMapping("/api/admin/cinema/save")
   public RestBean<String> save(@RequestBody @Validated() SaveCinemaQuery query) {
-
-
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
       wrapper.eq("name", query.getName());

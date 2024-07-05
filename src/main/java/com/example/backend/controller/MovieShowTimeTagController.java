@@ -2,18 +2,15 @@ package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.entity.MovieShowTimeTag;
 import com.example.backend.entity.RestBean;
-import com.example.backend.entity.Position;
 import com.example.backend.enumerate.ResponseCode;
-import com.example.backend.mapper.PositionMapper;
-
+import com.example.backend.mapper.MovieShowTimeTagMapper;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,40 +18,39 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @Data
-class PositionSaveQuery {
+class MovieShowTimeTagSaveQuery {
   Integer id;
-  @NotEmpty(message = "validator.savePosition.name.required")
+  @NotEmpty(message = "validator.saveMovieShowTimeTag.name.required")
   String name;
 }
 
 
 @Data
-class PositionListQuery {
+class MovieShowTimeTagListQuery {
   private Integer page;
   private Integer pageSize;
   private String name;
   private Integer id;
 
-  public PositionListQuery() {
+  public MovieShowTimeTagListQuery() {
     this.page = 1; // 默认页数为1
     this.pageSize = 10; // 默认页面大小为10
   }
 }
 
 @RestController
-public class PositionController {
+public class MovieShowTimeTagController {
   @Autowired
   private MessageUtils messageUtils;
   @Autowired
-  private PositionMapper positionMapper;
+  private MovieShowTimeTagMapper showTimeTagMapper;
 
-  @PostMapping("/api/position/list")
-  public RestBean<List<Position>> list(@RequestBody PositionListQuery query)  {
+  @PostMapping("/api/showTimeTag/list")
+  public RestBean<List<MovieShowTimeTag>> list(@RequestBody MovieShowTimeTagListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    Page<Position> page = new Page<>(query.getPage(), query.getPageSize());
+    Page<MovieShowTimeTag> page = new Page<>(query.getPage(), query.getPageSize());
 
     if (query.getName() != null && query.getName() != "") {
       wrapper.like("name", query.getName());
@@ -64,48 +60,48 @@ public class PositionController {
     }
     wrapper.orderByDesc("update_time");
 
-    IPage list = positionMapper.selectPage(page, wrapper);
+    IPage list = showTimeTagMapper.selectPage(page, wrapper);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/position/detail")
-  public RestBean<Position> detail (@RequestParam Integer id) {
+  @GetMapping("/api/showTimeTag/detail")
+  public RestBean<MovieShowTimeTag> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
-    QueryWrapper<Position> queryWrapper = new QueryWrapper<>();
+    QueryWrapper<MovieShowTimeTag> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
-    Position result = positionMapper.selectOne(queryWrapper);
+    MovieShowTimeTag result = showTimeTagMapper.selectOne(queryWrapper);
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
-  @CheckPermission(code = "position.remove")
-  @DeleteMapping("/api/admin/position/remove")
+  @CheckPermission(code = "showTimeTag.remove")
+  @DeleteMapping("/api/admin/showTimeTag/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
-    positionMapper.deleteById(id);
+    showTimeTagMapper.deleteById(id);
 
     return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
-  @CheckPermission(code = "position.save")
-  @PostMapping("/api/admin/position/save")
-  public RestBean<List<Object>> save(@RequestBody @Validated PositionSaveQuery query) {
-    Position data = new Position();
+  @CheckPermission(code = "showTimeTag.save")
+  @PostMapping("/api/admin/showTimeTag/save")
+  public RestBean<List<Object>> save(@RequestBody @Validated MovieShowTimeTagSaveQuery query) {
+    MovieShowTimeTag data = new MovieShowTimeTag();
     data.setName(query.getName());
 
-    QueryWrapper<Position> wrapper = new QueryWrapper<>();
+    QueryWrapper<MovieShowTimeTag> wrapper = new QueryWrapper<>();
     wrapper.eq("name", query.getName());
 
-    String repeatMessage = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.positionName"));
+    String repeatMessage = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.showTimeTagName"));
 
     if (query.getId() == null) {
       // 新增操作
-      List<Position> list = positionMapper.selectList(wrapper);
+      List<MovieShowTimeTag> list = showTimeTagMapper.selectList(wrapper);
       if (list.isEmpty()) {
-        positionMapper.insert(data);
+        showTimeTagMapper.insert(data);
         return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
@@ -113,13 +109,13 @@ public class PositionController {
     } else {
       // 更新操作
       wrapper.ne("id", query.getId());
-      Position find = positionMapper.selectOne(wrapper);
+      MovieShowTimeTag find = showTimeTagMapper.selectOne(wrapper);
 
       if (find != null) {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       } else {
         data.setId(query.getId());
-        positionMapper.updateById(data);
+        showTimeTagMapper.updateById(data);
         return RestBean.success(null, MessageUtils.getMessage("success.save"));
       }
     }
