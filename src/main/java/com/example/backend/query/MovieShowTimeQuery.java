@@ -17,4 +17,6 @@ public class MovieShowTimeQuery {
   String startTime;
   @NotNull
   String endTime;
+  Integer subtitleId;
+  Integer showTimeTagId;
 }

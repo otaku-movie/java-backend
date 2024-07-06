@@ -34,6 +34,12 @@ public class MovieShowTime {
   @TableField("status")
   Integer status;
 
+  @TableField("subtitle_id")
+  Integer subtitleId;
+
+  @TableField("show_time_tag_id")
+  Integer showTimeTagId;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

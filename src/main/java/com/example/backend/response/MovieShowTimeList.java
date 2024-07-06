@@ -22,4 +22,8 @@ public class MovieShowTimeList {
     private long selected_seat_count;
     private List<Spec> spec;
     private  Integer seat_count;
+    private Integer subtitle_id;
+    private String subtitle_name;
+    private Integer show_time_tag_id;
+    private String show_time_tag_name;
 }

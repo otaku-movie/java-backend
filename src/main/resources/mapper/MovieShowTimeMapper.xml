@@ -18,6 +18,10 @@
         <result property="theater_hall_spec" column="theater_hall_spec"></result>
         <result property="seat_count" column="seat_count"></result>
         <result property="selected_seat_count" column="selected_seat_count"></result>
+        <result property="subtitle_id" column="subtitle_id"></result>
+        <result property="subtitle_name" column="subtitle_name"></result>
+        <result property="show_time_tag_id" column="show_time_tag_id"></result>
+        <result property="show_time_tag_name" column="show_time_tag_name"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -38,7 +42,7 @@
             movie.cover as movie_poster,
             cinema_spec.name as spec_name,
             cinema_spec_spec.plus_price,
-            select_seat.movie_ticket_type_id
+            select_seat.movie_ticket_type_id,
         FROM
             select_seat
                 LEFT JOIN seat ON
@@ -72,14 +76,18 @@
                 cinema.name AS cinema_name,
                 theater_hall.id AS theater_hall_id,
                 theater_hall.name AS theater_hall_name,
+                language.id as subtitle_id,
+                language.name as subtitle_name,
+                movie_show_time_tag.id as show_time_tag_id,
+                movie_show_time_tag.name as show_time_tag_name,
                 (
-                SELECT
-                    COUNT(seat.show)
-                FROM seat
-                WHERE
-                    seat.deleted = 0 AND
-                    seat.theater_hall_id = theater_hall.id AND
-                    seat.show = TRUE
+                    SELECT
+                        COUNT(seat.show)
+                    FROM seat
+                    WHERE
+                        seat.deleted = 0 AND
+                        seat.theater_hall_id = theater_hall.id AND
+                        seat.show = TRUE
                 ) AS seat_count,
                 (
                     SELECT
@@ -98,6 +106,8 @@
                 cs2.name as theater_hall_spec
             FROM
                 movie_show_time
+            LEFT JOIN language ON movie_show_time.subtitle_id = language.id
+            LEFT JOIN movie_show_time_tag ON movie_show_time.show_time_tag_id = movie_show_time_tag.id
             LEFT JOIN movie ON movie.id = movie_show_time.movie_id AND movie.deleted = 0
             LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id AND movie_spec.deleted = 0
             LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id AND cinema_spec.deleted = 0

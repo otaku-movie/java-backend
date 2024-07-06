@@ -52,6 +52,13 @@ public class MovieShowTimeImpl implements MovieShowTimeService {
     movieShowTime.setEndTime(query.getEndTime());
     movieShowTime.setOpen(query.getOpen());
 
+    if (query.getShowTimeTagId() != null) {
+      movieShowTime.setShowTimeTagId(query.getShowTimeTagId());
+    }
+    if (query.getSubtitleId() != null) {
+      movieShowTime.setSubtitleId(query.getSubtitleId());
+    }
+
     if (query.getId() == null) {
       movieShowTimeMapper.insert(movieShowTime);
       System.out.println("可以插入");
