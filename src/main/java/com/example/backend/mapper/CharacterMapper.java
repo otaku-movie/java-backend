@@ -4,9 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.backend.query.CharacterListQuery;
 import com.example.backend.entity.Character;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.backend.query.MovieListQuery;
 import com.example.backend.response.CharacterList;
-import com.example.backend.response.MovieResponse;
 
 /**
 * @author last order

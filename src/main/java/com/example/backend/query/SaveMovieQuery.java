@@ -29,4 +29,6 @@ public class SaveMovieQuery {
   private List<Integer> spec;
   private List<MovieStaff> staffList;
   private List<MovieCharacter> characterList;
+  private List<Integer> tags;
+  private List<HelloMovie> helloMovie;
 }

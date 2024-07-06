@@ -1,12 +1,10 @@
 package com.example.backend.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.example.backend.entity.Api;
+import com.example.backend.entity.HelloMovie;
 import com.example.backend.entity.MovieTagTags;
-import com.example.backend.entity.Seat;
+import com.example.backend.mapper.HelloMovieMapper;
 import com.example.backend.mapper.MovieTagTagsMapper;
-import com.example.backend.mapper.SeatMapper;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,6 +14,6 @@ import org.springframework.stereotype.Service;
 */
 
 @Service
-public class MovieTagTagsService extends ServiceImpl<MovieTagTagsMapper, MovieTagTags> {
+public class HelloMovieService extends ServiceImpl<HelloMovieMapper, HelloMovie> {
 
 }

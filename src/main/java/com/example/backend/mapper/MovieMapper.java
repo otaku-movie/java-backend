@@ -1,11 +1,9 @@
 package com.example.backend.mapper;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.Movie;
 import com.example.backend.query.MovieListQuery;
-import com.example.backend.response.MovieResponse;
+import com.example.backend.response.movie.MovieResponse;
 import com.example.backend.response.MovieStaffResponse;
 import org.apache.ibatis.annotations.Mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;

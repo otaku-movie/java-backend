@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.example.backend.mapper.MovieMapper">
-    <resultMap id="movieList" type="com.example.backend.response.MovieResponse">
+    <resultMap id="movieList" type="com.example.backend.response.movie.MovieResponse">
         <id property="id" column="id"></id>
         <result property="id" column="id"></result>
         <result property="name" column="name"></result>
@@ -25,8 +25,17 @@
             <result property="name" column="spec_name"></result>
             <result property="description" column="spec_description"></result>
         </collection>
+        <collection property="tags" ofType="com.example.backend.response.movie.Tags">
+            <result property="id" column="tag_id"></result>
+            <result property="name" column="tag_name"></result>
+        </collection>
+        <collection property="hello_movie" ofType="com.example.backend.response.movie.HelloMovie">
+            <result property="id" column="hello_movie_id"></result>
+            <result property="code" column="hello_movie_code"></result>
+            <result property="date" column="hello_movie_date"></result>
+        </collection>
     </resultMap>
-        <select id="movieList" resultMap="movieList" resultType="com.example.backend.response.MovieResponse">
+        <select id="movieList" resultMap="movieList" resultType="com.example.backend.response.movie.MovieResponse">
             SELECT
                 movie.*,
                 COALESCE(cinema_counts.cinema_count, 0) AS cinema_count,
@@ -35,9 +44,17 @@
                 level.name AS level_name,
                 cinema_spec.id AS spec_id,
                 cinema_spec.name AS spec_name,
-                cinema_spec.description AS spec_description
+                cinema_spec.description AS spec_description,
+                movie_tag.id AS tag_id,
+                movie_tag.name AS tag_name,
+                hello_movie.id AS hello_movie_id,
+                hello_movie.code AS hello_movie_code,
+                hello_movie.date AS hello_movie_date
             FROM
                 movie
+            LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
+            LEFT JOIN movie_tag_tags ON movie.id = movie_tag_tags.movie_id
+            LEFT JOIN movie_tag ON movie_tag_tags.movie_tag_id = movie_tag.id
             --- 统计评论数量
             LEFT JOIN (
                 SELECT
@@ -101,7 +118,12 @@
             level.name AS level_name,
             cinema_spec.id AS spec_id,
             cinema_spec.name AS spec_name,
-            cinema_spec.description AS spec_description
+            cinema_spec.description AS spec_description,
+            movie_tag.id AS tag_id,
+            movie_tag.name AS tag_name,
+            hello_movie.id AS hello_movie_id,
+            hello_movie.code AS hello_movie_code,
+            hello_movie.date AS hello_movie_date
         FROM
             movie
                 --- 统计评论数量
@@ -141,6 +163,9 @@
                 GROUP BY
                     movie_show_time.movie_id
             ) AS theater_counts ON movie.id = theater_counts.movie_id
+                LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
+                LEFT JOIN movie_tag_tags ON movie.id = movie_tag_tags.movie_id
+                LEFT JOIN movie_tag ON movie_tag_tags.movie_tag_id = movie_tag.id
                 LEFT JOIN level ON movie.level_id = level.id
                 LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
                 LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id

@@ -1,8 +1,9 @@
-package com.example.backend.response;
+package com.example.backend.response.movie;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.example.backend.response.Spec;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
@@ -37,6 +38,8 @@ public class MovieResponse {
 
 //  private Integer deleted;
   List<Spec> spec;
+  List<HelloMovie> hello_movie;
+  List<Tags> tags;
 
   Integer level_id;
   String level_name;

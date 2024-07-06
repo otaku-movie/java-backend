@@ -7,19 +7,19 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("api")
-public class Api {
+@TableName("hello_movie")
+public class HelloMovie {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;
 
-  @TableField("name")
-  String name;
+  @TableField("movie_id")
+  Integer movieId;
 
-  @TableField("path")
-  String path;
+  @TableField("date")
+  String date;
 
   @TableField("code")
-  String code;
+  Integer code;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
@@ -28,4 +28,8 @@ public class Api {
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
   Date updateTime;
+
+  @TableLogic
+  @TableField(value = "deleted", fill = FieldFill.INSERT)
+  private Integer deleted;
 }

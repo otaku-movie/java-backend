@@ -7,7 +7,7 @@ import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.SaveMovieQuery;
-import com.example.backend.response.MovieResponse;
+import com.example.backend.response.movie.MovieResponse;
 import com.example.backend.response.MovieStaffResponse;
 import com.example.backend.service.MovieService;
 import com.example.backend.utils.MessageUtils;

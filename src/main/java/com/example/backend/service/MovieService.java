@@ -43,6 +43,18 @@ public class MovieService {
   @Autowired
   private  MovieCharacterService movieCharacterService;
 
+  @Autowired
+  private HelloMovieService helloMovieService;
+
+  @Autowired
+  private MovieTagTagsService movieTagTagsService;
+
+  @Autowired
+  private  MovieTagTagsMapper movieTagTagsMapper;
+
+  @Autowired
+  private  HelloMovieMapper helloMovieMapper;
+
   @Transactional
   public void saveMovie(Movie movie, SaveMovieQuery query) {
     if (query.getId() == null) {
@@ -65,7 +77,7 @@ public class MovieService {
         movieSpecMapper.insert(movieSpec);
       });
     }
-    System.out.println(query.getStaffList());
+
     if (query.getStaffList() != null) {
       movieStaffMapper.deleteStaff(query.getId());
 
@@ -97,30 +109,49 @@ public class MovieService {
           .collect(Collectors.toList())
       );
     }
+    // 保存标签
+    if (query.getTags() != null) {
+      movieTagTagsMapper.deleteMovieTags(query.getId());
+
+      movieTagTagsService.saveBatch(
+        query.getTags().stream()
+          .map(item -> {
+            MovieTagTags data = new MovieTagTags();
+            data.setMovieId(query.getId());
+            data.setMovieTagId(item);
+
+            return data;
+          })
+          .collect(Collectors.toList())
+      );
+    }
+
+    if (query.getHelloMovie() != null) {
+      helloMovieMapper.deleteHelloMovie(query.getId());
+
+      helloMovieService.saveBatch(
+        query.getHelloMovie().stream()
+          .map(item -> {
+            HelloMovie data = new HelloMovie();
+            data.setMovieId(query.getId());
+            data.setCode(item.getCode());
+            data.setDate(item.getDate());
+
+            return data;
+          })
+          .collect(Collectors.toList())
+      );
+    }
 
   }
-  public RestBean<Object> save (SaveMovieQuery query) {
+  public RestBean<Object> save(SaveMovieQuery query) {
     Movie movie = new Movie();
     String name = query.getOriginalName() == null ? query.getName() : query.getOriginalName();
 
-    if (query.getId() != null) {
-      movie.setId(query.getId());
-    }
-
-
-    if (query.getStatus() == null) {
-      movie.setStatus(1);
-    } else {
-      movie.setStatus(query.getStatus());
-    }
-    if (query.getTime() != null) {
-      movie.setTime(query.getTime());
-    }
-
-    if (query.getLevelId() != null) {
-      movie.setLevelId(query.getLevelId());
-    }
-
+    movie.setId(query.getId());
+    movie.setStatus(query.getStatus() == null ? 1 : query.getStatus());
+    movie.setTime(query.getTime());
+    movie.setLevelId(query.getLevelId());
     movie.setOriginalName(query.getOriginalName());
     movie.setCover(query.getCover());
     movie.setName(query.getName());
@@ -132,32 +163,83 @@ public class MovieService {
     // 添加的去重查询条件
     QueryWrapper<Movie> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("name", name);
-    // 编辑的去重查询条件
-    // 自定义验证方法
-    ValidationFunction<Movie> validationFunction = (old, newData) -> old.getName().equals(newData.getName());
-
-    boolean result = genericService.validate(
-      movie, query.getId(), validationFunction, queryWrapper, movieMapper
-    );
-
-    MovieResponse movieResponse = new MovieResponse();
-
-    if (query.getId() == null) {
-      if (result) {
-        saveMovie(movie, query);
-        movieResponse.setId(movie.getId());
-        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
-      } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
-      }
-    } else {
-      if (result) {
-        movie.setId(query.getId());
-        saveMovie(movie, query);
-        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
-      } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
-      }
+    if (query.getId() != null) {
+      queryWrapper.ne("id", query.getId());
     }
+
+    // 执行去重查询
+    int count = Math.toIntExact(movieMapper.selectCount(queryWrapper));
+
+    if (count > 0) {
+      return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+    }
+
+    // 保存电影信息
+    saveMovie(movie, query);
+    MovieResponse movieResponse = new MovieResponse();
+    movieResponse.setId(movie.getId());
+
+    return RestBean.success(movieMapper.movieDetail(movie.getId()), MessageUtils.getMessage("success.save"));
   }
+
+//  public RestBean<Object> save (SaveMovieQuery query) {
+//    Movie movie = new Movie();
+//    String name = query.getOriginalName() == null ? query.getName() : query.getOriginalName();
+//
+//    if (query.getId() != null) {
+//      movie.setId(query.getId());
+//    }
+//
+//    if (query.getStatus() == null) {
+//      movie.setStatus(1);
+//    } else {
+//      movie.setStatus(query.getStatus());
+//    }
+//    if (query.getTime() != null) {
+//      movie.setTime(query.getTime());
+//    }
+//
+//    if (query.getLevelId() != null) {
+//      movie.setLevelId(query.getLevelId());
+//    }
+//
+//    movie.setOriginalName(query.getOriginalName());
+//    movie.setCover(query.getCover());
+//    movie.setName(query.getName());
+//    movie.setDescription(query.getDescription());
+//    movie.setStartDate(query.getStartDate());
+//    movie.setEndDate(query.getEndDate());
+//    movie.setHomePage(query.getHomePage());
+//
+//    // 添加的去重查询条件
+//    QueryWrapper<Movie> queryWrapper = new QueryWrapper<>();
+//    queryWrapper.eq("name", name);
+//    // 编辑的去重查询条件
+//    // 自定义验证方法
+//    ValidationFunction<Movie> validationFunction = (old, newData) -> old.getName().equals(newData.getName());
+//
+//    boolean result = genericService.validate(
+//      movie, query.getId(), validationFunction, queryWrapper, movieMapper
+//    );
+//
+//    MovieResponse movieResponse = new MovieResponse();
+//
+//    if (query.getId() == null) {
+//      if (result) {
+//        saveMovie(movie, query);
+//        movieResponse.setId(movie.getId());
+//        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
+//      } else {
+//        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+//      }
+//    } else {
+//      if (result) {
+//        movie.setId(query.getId());
+//        saveMovie(movie, query);
+//        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
+//      } else {
+//        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+//      }
+//    }
+//  }
 }
