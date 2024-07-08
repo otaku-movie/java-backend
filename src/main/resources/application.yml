@@ -7,9 +7,9 @@ spring:
       max-file-size: -1
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/test_movie
+    url: jdbc:postgresql://43.154.172.94:5432/test_movie
     username: postgres
-    password: postgres
+    password: Apoptoxin4869
 #  web:
     resources:
       # 自定义404异常
