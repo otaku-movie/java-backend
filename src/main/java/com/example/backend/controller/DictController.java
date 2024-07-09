@@ -86,10 +86,9 @@ public class DictController {
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   // 根据 name 获取字典
-  @PostMapping("/api/dict/specify")
-  public RestBean<Map<String, List<DictItem>>> specify(@RequestBody specifyQuery query)  {
+  @GetMapping("/api/dict/specify")
+  public RestBean<Map<String, List<DictItem>>> specify()  {
     QueryWrapper wrapper = new QueryWrapper<>();
-    wrapper.in("code", query.getCode());
     List<Dict> list = dictMapper.selectList(wrapper);
 
     Map<String, List<DictItem>> result = list.stream().collect(
