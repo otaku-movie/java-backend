@@ -14,7 +14,8 @@ public class MovieOrderListQuery {
   private Integer theaterHallId;
   private Integer orderState;
   private Integer payState;
-  private List<String> orderTime;
+  private String orderStartTime;
+  private String orderEndTime;
 
   public MovieOrderListQuery() {
     this.page = 1; // 默认页数为1
