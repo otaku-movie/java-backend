@@ -1,0 +1,6 @@
+pass = rwqezihjzeuvqatq
+host = smtp.gmail.com
+from = diy4869@gmail.com
+user = diy4869@gmail.com
+port = 465
+sslEnable = true

@@ -16,6 +16,10 @@ error:
   emailRepeat: "メールアドレスは既に存在しています"
   uploadError: "アップロードに失敗しました"
   get: "{0}は必須です"
+email:
+  verifyCode:
+    title: "認証コード"
+    content: "あなたの認証コードは: {0} です。認証コードは2分以内に有効です。"
 repeat:
   path: "パス"
   code: "コード"
@@ -114,6 +118,13 @@ validator:
     name:
       required: "名前は必須です"
   saveUser:
+    code:
+      required: "認証コードは必須です"
+      length: "認証コードの長さは6桁でなければなりません"
+      error: "認証コードが間違っています"
+      expired: "認証コードの有効期限が切れました"
+    token:
+      required: "token は必須です"
     name:
       required: "ユーザー名は必須です"
     password:

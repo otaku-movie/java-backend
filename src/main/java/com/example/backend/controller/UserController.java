@@ -46,7 +46,6 @@ public class UserController {
     LoginResponse loginResponse = new LoginResponse();
     User result = userMapper.selectOne(queryWrapper);
 
-
     if (result != null) {
       StpUtil.login(result.getId());
       loginResponse.setId(result.getId());

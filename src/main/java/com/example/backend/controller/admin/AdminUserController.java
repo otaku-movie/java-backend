@@ -12,6 +12,7 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
 import com.example.backend.entity.UserRole;
+import com.example.backend.enumerate.RedisType;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.mapper.UserRoleMapper;
@@ -21,10 +22,12 @@ import com.example.backend.query.UserSaveQuery;
 import com.example.backend.response.UserListResponse;
 import com.example.backend.service.UserRoleService;
 import com.example.backend.utils.MessageUtils;
+import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -51,6 +54,9 @@ public class AdminUserController {
 
   @Autowired
   UserRoleService userRoleService;
+
+  @Resource
+  RedisTemplate redisTemplate;
 
   @PostMapping("/api/admin/user/list")
   public RestBean<List<UserListResponse>> list(@RequestBody @Validated  UserListQuery query)  {
@@ -132,6 +138,25 @@ public class AdminUserController {
       }
     }
 
+    // 验证邮箱是否有效
+    String key = RedisType.verifyCode.getCode() + ':' + query.getToken();
+
+    Object code = redisTemplate.opsForValue().get(key);
+
+    if (code == null) {
+      return RestBean.error(
+        ResponseCode.ERROR.getCode(),
+        MessageUtils.getMessage("validator.saveUser.code.expired")
+      );
+    } else if (code != null && code != query.getCode()) {
+      return RestBean.error(
+        ResponseCode.ERROR.getCode(),
+        MessageUtils.getMessage("validator.saveUser.code.error")
+      );
+    }
+
+
+
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
       wrapper.eq("email", query.getEmail());
@@ -144,8 +169,6 @@ public class AdminUserController {
         return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.emailRepeat"));
       }
     } else {
-
-
       QueryWrapper wrapper = new QueryWrapper<>();
       wrapper.eq("email", query.getEmail());
       wrapper.ne("id", query.getId());

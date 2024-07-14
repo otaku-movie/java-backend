@@ -5,6 +5,7 @@ success:
   login: "登录成功"
   uploadSuccess: "上传成功"
   success: "success"
+  send: "发送成功"
 error:
   systemError: "系统错误"
   userNotFound: "用户不存在"
@@ -16,6 +17,10 @@ error:
   emailRepeat: "邮箱已存在"
   uploadError: "上传失败"
   get: "{0}不能为空"
+email:
+  verifyCode:
+    title: "验证码"
+    content: "您的验证码是: {0}，验证码2分钟内有效。"
 repeat:
   path: "路径"
   code: "code"
@@ -114,6 +119,13 @@ validator:
     name:
       required: "name 不能为空"
   saveUser:
+    code:
+      required: "验证码不能为空"
+      length: "验证码长度必须是6位"
+      error: "验证码错误"
+      expired: "验证码已过期"
+    token:
+      required: "token 不能为空"
     name:
       required: "用户名不能为空"
     password:
