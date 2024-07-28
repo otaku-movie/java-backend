@@ -1,93 +1,166 @@
 success:
-  save: "Saved successfully"
-  remove: "Removed successfully"
-  get: "Retrieved successfully"
-  login: "Logged in successfully"
+  save: "Save successful"
+  remove: "Delete successful"
+  get: "Retrieve successful"
+  login: "Login successful"
+  uploadSuccess: "Upload successful"
+  success: "Success"
+  send: "Send successful"
 error:
-  systemError: "An error occurred in the system"
+  systemError: "System error"
   userNotFound: "User not found"
-  loginExpired: "Your login session has expired. Please log in again"
+  loginExpired: "Login expired, please login again"
+  parameterError: "Parameter error"
+  repeat: "{0} already exists"
+  notPermission: "No permission"
+  timeConflict: "Time conflict"
+  emailRepeat: "Email already exists"
+  uploadError: "Upload failed"
+  get: "{0} cannot be empty"
+email:
+  verifyCode:
+    title: "Verification Code"
+    content: "Your verification code is: {0}, the code is valid for 2 minutes."
+repeat:
+  path: "Path"
+  code: "Code"
+  roleName: "Role Name"
+  movieTicketTypeName: "Movie Ticket Type"
+  theaterHallName: "Theater Hall Name"
+  positionName: "Position Name"
+  languageCode: "Language Code"
+  brandName: "Brand Name"
+  movieTagName: "Tag Name"
+  showTimeTagName: "Show Time Tag Name"
 validator:
-  # Login
   login:
     password:
-      required: "Password is required"
+      required: "Password cannot be empty"
     email:
-      required: "Email is required"
-      notEmail: "Invalid email address"
-  # Register
+      required: "Email cannot be empty"
+      notEmail: "Not a valid email address"
   register:
     name:
-      required: "Username is required"
+      required: "Username cannot be empty"
     password:
-      required: "Password is required"
+      required: "Password cannot be empty"
     email:
-      required: "Email is required"
-      notEmail: "Invalid email address"
-  # Movie comment
+      required: "Email cannot be empty"
+      notEmail: "Not a valid email address"
   movieComment:
     movieId:
-      required: "Movie ID is required"
+      required: "movieId cannot be empty"
     content:
-      required: "Comment is required"
-      max: "Comment must not exceed 1000 characters"
-  # Movie reply
+      required: "Comment content cannot be empty"
+      max: "Comment content cannot exceed 1000 characters"
   movieReply:
     movieCommentId:
-      required: "Movie comment ID is required"
+      required: "movieCommentId cannot be empty"
     content:
-      required: "Comment is required"
-      max: "Comment must not exceed 1000 characters"
-  # Save position
+      required: "Reply content cannot be empty"
+      max: "Reply content cannot exceed 1000 characters"
   savePosition:
     name:
-      required: "Position is required"
-  # Save staff
+      required: "Position cannot be empty"
+  saveBrand:
+    name:
+      required: "Brand cannot be empty"
+  saveTag:
+    name:
+      required: "Tag cannot be empty"
+  saveShowTimeTag:
+    name:
+      required: "Show Time Tag Name cannot be empty"
+  saveLanguage:
+    name:
+      required: "Language cannot be empty"
+    code:
+      required: "Code cannot be empty"
   saveStaff:
     name:
-      required: "Name is required"
+      required: "Name cannot be empty"
     description:
-      required: "Description is required"
-  # Save theater hall
+      required: "Description cannot be empty"
   saveTheaterHall:
     cinemaId:
-      required: "Cinema ID is required"
+      required: "cinemaId cannot be empty"
+    cinemaSpecId:
+      required: "cinemaSpecId cannot be empty"
+    rowCount:
+      required: "rowCount cannot be empty"
+    columnCount:
+      required: "columnCount cannot be empty"
     name:
-      required: "Name is required"
-  # Save API
-  saveApi:
-    code:
-      required: "Code is required"
-  # Save button
+      required: "Name cannot be empty"
   saveButton:
     i18nKey:
-      required: "i18n key is required"
-    code:
-      required: "Code is required"
+      required: "i18nKey cannot be empty"
     menuId:
-      required: "Menu ID is required"
-    apiId:
-      required: "API ID is required"
-  # Save menu
+      required: "menuId cannot be empty"
+    apiCode:
+      required: "apiCode cannot be empty"
   saveMenu:
     name:
-      required: "Name is required"
+      required: "Name cannot be empty"
     i18nKey:
-      required: "i18n key is required"
+      required: "i18nKey cannot be empty"
     path:
-      required: "Path is required"
+      required: "Path cannot be empty"
     pathName:
-      required: "Path name is required"
-  # Save character
+      required: "pathName cannot be empty"
   saveCharacter:
     name:
-      required: "Name is required"
-  # Save user
+      required: "Name cannot be empty"
   saveUser:
+    code:
+      required: "Verification code cannot be empty"
+      length: "Verification code must be 6 characters long"
+      error: "Invalid verification code"
+      expired: "Verification code has expired"
+    token:
+      required: "Token cannot be empty"
     name:
-      required: "Username is required"
+      required: "Username cannot be empty"
     password:
-      required: "Password is required"
+      required: "Password cannot be empty"
     email:
-      required: "Email is required"
-      notEmail: "Invalid email address"
+      required: "Email cannot be empty"
+      notEmail: "Not a valid email address"
+  saveMovieTicketType:
+    name:
+      required: "Name cannot be empty"
+    price:
+      required: "Price cannot be empty"
+    cinemaId:
+      required: "cinemaId cannot be empty"
+  saveSeat:
+    theaterHallId:
+      required: "theaterHallId cannot be empty"
+  saveSelectSeat:
+    movieShowTimeId:
+      required: "Movie show time cannot be empty"
+    theaterHallId:
+      required: "theaterHallId cannot be empty"
+    seatPosition:
+      required: "Seat position cannot be empty"
+    x:
+      required: "Seat x coordinate cannot be empty"
+    y:
+      required: "Seat y coordinate cannot be empty"
+  saveCinema:
+    brandId:
+      required: "brandId cannot be empty"
+    name:
+      required: "Name cannot be empty"
+    description:
+      required: "Description cannot be empty"
+    address:
+      required: "Address cannot be empty"
+    tel:
+      required: "Phone cannot be empty"
+  saveDict:
+    name:
+      required: "Name cannot be empty"
+    code:
+      required: "Code cannot be empty"
+

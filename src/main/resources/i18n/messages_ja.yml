@@ -1,25 +1,26 @@
 success:
-  save: "保存に成功しました"
-  remove: "削除に成功しました"
-  get: "取得に成功しました"
-  login: "ログインに成功しました"
-  uploadSuccess: "アップロードに成功しました"
-  success: "success"
+  save: "保存成功"
+  remove: "削除成功"
+  get: "取得成功"
+  login: "ログイン成功"
+  uploadSuccess: "アップロード成功"
+  success: "成功"
+  send: "送信成功"
 error:
-  systemError: "システムエラーが発生しました"
-  userNotFound: "ユーザーが見つかりませんでした"
-  loginExpired: "ログインの期限が切れました。再度ログインしてください"
-  parameterError: "パラメーターエラーです"
-  repeat: "{0}は既に存在しています"
+  systemError: "システムエラー"
+  userNotFound: "ユーザーが見つかりません"
+  loginExpired: "ログインの有効期限が切れました。再ログインしてください"
+  parameterError: "パラメータエラー"
+  repeat: "{0}は既に存在します"
   notPermission: "権限がありません"
-  timeConflict: "時間の衝突があります"
-  emailRepeat: "メールアドレスは既に存在しています"
-  uploadError: "アップロードに失敗しました"
-  get: "{0}は必須です"
+  timeConflict: "時間が重複しています"
+  emailRepeat: "メールアドレスは既に存在します"
+  uploadError: "アップロード失敗"
+  get: "{0}は空にできません"
 email:
   verifyCode:
-    title: "認証コード"
-    content: "あなたの認証コードは: {0} です。認証コードは2分以内に有効です。"
+    title: "確認コード"
+    content: "あなたの確認コードは: {0} です。このコードは2分間有効です。"
 repeat:
   path: "パス"
   code: "コード"
@@ -30,142 +31,136 @@ repeat:
   languageCode: "言語コード"
   brandName: "ブランド名"
   movieTagName: "タグ名"
-  showTimeTagName: "上映スケジュールタグ名"
+  showTimeTagName: "ショータイムタグ名"
 validator:
-  # ログイン
   login:
     password:
-      required: "パスワードは必須です"
+      required: "パスワードは空にできません"
     email:
-      required: "メールアドレスは必須です"
+      required: "メールアドレスは空にできません"
       notEmail: "有効なメールアドレスではありません"
-  #  登録
   register:
     name:
-      required: "ユーザー名は必須です"
+      required: "ユーザー名は空にできません"
     password:
-      required: "パスワードは必須です"
+      required: "パスワードは空にできません"
     email:
-      required: "メールアドレスは必須です"
+      required: "メールアドレスは空にできません"
       notEmail: "有効なメールアドレスではありません"
-  # 映画コメント
   movieComment:
     movieId:
-      required: "movieIdは必須です"
+      required: "movieIdは空にできません"
     content:
-      required: "コメント内容は必須です"
-      max: "コメントは1000文字以内で入力してください"
-  # 映画返信
+      required: "コメント内容は空にできません"
+      max: "コメント内容は1000文字を超えることはできません"
   movieReply:
     movieCommentId:
-      required: "movieCommentIdは必須です"
+      required: "movieCommentIdは空にできません"
     content:
-      required: "コメント内容は必須です"
-      max: "コメントは1000文字以内で入力してください"
-  # 職位保存
+      required: "返信内容は空にできません"
+      max: "返信内容は1000文字を超えることはできません"
   savePosition:
     name:
-      required: "職位は必須です"
-  # スタッフ保存
-  saveStaff:
-    name:
-      required: "名前は必須です"
-    description:
-      required: "説明は必須です"
+      required: "ポジションは空にできません"
   saveBrand:
     name:
-      required: "ブランドは空であってはなりません"
+      required: "ブランドは空にできません"
   saveTag:
     name:
-      required: "タグは空であってはなりません"
+      required: "タグは空にできません"
   saveShowTimeTag:
     name:
-      required: "上映スケジュールタグ名は空であってはなりません"
+      required: "ショータイムタグ名は空にできません"
   saveLanguage:
     name:
-      required: "言語は空であってはなりません"
+      required: "言語は空にできません"
     code:
-      required: "コードは空であってはなりません"
-  # シアターホール保存
+      required: "コードは空にできません"
+  saveStaff:
+    name:
+      required: "名前は空にできません"
+    description:
+      required: "説明は空にできません"
   saveTheaterHall:
     cinemaId:
-      required: "cinemaIdは必須です"
+      required: "cinemaIdは空にできません"
     cinemaSpecId:
-      required: "cinemaSpecIdは必須です"
+      required: "cinemaSpecIdは空にできません"
     rowCount:
-      required: "行数は必須です"
+      required: "rowCountは空にできません"
     columnCount:
-      required: "列数は必須です"
+      required: "columnCountは空にできません"
     name:
-      required: "名前は必須です"
+      required: "名前は空にできません"
   saveButton:
     i18nKey:
-      required: "i18nKeyは必須です"
+      required: "i18nKeyは空にできません"
     menuId:
-      required: "menuIdは必須です"
+      required: "menuIdは空にできません"
     apiCode:
-      required: "apiCodeは必須です"
+      required: "apiCodeは空にできません"
   saveMenu:
     name:
-      required: "名前は必須です"
+      required: "名前は空にできません"
     i18nKey:
-      required: "i18nKeyは必須です"
+      required: "i18nKeyは空にできません"
     path:
-      required: "パスは必須です"
+      required: "パスは空にできません"
     pathName:
-      required: "パス名は必須です"
+      required: "pathNameは空にできません"
   saveCharacter:
     name:
-      required: "名前は必須です"
+      required: "名前は空にできません"
   saveUser:
     code:
-      required: "認証コードは必須です"
-      length: "認証コードの長さは6桁でなければなりません"
-      error: "認証コードが間違っています"
-      expired: "認証コードの有効期限が切れました"
+      required: "確認コードは空にできません"
+      length: "確認コードの長さは6文字でなければなりません"
+      error: "確認コードが無効です"
+      expired: "確認コードの有効期限が切れました"
     token:
-      required: "token は必須です"
+      required: "トークンは空にできません"
     name:
-      required: "ユーザー名は必須です"
+      required: "ユーザー名は空にできません"
     password:
-      required: "パスワードは必須です"
+      required: "パスワードは空にできません"
     email:
-      required: "メールアドレスは必須です"
+      required: "メールアドレスは空にできません"
       notEmail: "有効なメールアドレスではありません"
   saveMovieTicketType:
     name:
-      required: "名前は必須です"
+      required: "名前は空にできません"
     price:
-      required: "価格は必須です"
+      required: "価格は空にできません"
     cinemaId:
-      required: "cinemaIdは必須です"
+      required: "cinemaIdは空にできません"
   saveSeat:
     theaterHallId:
-      required: "シアターホールidは必須です"
+      required: "theaterHallIdは空にできません"
   saveSelectSeat:
     movieShowTimeId:
-      required: "映画の上映時間は必須です"
+      required: "映画の上映時間は空にできません"
     theaterHallId:
-      required: "シアターホールidは必須です"
+      required: "theaterHallIdは空にできません"
     seatPosition:
-      required: "席の位置は必須です"
+      required: "座席の位置は空にできません"
     x:
-      required: "座席のx座標は必須です"
+      required: "座席の x 座標は空にできません"
     y:
-      required: "座席のy座標は必須です"
+      required: "座席の y 座標は空にできません"
   saveCinema:
-    name:
-      required: "名前は必須です"
     brandId:
-      required: "brandIdは必須です"
+      required: "brandIdは空にできません"
+    name:
+      required: "名前は空にできません"
     description:
-      required: "説明は必須です"
+      required: "説明は空にできません"
     address:
-      required: "住所は必須です"
+      required: "住所は空にできません"
     tel:
-      required: "電話番号は必須です"
+      required: "電話番号は空にできません"
   saveDict:
     name:
-      required: "名前は必須です"
+      required: "名前は空にできません"
     code:
-      required: "コードは必須です"
+      required: "コードは空にできません"
+

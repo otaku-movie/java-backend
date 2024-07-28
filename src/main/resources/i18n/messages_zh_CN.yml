@@ -170,8 +170,3 @@ validator:
       required: "name 不能为空"
     code:
       required: "code 不能为空"
-
-
-
-
-
