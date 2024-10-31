@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.example.backend.config.MinIOConfig;
 import io.minio.PutObjectArgs;
 import io.minio.errors.*;
+import org.springframework.cglib.core.Local;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
@@ -15,6 +16,9 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Utils {
@@ -73,6 +77,11 @@ public class Utils {
         SimpleDateFormat sdf = new SimpleDateFormat(format);
 
         return sdf.format(date);
+    }
+    public static LocalDate stringToDate (String date, String format) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+        return LocalDate.parse(date, formatter);
+
     }
 }
 

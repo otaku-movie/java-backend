@@ -20,6 +20,7 @@
         <result property="want_to_see_count" column="want_to_see_count"></result>
         <result property="level_id" column="level_id"></result>
         <result property="level_name" column="level_name"></result>
+        <result property="level_description" column="level_description"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -35,7 +36,7 @@
             <result property="date" column="hello_movie_date"></result>
         </collection>
     </resultMap>
-        <select id="movieList" resultMap="movieList" resultType="com.example.backend.response.movie.MovieResponse">
+    <select id="movieList" resultMap="movieList" resultType="com.example.backend.response.movie.MovieResponse">
             SELECT
                 movie.*,
                 COALESCE(cinema_counts.cinema_count, 0) AS cinema_count,
@@ -108,7 +109,114 @@
                 </if>
             </where>
             ORDER BY movie.update_time DESC
-        </select>
+    </select>
+    <resultMap id="appMovieStaff" type="com.example.backend.response.app.AppMovieStaffResponse">
+        <id property="id" column="id"></id>
+        <result property="id" column="staff_id"></result>
+        <result property="avatar" column="staff_avatar"></result>
+        <result property="name" column="staff_name"></result>
+        <collection property="position" ofType="com.example.backend.entity.Position">
+            <result property="id" column="positon_id"></result>
+            <result property="name" column="position_name"></result>
+        </collection>
+    </resultMap>
+    <select id="appMovieStaff" resultMap="appMovieStaff">
+        SELECT
+            staff.id AS staff_id,
+            staff.name AS staff_name,
+            staff.cover AS staff_avatar,
+            position.id AS positon_id,
+            position.name AS position_name
+        FROM movie_staff
+                 LEFT JOIN staff ON movie_staff.staff_id = staff."id"
+                 LEFT JOIN "position" ON movie_staff.position_id = "position"."id"
+        WHERE
+            movie_staff.deleted = 0
+            AND movie_staff.movie_id = #{movieId}
+    </select>
+    <resultMap id="nowMovieShowing" type="com.example.backend.response.app.NowMovieShowingResponse">
+        <id property="id" column="id"></id>
+        <result property="id" column="id"></result>
+        <result property="cover" column="cover"></result>
+        <result property="name" column="name"></result>
+<!--        <result property="description" column="description"></result>-->
+<!--        <result property="original_name" column="original_name"></result>-->
+<!--        <result property="home_page" column="home_page"></result>-->
+        <result property="start_date" column="start_date"></result>
+<!--        <result property="end_date" column="end_date"></result>-->
+<!--        <result property="status" column="status"></result>-->
+<!--        <result property="time" column="time"></result>-->
+<!--        <result property="cinema_count" column="cinema_count"></result>-->
+<!--        <result property="theater_count" column="theater_count"></result>-->
+<!--        <result property="comment_count" column="comment_count"></result>-->
+<!--        <result property="watched_count" column="watched_count"></result>-->
+<!--        <result property="want_to_see_count" column="want_to_see_count"></result>-->
+<!--        <result property="level_id" column="level_id"></result>-->
+        <result property="level_name" column="level_name"></result>
+        <collection property="spec" ofType="com.example.backend.response.Spec">
+            <result property="id" column="spec_id"></result>
+            <result property="name" column="spec_name"></result>
+            <result property="description" column="spec_description"></result>
+        </collection>
+<!--        <collection property="tags" ofType="com.example.backend.response.movie.Tags">-->
+<!--            <result property="id" column="tag_id"></result>-->
+<!--            <result property="name" column="tag_name"></result>-->
+<!--        </collection>-->
+        <collection property="cast" ofType="com.example.backend.response.Staff">
+            <result property="id" column="staff_id"></result>
+            <result property="name" column="staff_name"></result>
+        </collection>
+        <collection property="hello_movie" ofType="com.example.backend.response.movie.HelloMovie">
+            <result property="id" column="hello_movie_id"></result>
+            <result property="code" column="hello_movie_code"></result>
+            <result property="date" column="hello_movie_date"></result>
+        </collection>
+    </resultMap>
+
+    <select id="nowMovieShowing" resultMap="nowMovieShowing">
+        SELECT DISTINCT
+            movie.id,
+            movie.name,
+            movie.cover,
+            "staff".id AS staff_id,
+            "staff"."name" AS staff_name,
+            level.name AS level_name,
+            hello_movie.id AS hello_movie_id,
+            hello_movie.code AS hello_movie_code,
+            hello_movie.date AS hello_movie_date
+-- 	*
+        FROM movie_show_time
+                 LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+                 LEFT JOIN movie_staff ON movie.id = movie_staff.movie_id
+                 LEFT JOIN "staff_character" ON staff_character.staff_id = "movie_staff".staff_id
+                 LEFT JOIN "staff" ON staff_character.staff_id = "staff"."id"
+                 LEFT JOIN level ON movie.level_id = level.id
+                 LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
+        WHERE
+            movie_show_time.deleted = 0
+            -- 查询当前时间以后的电影
+--          AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= CURRENT_TIMESTAMP
+        ORDER BY movie.id
+    </select>
+    <select id="getMovieComingSoon" resultType="com.example.backend.entity.Movie">
+        SELECT movie.*
+        FROM "movie"
+        WHERE
+            movie.deleted = 0
+        ORDER BY
+            CASE
+                WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1  -- 如果没有日期数据，排到最后
+                ELSE 0  -- 有日期数据的排在前面
+                END,
+            TO_DATE(
+              CASE
+                  WHEN movie.start_date LIKE '____-__-__' THEN movie.start_date  -- 完整日期
+                  WHEN movie.start_date LIKE '____-__' THEN movie.start_date || '-01'  -- 补充日期
+                  WHEN movie.start_date LIKE '____' THEN movie.start_date || '-01-01'  -- 补充年月日
+                  ELSE '1900-01-01'  -- 默认值
+                  END, 'YYYY-MM-DD'
+            ) ASC
+    </select>
     <select id="movieDetail" resultMap="movieList">
         SELECT
             movie.*,
@@ -116,6 +224,7 @@
             COALESCE(theater_counts.theater_count, 0) AS theater_count,
             COALESCE(comment_counts.comment_count, 0) AS comment_count,
             level.name AS level_name,
+            level.description AS level_description,
             cinema_spec.id AS spec_id,
             cinema_spec.name AS spec_name,
             cinema_spec.description AS spec_description,
@@ -178,6 +287,7 @@
         <collection property="staff" ofType="com.example.backend.response.Staff">
             <result property="id" column="staff_id"></result>
             <result property="name" column="staff_name"></result>
+            <result property="cover" column="staff_cover"></result>
         </collection>
     </resultMap>
     <select id="movieStaffList" resultMap="movieStaffList">
@@ -185,7 +295,8 @@
             position.id as position_id,
             position.name as position_name,
             staff.id as staff_id,
-            staff.name as staff_name
+            staff.name as staff_name,
+            staff.cover as staff_cover
         FROM movie_staff
             LEFT JOIN position ON movie_staff.position_id = position.id
             LEFT JOIN staff ON movie_staff.staff_id = staff.id
@@ -196,6 +307,7 @@
     <resultMap id="movieCharacterList" type="com.example.backend.response.MovieCharacterResponse">
         <result property="id" column="character_id"></result>
         <result property="name" column="character_name"></result>
+        <result property="cover" column="character_cover"></result>
         <collection property="staff" ofType="com.example.backend.response.Staff">
             <result property="id" column="staff_id"></result>
             <result property="name" column="staff_name"></result>
@@ -205,6 +317,7 @@
         SELECT
             character.id as character_id,
             character.name as character_name,
+            character.cover as character_cover,
             staff.id as staff_id,
             staff.name as staff_name
         FROM
@@ -215,5 +328,29 @@
         WHERE
             movie_character.deleted = 0 AND
             movie_character.movie_id = #{id}
+    </select>
+    <resultMap id="getMovieShowTime" type="com.example.backend.response.app.AppBeforeMovieShowTimeResponse">
+        <result property="cinema_id" column="cinema_id"></result>
+        <result property="cinema_name" column="cinema_name"></result>
+        <result property="cinema_address" column="cinema_address"></result>
+        <result property="start_time" column="start_time"></result>
+        <result property="end_time" column="end_time"></result>
+    </resultMap>
+    <select id="getMovieShowTime" resultMap="getMovieShowTime">
+
+        SELECT
+            cinema.id AS cinema_id,
+            cinema.name AS cinema_name,
+            cinema.address AS cinema_address,
+            movie_show_time.start_time AS start_time,
+            movie_show_time.end_time AS end_time
+        FROM
+            movie_show_time
+                LEFT JOIN cinema ON movie_show_time.cinema_id = cinema."id"
+        WHERE
+            movie_show_time.deleted = 0
+            <!-- AND movie_show_time.status = #{showTimeState} -->
+            <!-- AND movie_show_time.id = #{query.movieId} -->
+            <!-- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now() -->
     </select>
 </mapper>

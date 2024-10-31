@@ -8,6 +8,7 @@
         <result property="content" column="content"/>
         <result property="comment_user_id" column="comment_user_id"/>
         <result property="comment_user_name" column="comment_user_name"/>
+        <result property="comment_user_avatar" column="comment_user_avatar"/>
         <result property="movie_id" column="movie_id"/>
         <result property="like" column="like"/>
         <result property="unlike" column="unlike"/>
@@ -28,6 +29,7 @@
             movie_comment.create_time as create_time,
             movie_comment.update_time as update_time,
             users.name as comment_user_name,
+            users.cover as comment_user_avatar,
             (
                 SELECT
                     COUNT(*)

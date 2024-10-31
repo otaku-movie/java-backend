@@ -39,6 +39,9 @@
             <if test="query.id != null and !query.id.equals('')">
                 AND theater_hall.id = #{query.id}
             </if>
+            <if test="query.cinemaId != null and !query.cinemaId.equals('')">
+                AND theater_hall.cinema_id = #{query.cinemaId}
+            </if>
         </where>
     </select>
 </mapper>

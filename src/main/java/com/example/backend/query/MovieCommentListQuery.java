@@ -1,5 +1,6 @@
 package com.example.backend.query;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

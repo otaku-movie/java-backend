@@ -2,6 +2,7 @@ package com.example.backend.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.context.annotation.Primary;
 
@@ -51,14 +52,17 @@ public class Movie {
   @TableField("want_to_see_count")
   Integer wantToSeeCount;
 
+  @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;
 
+  @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
   Date updateTime;
 
+  @JsonIgnore
   @TableLogic
   @TableField(value = "deleted", fill = FieldFill.INSERT)
   private Integer deleted;

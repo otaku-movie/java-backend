@@ -9,9 +9,23 @@ import com.example.backend.annotation.CheckPermission;
 import com.example.backend.entity.CinemaSpecSpec;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Cinema;
+import com.example.backend.entity.TheaterHall;
+import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
+import com.example.backend.enumerate.ShowTimeState;
 import com.example.backend.mapper.CinemaMapper;
+import com.example.backend.mapper.MovieShowTimeMapper;
+import com.example.backend.mapper.TheaterHallMapper;
+import com.example.backend.query.CinemaListQuery;
+import com.example.backend.query.GetCinemaMovieShowTimeListQuery;
+import com.example.backend.query.MovieShowTimeListQuery;
+import com.example.backend.query.app.getMovieShowTimeQuery;
 import com.example.backend.response.CinemaResponse;
+import com.example.backend.response.MovieShowTimeList;
+import com.example.backend.response.app.AppBeforeMovieShowTimeResponse;
+import com.example.backend.response.app.AppMovieShowTimeResponse;
+import com.example.backend.response.app.GetCinemaMovieShowTimeListResponse;
+import com.example.backend.response.cinema.CinemaScreeningResponse;
 import com.example.backend.service.CinemaSpecSpecService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,6 +74,11 @@ public class CinemaController {
   private CinemaMapper cinemaMapper;
 
   @Autowired
+  private TheaterHallMapper theaterHallMapper;
+  @Autowired
+  private MovieShowTimeMapper movieShowTimeMapper;
+
+  @Autowired
   private CinemaSpecSpecService cinemaSpecSpecService;
 
   @PostMapping("/api/cinema/list")
@@ -76,13 +97,61 @@ public class CinemaController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/cinema/spec")
+  // 获取影院排片
+
+  @GetMapping("/api/cinema/screening")
+  public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+
+    QueryWrapper queryWrapper = new QueryWrapper();
+    queryWrapper.eq("cinema_id", id);
+    List<TheaterHall> theaterHallList = theaterHallMapper.selectList(queryWrapper);
+
+    // 获取当前日期
+    LocalDate currentDate = LocalDate.parse(date);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    String today = currentDate.format(formatter);
+
+    // 获取今日上映的电影
+    MovieShowTimeListQuery movieShowTimeListQuery = new MovieShowTimeListQuery();
+
+    movieShowTimeListQuery.setDate(today);
+    movieShowTimeListQuery.setCinemaId(id);
+    List<MovieShowTimeList> movieShowTimeListList =  movieShowTimeMapper.movieShowTimeList(movieShowTimeListQuery, OrderState.order_succeed.getCode());
+
+    // 组装返回结果
+    List<CinemaScreeningResponse> result = theaterHallList.stream().map(item -> {
+      CinemaScreeningResponse cinemaScreeningResponse = new CinemaScreeningResponse();
+
+      cinemaScreeningResponse.setId(item.getId());
+      cinemaScreeningResponse.setName(item.getName());
+      cinemaScreeningResponse.setDate(today);
+
+
+      List<MovieShowTimeList> screening = movieShowTimeListList
+        .stream()
+        .filter(children -> Objects.equals(children.getTheater_hall_id(), item.getId()))
+        .toList();
+      cinemaScreeningResponse.setChildren(screening);
+
+      return cinemaScreeningResponse;
+    }).toList();
+
+
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+  }
   public RestBean<List<Object>> cinemaSpec (@RequestParam Integer cinemaId) {
     if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     List<Object> result = cinemaMapper.cinemaSpec(cinemaId);
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
+  }
+  @PostMapping("/api/app/cinema/movie/showTime")
+  public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
+    GetCinemaMovieShowTimeListResponse list = cinemaMapper.getCinemaMovieShowTimeList(query, ShowTimeState.no_started.getCode());
+
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @Transactional
   public void saveCinema(SaveCinemaQuery query) {

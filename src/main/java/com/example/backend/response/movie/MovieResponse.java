@@ -43,4 +43,5 @@ public class MovieResponse {
 
   Integer level_id;
   String level_name;
+  String level_description;
 }

@@ -11,4 +11,5 @@ public class MovieCharacterResponse {
   List<Staff> staff;
   Integer id;
   String name;
+  String cover;
 }

@@ -1,6 +1,7 @@
 package com.example.backend.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -27,15 +28,18 @@ public class Position implements Serializable {
     /**
      * 
      */
+    @JsonIgnore
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private Date createTime;
 
     /**
      * 
      */
+    @JsonIgnore
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
 
+    @JsonIgnore
     @TableLogic
     @TableField(value = "deleted", fill = FieldFill.INSERT)
     private Integer deleted;

@@ -9,6 +9,7 @@ public class MovieShowTimeListQuery {
   private Integer movieId;
   private Integer cinemaId;
   private Integer theaterHallId;
+  private String date;
 
   public MovieShowTimeListQuery() {
     this.page = 1; // 默认页数为1

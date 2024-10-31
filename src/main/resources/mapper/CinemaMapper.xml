@@ -94,4 +94,52 @@
             WHERE
                 cinema.id = #{id}
         </select>
+
+    <resultMap id="getCinemaMovieShowTimeList" type="com.example.backend.response.app.GetCinemaMovieShowTimeListResponse">
+        <result property="cinema_id" column="cinema_id"/>
+        <result property="cinema_name" column="cinema_name"/>
+        <result property="cinema_address" column="cinema_address"/>
+        <result property="cinema_tel" column="cinema_tel"/>
+
+        <!-- 集合映射，DateGroup -->
+        <collection property="data" ofType="com.example.backend.response.app.DateGroup">
+            <result property="date" column="date"/>
+            <!-- 时间集合映射，Time -->
+            <collection property="data" ofType="com.example.backend.response.app.TheaterHallShowTime">
+                <result property="id" column="id"/>
+                <result property="start_time" column="start_time"/>
+                <result property="end_time" column="end_time"/>
+                <result property="theater_hall_id" column="theater_hall_id"/>
+                <result property="theater_hall_name" column="theater_hall_name"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="getCinemaMovieShowTimeList" resultMap="getCinemaMovieShowTimeList">
+        SELECT
+            movie_show_time.id AS id,
+            cinema.id AS cinema_id,
+            cinema.name AS cinema_name,
+            cinema.address AS cinema_address,
+            cinema.tel as cinema_tel,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+            theater_hall.id as theater_hall_id,
+            theater_hall.name as theater_hall_name
+        FROM
+            movie_show_time
+        LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+        LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall."id"
+        WHERE
+            movie_show_time.deleted = 0
+        <!--     AND movie_show_time.cinema_id = #{query.cinemaId} -->
+         <!--    AND movie_show_time.movie_id = #{query.movieId} -->
+         <!-- AND movie_show_time.status = #{showTimeState} -->
+        <!-- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now() -->
+        GROUP BY
+            date, movie_show_time.id, cinema.id, cinema.name, cinema.address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name"
+        ORDER BY
+            date, movie_show_time.start_time
+
+    </select>
 </mapper>

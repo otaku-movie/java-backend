@@ -62,7 +62,7 @@
             select_seat.select_seat_state = #{seatState} AND
             select_seat.deleted = 0
     </select>
-        <select id="movieShowTimeList" resultMap="movie_show_time_list">
+    <select id="movieShowTimeList" resultMap="movie_show_time_list">
             SELECT
                 movie_show_time.id,
                 movie_show_time.start_time,
@@ -125,10 +125,13 @@
                 <if test="query.theaterHallId != null and !query.theaterHallId.equals('')">
                     AND theater_hall.id = #{query.theaterHallId}
                 </if>
+                <if test="query.date != null and !query.date.equals('')">
+                    AND TO_DATE(movie_show_time.start_time, 'YYYY-MM-DD') = TO_DATE(#{query.date}, 'YYYY-MM-DD')
+                </if>
             </where>
             ORDER BY
                 movie_show_time.update_time DESC
-        </select>
+    </select>
     <resultMap id="StatisticsOfDailyMovieScreenings" type="com.example.backend.response.chart.StatisticsOfDailyMovieScreenings">
         <result property="start_time" column="start_time"></result>
         <result property="total_count" column="total_count"></result>

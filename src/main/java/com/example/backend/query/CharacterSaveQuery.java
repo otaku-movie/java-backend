@@ -1,5 +1,6 @@
 package com.example.backend.query;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -17,6 +18,5 @@ public  class CharacterSaveQuery {
   @NotNull
   String description;
 
-  @NotNull
   List<Integer> staffId;
 }

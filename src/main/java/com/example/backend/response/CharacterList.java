@@ -8,11 +8,6 @@ import lombok.Data;
 import java.util.Date;
 import java.util.List;
 
-@Data
-class  Staff {
-  private Integer id;
-  private String name;
-}
 
 @Data
 public class CharacterList {

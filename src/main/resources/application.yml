@@ -1,10 +1,13 @@
 spring:
+#  jackson:
+#    property-naming-strategy: SNAKE_CASE
   servlet:
     multipart:
       # 请求最大大小 不设置会报错
       max-request-size: -1
       # 文件上传最大大小
       max-file-size: -1
+
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://43.154.172.94:5432/test_movie
@@ -44,6 +47,7 @@ server:
     # tomcat 请求大小 -1 表示没限制
     max-http-form-post-size: -1
   port: 8080
+  address: 0.0.0.0
 sa-token:
   # token 名称（同时也是 cookie 名称）
   token-name: token
@@ -55,6 +59,10 @@ sa-token:
   token-style: simple-uuid
   # 是否输出操作日志
   is-log: true
+logging:
+  level:
+    com.zaxxer.hikari.HikariConfig: DEBUG
+    com.zaxxer.hikari.HikariPool: DEBUG
 minio:
   accessKey: RQXIcweef6ZzjFWFsDrj
   secretKey: pfASmYyXgqQnR81CHTLyIIaHTt1SoxUcTgYaeR2p
@@ -67,6 +75,7 @@ captcha:
   prefix: captcha
   # 验证码过期时间，默认是2分钟,单位毫秒， 可以根据自身业务进行调整
   expire:
+    # 默认缓存时间 2分钟
     # 默认缓存时间 2分钟
     default: 10000
   # 使用加载系统自带的资源， 默认是 false
