@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.backend.controller.CinemaListQuery;
 import com.example.backend.entity.Cinema;
 import com.example.backend.response.CinemaResponse;
+import com.example.backend.response.MovieShowTimeList;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public interface CinemaMapper extends BaseMapper<Cinema> {
 
   CinemaResponse cinemaDetail(Integer id);
   List<Object> cinemaSpec(Integer cinemaId);
+
+
 }

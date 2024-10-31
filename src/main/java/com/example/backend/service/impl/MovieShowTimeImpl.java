@@ -34,7 +34,7 @@ public class MovieShowTimeImpl implements MovieShowTimeService {
       try {
         Date o1StartTimestamp = Utils.getTimestamp(o1.getStartTime(), format);
         Date o2StartTimestamp = Utils.getTimestamp(o2.getStartTime(), format);
-        return Math.toIntExact(o1StartTimestamp.getTime() - o2StartTimestamp.getTime());
+        return Long.compare(o1StartTimestamp.getTime(), o2StartTimestamp.getTime());
       } catch (ParseException e) {
         throw new RuntimeException(e);
       }
