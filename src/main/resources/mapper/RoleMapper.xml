@@ -6,11 +6,11 @@
 
     <resultMap id="permissionList" type="com.example.backend.response.ButtonResponse">
         <id property="id" column="menu_id" jdbcType="INTEGER"/>
-        <result property="i18n_key" column="i18n_key" jdbcType="VARCHAR"/>
+        <result property="i18nKey" column="i18n_key" jdbcType="VARCHAR"/>
         <result property="path" column="menu_path" jdbcType="VARCHAR"/>
-        <result property="path_name" column="menu_path_name" jdbcType="VARCHAR"/>
+        <result property="pathName" column="menu_path_name" jdbcType="VARCHAR"/>
         <result property="show" column="menu_show" jdbcType="BOOLEAN"/>
-        <result property="parent_id" column="menu_parent_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="menu_parent_id" jdbcType="INTEGER"/>
         <result property="checked" column="menu_checked" jdbcType="BOOLEAN"/>
         <collection property="children" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"/>
@@ -19,8 +19,8 @@
         </collection>
         <collection property="button" ofType="com.example.backend.response.Button">
             <result property="id" column="button_id" jdbcType="INTEGER"/>
-            <result property="i18n_key" column="button_i18n_key" jdbcType="VARCHAR"/>
-            <result property="api_code" column="api_code" jdbcType="VARCHAR"/>
+            <result property="i18nKey" column="button_i18n_key" jdbcType="VARCHAR"/>
+            <result property="apiCode" column="api_code" jdbcType="VARCHAR"/>
             <result property="checked" column="button_checked" jdbcType="BOOLEAN"/>
         </collection>
     </resultMap>
@@ -52,11 +52,11 @@
     </select>
     <!--    角色的按钮权限 -->
     <resultMap id="rolePermissionButton" type="com.example.backend.response.RolePermissionButton">
-        <result property="user_id" column="user_id"/>
-        <result property="role_id" column="role_id"/>
-        <result property="button_id" column="button_id"/>
-        <result property="button_name" column="button_name"/>
-        <result property="api_code" column="api_code"/>
+        <result property="userId" column="user_id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="buttonId" column="button_id"/>
+        <result property="buttonName" column="button_name"/>
+        <result property="apiCode" column="api_code"/>
     </resultMap>
     <select id="rolePermissionButton" resultMap="rolePermissionButton">
         SELECT

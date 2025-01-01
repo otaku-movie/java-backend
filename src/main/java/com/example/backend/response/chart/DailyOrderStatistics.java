@@ -14,5 +14,5 @@ class OrderState {
 public class DailyOrderStatistics {
   String date;
   Long count;
-  List<OrderState> order_state;
+  List<OrderState> orderState;
 }

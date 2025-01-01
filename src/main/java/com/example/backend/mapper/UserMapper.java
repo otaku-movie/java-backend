@@ -8,6 +8,8 @@ import com.example.backend.query.UserListQuery;
 import com.example.backend.response.UserListResponse;
 import com.example.backend.response.chart.StatisticsUserCount;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -18,4 +20,15 @@ public interface UserMapper extends BaseMapper<User> {
   List<Role> userRole(Integer id);
 
   List<StatisticsUserCount> StatisticsOfDailyRegisteredUsers();
+  @Select("""
+        SELECT COUNT(*) 
+        FROM (
+            SELECT DISTINCT mo.id
+            FROM select_seat ss
+            LEFT JOIN movie_order mo ON mo.id = ss.movie_order_id
+            WHERE ss.user_id = #{userId}
+              AND ss.movie_order_id IS NOT NULL
+        ) AS distinct_movie_orders
+    """)
+  Integer countDistinctMovieOrders(@Param("userId") int userId);
 }

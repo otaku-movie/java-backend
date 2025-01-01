@@ -53,7 +53,7 @@ public class MovieTicketTypeController {
   @Autowired
   private MovieTicketTypeMapper movieTicketTypeMapper;
 
-  @PostMapping("/api/movie/ticketType/list")
+  @PostMapping("/api/cinema/ticketType/list")
   public RestBean<List<MovieTicketType>> list(@RequestBody MovieTicketTypeListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("cinema_id", query.getCinemaId());
@@ -64,7 +64,7 @@ public class MovieTicketTypeController {
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/movie/ticketType/detail")
+  @GetMapping("/api/cinema/ticketType/detail")
   public RestBean<MovieTicketType> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<MovieTicketType> queryWrapper = new QueryWrapper<>();
@@ -76,7 +76,7 @@ public class MovieTicketTypeController {
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTicketType.remove")
-  @DeleteMapping("/api/admin/movie/ticketType/remove")
+  @DeleteMapping("/api/admin/cinema/ticketType/remove")
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -86,7 +86,7 @@ public class MovieTicketTypeController {
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTicketType.save")
-  @PostMapping("/api/admin/movie/ticketType/save")
+  @PostMapping("/api/admin/cinema/ticketType/save")
   public RestBean<List<Object>> save(@RequestBody @Validated MovieTicketTypeSaveQuery query)  {
     String message = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.movieTicketTypeName"));
     MovieTicketType modal = new MovieTicketType();

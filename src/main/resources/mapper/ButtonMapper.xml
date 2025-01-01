@@ -7,11 +7,11 @@
     <resultMap id="buttonList" type="com.example.backend.response.ButtonResponse">
             <id property="id" column="id" jdbcType="INTEGER"/>
 <!--            <result property="name" column="name" jdbcType="VARCHAR"/>-->
-            <result property="i18n_key" column="i18n_key" jdbcType="VARCHAR"/>
+            <result property="i18nKey" column="i18n_key" jdbcType="VARCHAR"/>
             <result property="path" column="path" jdbcType="INTEGER"/>
-            <result property="path_name" column="path_name" jdbcType="VARCHAR"/>
+            <result property="pathName" column="path_name" jdbcType="VARCHAR"/>
             <result property="show" column="show" jdbcType="BOOLEAN"/>
-            <result property="parent_id" column="parent_id" jdbcType="INTEGER"/>
+            <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
             <collection property="children" ofType="com.example.backend.response.Spec">
                 <result property="id" column="spec_id"></result>
                 <result property="name" column="spec_name"></result>
@@ -19,8 +19,8 @@
             </collection>
             <collection property="button" ofType="com.example.backend.response.Button">
                 <result property="id" column="button_id"></result>
-                <result property="i18n_key" column="button_i18n_key" jdbcType="VARCHAR"/>
-                <result property="api_code" column="api_code"></result>
+                <result property="i18nKey" column="button_i18n_key" jdbcType="VARCHAR"/>
+                <result property="apiCode" column="api_code"></result>
             </collection>
     </resultMap>
 

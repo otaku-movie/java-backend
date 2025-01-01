@@ -7,7 +7,7 @@ import java.util.List;
 class CinemaSpec {
   Integer id;
   String name;
-  Integer plus_price;
+  Integer plusPrice;
 }
 
 @Data
@@ -17,10 +17,10 @@ public class CinemaResponse {
   String description;
   String address;
   String tel;
-  String home_page;
-  Integer max_select_seat_count;
-  Integer theater_count;
-  Integer brand_id;
-  String brand_name;
+  String homePage;
+  Integer maxSelectSeatCount;
+  Integer theaterCount;
+  Integer brandId;
+  String brandName;
   List<CinemaSpec> spec;
 }

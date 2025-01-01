@@ -153,6 +153,7 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
     map.forEach((row, seat) -> {
       SeatResponse modal = new SeatResponse();
       modal.setRowAxis(row);
+      modal.setRowName(seat.get(0).getRowName());
       modal.setChildren(seat);
 
       result.add(modal);
@@ -167,6 +168,7 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
     seatDetailResponse.setAisle(getSeatAisle(theaterHallId));
     seatDetailResponse.setSeat(result);
     seatDetailResponse.setArea(getSeatArea(theaterHallId));
+
 
     return seatDetailResponse;
   }

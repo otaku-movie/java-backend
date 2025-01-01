@@ -3,20 +3,20 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.backend.mapper.MovieCommentMapper">
-    <resultMap id="commentList" type="com.example.backend.response.MovieCommentResponse">
+    <resultMap id="commentList" type="com.example.backend.response.comment.CommentDetail">
         <result property="id" column="id"/>
         <result property="content" column="content"/>
-        <result property="comment_user_id" column="comment_user_id"/>
-        <result property="comment_user_name" column="comment_user_name"/>
-        <result property="comment_user_avatar" column="comment_user_avatar"/>
-        <result property="movie_id" column="movie_id"/>
+        <result property="commentUserId" column="comment_user_id"/>
+        <result property="commentUserName" column="comment_user_name"/>
+        <result property="commentUserAvatar" column="comment_user_avatar"/>
+        <result property="movieId" column="movie_id"/>
         <result property="like" column="like"/>
-        <result property="unlike" column="unlike"/>
-        <result property="reply_count" column="reply_count"/>
-        <result property="like_count" column="like_count"/>
-        <result property="unlike_count" column="unlike_count"/>
-        <result property="create_time" column="create_time"/>
-        <result property="update_time" column="update_time"/>
+        <result property="dislikeCount" column="dislike_count"/>
+        <result property="replyCount" column="reply_count"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="dislikeCount" column="dislike_count"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
     <select id="commentList" resultMap="commentList">
         SELECT
@@ -25,7 +25,7 @@
             movie_comment.comment_user_id as comment_user_id,
             movie_comment.movie_id as movie_id,
             movie_comment.like_count as like_count,
-            movie_comment.unlike_count as unlike_count,
+            movie_comment.dislike_count as dislike_count,
             movie_comment.create_time as create_time,
             movie_comment.update_time as update_time,
             users.name as comment_user_name,
@@ -43,5 +43,32 @@
         WHERE
             movie_comment.deleted = 0 AND movie_comment.movie_id = #{query.movieId}
         ORDER BY movie_comment.update_time DESC
+    </select>
+    <select id="commentDetail" resultMap="commentList">
+        SELECT
+            movie_comment.id as id,
+            movie_comment.content as content,
+            movie_comment.comment_user_id as comment_user_id,
+            movie_comment.comment_user_id as comment_user_id,
+            movie_comment.movie_id as movie_id,
+            movie_comment.like_count as like_count,
+            movie_comment.dislike_count as dislike_count,
+            movie_comment.create_time as create_time,
+            movie_comment.update_time as update_time,
+            users.name as comment_user_name,
+            users.cover as comment_user_avatar,
+            (
+                SELECT
+                    COUNT(*)
+                FROM movie_reply
+                WHERE
+                    movie_reply.movie_comment_id = movie_comment.id AND
+                    movie_reply.deleted = 0
+            ) AS reply_count
+        FROM movie_comment
+                 LEFT JOIN users ON movie_comment.comment_user_id = users.id
+        WHERE
+            movie_comment.deleted = 0
+            AND movie_comment.id = #{id}
     </select>
 </mapper>

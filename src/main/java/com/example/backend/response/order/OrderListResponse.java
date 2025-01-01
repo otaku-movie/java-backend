@@ -9,33 +9,35 @@ import java.util.List;
 
 @Data
 class Seat {
-  Integer seat_x;
-  Integer seat_y;
-  String movie_ticket_type_name;
+  Integer seatX;
+  Integer seatY;
+  String seatName;
+  String movieTicketTypeName;
 }
 
 @Data
 public class OrderListResponse {
   Integer id;
-  BigDecimal order_total;
-  Integer order_state;
-  Integer pay_method;
-  Integer pay_number;
-  Integer pay_state;
-  BigDecimal pay_total;
+  BigDecimal orderTotal;
+  Integer orderState;
+  String payMethod;
+  Integer payNumber;
+  Integer payState;
+  BigDecimal payTotal;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date order_time;
+  Date orderTime;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date pay_time;
-  private String start_time;
-  private String end_time;
+  Date payTime;
+  private String date;
+  private String startTime;
+  private String endTime;
   private Integer status;
-  private Integer movie_id;
-  private String movie_name;
-  private String movie_poster;
-  private Integer cinema_id;
-  private String cinema_name;
-  private String theater_hall_name;
-  private String theater_hall_spec_name;
+  private Integer movieId;
+  private String movieName;
+  private String moviePoster;
+  private Integer cinemaId;
+  private String cinemaName;
+  private String theaterHallName;
+  private String theaterHallSpecName;
   List<Seat> seat;
 }

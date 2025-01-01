@@ -6,14 +6,14 @@ import java.util.List;
 
 @Data
 class Movie {
-  Integer movie_id;
-  String movie_name;
-  Long movie_count;
+  Integer movieId;
+  String movieName;
+  Long movieCount;
 }
 
 @Data
 public class StatisticsOfDailyMovieScreenings {
-  String start_time;
-  Long total_count;
+  String startTime;
+  Long totalCount;
   List<Movie> movie;
 }

@@ -16,6 +16,8 @@ import java.util.List;
 @Mapper
 public interface MovieOrderMapper extends BaseMapper<MovieOrder> {
   IPage<OrderListResponse> orderList(MovieOrderListQuery query, Page<OrderListResponse> page);
+  OrderListResponse orderDetail(Integer orderId);
+  IPage<OrderListResponse>  userOrderList(Integer userId,  Page<OrderListResponse> page);
   List<DailyOrderStatistics> DailyOrderStatistics();
   List<DailyTransactionAmount> DailyTransactionAmount(Integer orderState, Integer payState);
 }

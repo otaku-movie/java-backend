@@ -21,6 +21,7 @@ import java.util.List;
 public interface MovieMapper extends BaseMapper<Movie> {
     IPage<MovieResponse> movieList(MovieListQuery query, IPage<MovieResponse> page);
     MovieResponse movieDetail(Integer id);
+    MovieResponse getMovieRate(Integer id);
     // 热映电影
     IPage<NowMovieShowingResponse> nowMovieShowing(AppMovieListQuery query, IPage<MovieMapper> page);
     List<AppMovieStaffResponse> appMovieStaff(Integer movieId);

@@ -7,20 +7,20 @@
         <result property="name" column="name"></result>
         <result property="description" column="description"></result>
         <result property="cover" column="cover"></result>
-        <result property="original_name" column="original_name"></result>
-        <result property="home_page" column="home_page"></result>
-        <result property="start_date" column="start_date"></result>
-        <result property="end_date" column="end_date"></result>
+        <result property="originalName" column="original_name"></result>
+        <result property="homePage" column="home_page"></result>
+        <result property="startDate" column="start_date"></result>
+        <result property="endDate" column="end_date"></result>
         <result property="status" column="status"></result>
         <result property="time" column="time"></result>
-        <result property="cinema_count" column="cinema_count"></result>
-        <result property="theater_count" column="theater_count"></result>
-        <result property="comment_count" column="comment_count"></result>
-        <result property="watched_count" column="watched_count"></result>
-        <result property="want_to_see_count" column="want_to_see_count"></result>
-        <result property="level_id" column="level_id"></result>
-        <result property="level_name" column="level_name"></result>
-        <result property="level_description" column="level_description"></result>
+        <result property="cinemaCount" column="cinema_count"></result>
+        <result property="theaterCount" column="theater_count"></result>
+        <result property="commentCount" column="comment_count"></result>
+        <result property="watchedCount" column="watched_count"></result>
+        <result property="wantToSeeCount" column="want_to_see_count"></result>
+        <result property="levelId" column="level_id"></result>
+        <result property="levelName" column="level_name"></result>
+        <result property="levelDescription" column="level_description"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -30,7 +30,7 @@
             <result property="id" column="tag_id"></result>
             <result property="name" column="tag_name"></result>
         </collection>
-        <collection property="hello_movie" ofType="com.example.backend.response.movie.HelloMovie">
+        <collection property="helloMovie" ofType="com.example.backend.response.movie.HelloMovie">
             <result property="id" column="hello_movie_id"></result>
             <result property="code" column="hello_movie_code"></result>
             <result property="date" column="hello_movie_date"></result>
@@ -139,34 +139,19 @@
         <result property="id" column="id"></result>
         <result property="cover" column="cover"></result>
         <result property="name" column="name"></result>
-<!--        <result property="description" column="description"></result>-->
-<!--        <result property="original_name" column="original_name"></result>-->
-<!--        <result property="home_page" column="home_page"></result>-->
-        <result property="start_date" column="start_date"></result>
-<!--        <result property="end_date" column="end_date"></result>-->
-<!--        <result property="status" column="status"></result>-->
-<!--        <result property="time" column="time"></result>-->
-<!--        <result property="cinema_count" column="cinema_count"></result>-->
-<!--        <result property="theater_count" column="theater_count"></result>-->
-<!--        <result property="comment_count" column="comment_count"></result>-->
-<!--        <result property="watched_count" column="watched_count"></result>-->
-<!--        <result property="want_to_see_count" column="want_to_see_count"></result>-->
-<!--        <result property="level_id" column="level_id"></result>-->
-        <result property="level_name" column="level_name"></result>
+        <result property="startDate" column="start_date"></result>
+
+        <result property="levelName" column="level_name"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
             <result property="description" column="spec_description"></result>
         </collection>
-<!--        <collection property="tags" ofType="com.example.backend.response.movie.Tags">-->
-<!--            <result property="id" column="tag_id"></result>-->
-<!--            <result property="name" column="tag_name"></result>-->
-<!--        </collection>-->
         <collection property="cast" ofType="com.example.backend.response.Staff">
             <result property="id" column="staff_id"></result>
             <result property="name" column="staff_name"></result>
         </collection>
-        <collection property="hello_movie" ofType="com.example.backend.response.movie.HelloMovie">
+        <collection property="helloMovie" ofType="com.example.backend.response.movie.HelloMovie">
             <result property="id" column="hello_movie_id"></result>
             <result property="code" column="hello_movie_code"></result>
             <result property="date" column="hello_movie_date"></result>
@@ -281,6 +266,17 @@
         WHERE
             movie.id = #{id}
     </select>
+    <select id="getMovieRate" resultType="com.example.backend.response.movie.MovieResponse">
+        SELECT
+            movie_rate.movie_id,
+            round(AVG(rate), 1) AS rate,
+            COUNT(rate) AS total_ratings
+        FROM
+            movie_rate
+        WHERE
+            movie_rate.movie_id = #{id}
+        GROUP BY movie_id
+    </select>
     <resultMap id="movieStaffList" type="com.example.backend.response.MovieStaffResponse">
         <result property="id" column="position_id"></result>
         <result property="name" column="position_name"></result>
@@ -330,11 +326,11 @@
             movie_character.movie_id = #{id}
     </select>
     <resultMap id="getMovieShowTime" type="com.example.backend.response.app.AppBeforeMovieShowTimeResponse">
-        <result property="cinema_id" column="cinema_id"></result>
-        <result property="cinema_name" column="cinema_name"></result>
-        <result property="cinema_address" column="cinema_address"></result>
-        <result property="start_time" column="start_time"></result>
-        <result property="end_time" column="end_time"></result>
+        <result property="cinemaId" column="cinema_id"></result>
+        <result property="cinemaName" column="cinema_name"></result>
+        <result property="cinemaAddress" column="cinema_address"></result>
+        <result property="startTime" column="start_time"></result>
+        <result property="endTime" column="end_time"></result>
     </resultMap>
     <select id="getMovieShowTime" resultMap="getMovieShowTime">
 

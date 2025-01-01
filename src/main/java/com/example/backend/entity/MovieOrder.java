@@ -39,8 +39,8 @@ public class MovieOrder implements Serializable {
   @TableField(value = "pay_time")
   private Date payTime;
 
-  @TableField(value = "pay_method")
-  private Integer orderMethod;
+  @TableField(value = "pay_method_id")
+  private Integer payMethodId;
 
   // 订单创建时间
   @TableField(value = "create_time", fill = FieldFill.INSERT)

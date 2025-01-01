@@ -8,11 +8,16 @@ spring:
       # 文件上传最大大小
       max-file-size: -1
 
+#  datasource:
+#    driver-class-name: org.postgresql.Driver
+#    url: jdbc:postgresql://43.154.172.94:5432/test_movie
+#    username: postgres
+#    password: Apoptoxin4869
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://43.154.172.94:5432/test_movie
+    url: jdbc:postgresql://localhost:5432/test-movie
     username: postgres
-    password: Apoptoxin4869
+    password: 123456
 #  web:
     resources:
       # 自定义404异常

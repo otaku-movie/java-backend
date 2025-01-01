@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class StatisticsUserCount {
-  String create_date;
-  Integer user_count;
+  String createDate;
+  Integer userCount;
 }

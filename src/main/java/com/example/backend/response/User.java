@@ -13,9 +13,9 @@ public class User {
   String name;
   String email;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date create_time;
+  Date createTime;
 
   @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date update_time;
+  Date updateTime;
 }

@@ -1,6 +1,7 @@
 package com.example.backend.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.example.backend.response.MovieReplyResponse;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
@@ -8,12 +9,18 @@ import java.util.Date;
 
 @Data
 @TableName("movie_reply")
-public class MovieReply {
+public class MovieReply extends MovieReplyResponse {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;
 
   @TableField("content")
   String content;
+
+  @TableField("like_count")
+  Integer likeCount;
+
+  @TableField("dislike_count")
+  Integer dislikeCount;
 
   @TableField("movie_id")
   Integer movieId;

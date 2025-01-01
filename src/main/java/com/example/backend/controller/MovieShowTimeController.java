@@ -15,6 +15,7 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.response.UserSelectSeat;
+import com.example.backend.response.app.AppMovieShowTimeDetail;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.service.SeatService;
 import com.example.backend.service.SelectSeatService;
@@ -38,6 +39,8 @@ class SeatPosition {
   Integer x;
   @NotNull(message = "${validator.saveSelectSeat.y.required}")
   Integer y;
+  @NotNull
+  Integer seatId;
 }
 
 @Data
@@ -83,6 +86,14 @@ public class MovieShowTimeController {
 
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
+  }
+  @GetMapping("/api/app/movie_show_time/detail")
+  public RestBean<AppMovieShowTimeDetail> GetAppMovieShowTimeDetail(@RequestParam Integer id) {
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+
+    AppMovieShowTimeDetail result = movieShowTimeMapper.appMovieShowTimeDetail(id);
+
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/movie_show_time/detail")
   public RestBean<MovieShowTime> detail (@RequestParam Integer id) {
@@ -130,6 +141,7 @@ public class MovieShowTimeController {
     queryWrapper.in("x", queryX);
     queryWrapper.in("y", queryY);
     queryWrapper.eq("theater_hall_id", query.getTheaterHallId());
+    queryWrapper.eq("movie_show_time_id", query.getMovieShowTimeId());
 
     List<SelectSeat> list = selectSeatMapper.selectList(queryWrapper);
 
@@ -158,7 +170,8 @@ public class MovieShowTimeController {
       modal.setX(item.getX());
       modal.setY(item.getY());
       modal.setUserId(StpUtil.getLoginIdAsInt());
-      modal.setSelectSeatState(SeatState.locked.getCode());
+      modal.setSelectSeatState(SeatState.selected.getCode());
+      modal.setSeatId(item.getSeatId());
 
       return modal;
     }).toList();
@@ -172,10 +185,15 @@ public class MovieShowTimeController {
   }
   @SaCheckLogin
   @GetMapping("/api/movie_show_time/user_select_seat")
-  public RestBean<List<UserSelectSeat>> selectSeatList(
+  public RestBean<Object> selectSeatList(
     @RequestParam("movieShowTimeId") Integer movieShowTimeId
   ) {
-    List<UserSelectSeat> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId,SeatState.locked.getCode() );
+    UserSelectSeat result = movieShowTimeMapper.userSelectSeat(
+      StpUtil.getLoginIdAsInt(),
+      // 获取用户选择的座位
+      movieShowTimeId,
+      SeatState.selected.getCode()
+    );
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }

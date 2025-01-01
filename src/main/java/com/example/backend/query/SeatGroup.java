@@ -11,6 +11,8 @@ public class SeatGroup {
   @NotNull
   // y 坐标
   Integer y;
+  @NotNull
+  Integer seatId;
   // 电影票类型
   @NotNull
   Integer movieTicketTypeId;

@@ -16,8 +16,8 @@ public class NowMovieShowingResponse {
   String cover;
   List<Tags> tags;
   List<Spec> spec;
-  String level_name;
+  String levelName;
   List<Staff> cast;
-  List<HelloMovie> hello_movie;
-  String start_date;
+  List<HelloMovie> helloMovie;
+  String startDate;
 }

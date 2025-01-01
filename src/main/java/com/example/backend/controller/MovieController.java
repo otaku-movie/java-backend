@@ -75,6 +75,13 @@ public class MovieController {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     MovieResponse result = movieMapper.movieDetail(id);
+    MovieResponse data = movieMapper.getMovieRate(id);
+
+    if (data != null) {
+      result.setRate(data.getRate());
+      result.setTotalRatings(data.getTotalRatings());
+    }
+
 
     return RestBean.success(result, MessageUtils.getMessage("success.remove"));
   }

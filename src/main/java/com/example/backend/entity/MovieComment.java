@@ -15,6 +15,12 @@ public class MovieComment {
   @TableField("content")
   String content;
 
+  @TableField("like_count")
+  Integer likeCount;
+
+  @TableField("dislike_count")
+  Integer dislikeCount;
+
   // 评论人
   @TableField("comment_user_id")
   Integer commentUserId;

@@ -5,8 +5,8 @@ import lombok.Data;
 @Data
 public class Button {
   Integer id;
-  String i18n_key;
+  String i18nKey;
   String name;
-  String api_code;
+  String apiCode;
   Boolean checked;
 }

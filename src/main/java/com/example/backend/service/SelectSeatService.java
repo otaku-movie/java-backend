@@ -45,7 +45,12 @@ public class SelectSeatService extends ServiceImpl<SelectSeatMapper, SelectSeat>
 
   public Object selectSeatList(Integer theaterHallId, Integer movieShowTimeId) {
     System.out.println("loginId:" + StpUtil.getLoginIdAsInt());
-    List<SeatListResponse> seatList = selectSeatMapper.selectSeatList(theaterHallId, movieShowTimeId, StpUtil.getLoginIdAsInt(), SeatState.sold.getCode());
+    List<SeatListResponse> seatList = selectSeatMapper.selectSeatList(
+      theaterHallId,
+      movieShowTimeId,
+      StpUtil.getLoginIdAsInt(),
+      SeatState.selected.getCode()
+    );
 
     List result = new ArrayList();
 
@@ -57,6 +62,7 @@ public class SelectSeatService extends ServiceImpl<SelectSeatMapper, SelectSeat>
       SeatResponse modal = new SeatResponse();
       modal.setRowAxis(row);
       modal.setChildren(seat);
+      modal.setRowName(seat.get(0).getRowName());
 
       result.add(modal);
     });

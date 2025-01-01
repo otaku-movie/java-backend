@@ -10,8 +10,8 @@
         <result property="name" column="name"></result>
         <result property="cover" column="endTime"></result>
         <result property="email" column="email"></result>
-        <result property="create_time" column="create_time"/>
-        <result property="update_time" column="update_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
         <collection property="roles" ofType="com.example.backend.response.Role">
             <result property="id" column="role_id"></result>
             <result property="name" column="role_name"></result>
@@ -54,8 +54,8 @@
         WHERE user_role.user_id = #{id}
     </select>
     <resultMap id="StatisticsOfDailyRegisteredUsers" type="com.example.backend.response.chart.StatisticsUserCount">
-        <result property="create_date" column="create_date"></result>
-        <result property="user_count" column="user_count"></result>
+        <result property="createDate" column="create_date"></result>
+        <result property="userCount" column="user_count"></result>
     </resultMap>
     <select id="StatisticsOfDailyRegisteredUsers" resultMap="StatisticsOfDailyRegisteredUsers">
         --  统计每日注册用户数

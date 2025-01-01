@@ -26,6 +26,7 @@ import com.example.backend.response.app.AppBeforeMovieShowTimeResponse;
 import com.example.backend.response.app.AppMovieShowTimeResponse;
 import com.example.backend.response.app.GetCinemaMovieShowTimeListResponse;
 import com.example.backend.response.cinema.CinemaScreeningResponse;
+import com.example.backend.response.cinema.MovieShowingResponse;
 import com.example.backend.service.CinemaSpecSpecService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
@@ -97,9 +98,15 @@ public class CinemaController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  // 获取影院排片
+  // 获取影院上映中的电影
+  @GetMapping("/api/cinema/movieShowing")
+  public RestBean<Object> GetMovieShowing(@RequestParam("id") Integer id) {
+    List<MovieShowingResponse> result = cinemaMapper.getMovieShowing(id);
 
-  @GetMapping("/api/cinema/screening")
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+  }
+  // 获取影院排片
+  @GetMapping("/api/cinema/movieScheduleList")
   public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -130,7 +137,7 @@ public class CinemaController {
 
       List<MovieShowTimeList> screening = movieShowTimeListList
         .stream()
-        .filter(children -> Objects.equals(children.getTheater_hall_id(), item.getId()))
+        .filter(children -> Objects.equals(children.getTheaterHallId(), item.getId()))
         .toList();
       cinemaScreeningResponse.setChildren(screening);
 
@@ -140,10 +147,11 @@ public class CinemaController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  public RestBean<List<Object>> cinemaSpec (@RequestParam Integer cinemaId) {
+  @GetMapping("/api/cinema/spec")
+  public RestBean<List<com.example.backend.response.Spec>> cinemaSpec (@RequestParam Integer cinemaId) {
     if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
-    List<Object> result = cinemaMapper.cinemaSpec(cinemaId);
+    List<com.example.backend.response.Spec> result = cinemaMapper.cinemaSpec(cinemaId);
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }

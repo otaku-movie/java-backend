@@ -3,16 +3,18 @@
 <mapper namespace="com.example.backend.mapper.SelectSeatMapper">
     <resultMap id="seatListResponseMap" type="com.example.backend.response.SeatListResponse">
         <id property="id" column="id"/>
-        <result property="theater_hall_id" column="theater_hall_id"/>
+        <result property="theaterHallId" column="theater_hall_id"/>
         <result property="x" column="x_axis"/>
         <result property="y" column="y_axis"/>
         <result property="z" column="z_axis"/>
+        <result property="rowName" column="row_name"></result>
+        <result property="seatName" column="seat_name"></result>
         <result property="selected" column="selected"/>
         <result property="show" column="show"/>
         <result property="disabled" column="disabled"/>
-        <result property="wheel_chair" column="wheel_chair"/>
-        <result property="seat_position_group" column="seat_position_group"/>
-        <result property="select_seat_state" column="select_seat_state"/>
+        <result property="wheelChair" column="wheel_chair"/>
+        <result property="seatPositionGroup" column="seat_position_group"/>
+        <result property="selectSeatState" column="select_seat_state"/>
         <association property="area" javaType="com.example.backend.response.SeatAreaResponse">
             <id property="id" column="seat_area_id"/>
             <result property="name" column="seat_area_name"/>
@@ -48,6 +50,8 @@
             seat.y_axis,
             seat.z_axis,
             seat.show,
+            seat.row_name,
+            seat.seat_name,
             seat.disabled,
             seat.wheel_chair,
             seat.seat_position_group,
@@ -57,7 +61,7 @@
             seat_area.color as seat_area_color,
             -- 判断当前用户是否选中，只处理未支付的，已支付的不考虑
             CASE
-                WHEN select_seat.user_id = #{userId} AND select_seat.select_seat_state != #{selectSeatState} THEN true
+                WHEN select_seat.user_id = #{userId} AND select_seat.select_seat_state = #{selected} THEN true
                 ELSE false
                 END AS selected,
             COALESCE(select_seat.select_seat_state, 1) AS select_seat_state

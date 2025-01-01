@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class DailyTransactionAmount {
   String date;
-  Long total_amount;
+  Long totalAmount;
 }

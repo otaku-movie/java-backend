@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.query.MovieCommentListQuery;
 import com.example.backend.entity.MovieComment;
 import com.example.backend.response.MovieCommentResponse;
+import com.example.backend.response.comment.CommentDetail;
 
 /**
 * @author last order
@@ -14,7 +15,8 @@ import com.example.backend.response.MovieCommentResponse;
 * @Entity com.example.backend.entity.TheaterHall.Button
 */
 public interface MovieCommentMapper extends BaseMapper<MovieComment> {
-  IPage<MovieCommentResponse> commentList(MovieCommentListQuery query, Page page);
+  IPage<CommentDetail> commentList(MovieCommentListQuery query, Page page);
+   CommentDetail commentDetail(Integer id);
 }
 
 

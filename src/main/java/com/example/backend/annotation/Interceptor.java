@@ -55,11 +55,10 @@ public class Interceptor implements HandlerInterceptor {
           // 获取角色的按钮权限
           List<RolePermissionButton> rolePermissionButton = roleMapper.rolePermissionButton(userRole.getRoleId());
 
-          System.out.println(rolePermissionButton);
           HashMap<String, RolePermissionButton> map = new HashMap<>();
           rolePermissionButton.forEach(item -> {
-            if (map.get(item.getApi_code())  == null && item.getApi_code() != null) {
-              map.put(item.getApi_code(), item);
+            if (map.get(item.getApiCode())  == null && item.getApiCode() != null) {
+              map.put(item.getApiCode(), item);
             }
           });
 

@@ -5,57 +5,89 @@
         <id property="id" column="id"></id>
         <result property="id" column="id"></result>
         <result property="open" column="open"></result>
-        <result property="start_time" column="start_time"></result>
-        <result property="end_time" column="end_time"></result>
+        <result property="startTime" column="start_time"></result>
+        <result property="endTime" column="end_time"></result>
         <result property="status" column="status"></result>
-        <result property="movie_id" column="movie_id"></result>
-        <result property="movie_name" column="movie_name"></result>
-        <result property="movie_cover" column="movie_cover"></result>
-        <result property="cinema_id" column="cinema_id"></result>
-        <result property="cinema_name" column="cinema_name"></result>
-        <result property="theater_hall_id" column="theater_hall_id"></result>
-        <result property="theater_hall_name" column="theater_hall_name"></result>
-        <result property="theater_hall_spec" column="theater_hall_spec"></result>
-        <result property="seat_count" column="seat_count"></result>
-        <result property="selected_seat_count" column="selected_seat_count"></result>
-        <result property="subtitle_id" column="subtitle_id"></result>
-        <result property="subtitle_name" column="subtitle_name"></result>
-        <result property="show_time_tag_id" column="show_time_tag_id"></result>
-        <result property="show_time_tag_name" column="show_time_tag_name"></result>
+        <result property="movieId" column="movie_id"></result>
+        <result property="movieName" column="movie_name"></result>
+        <result property="movieCover" column="movie_cover"></result>
+        <result property="cinemaId" column="cinema_id"></result>
+        <result property="cinemaName" column="cinema_name"></result>
+        <result property="theaterHallId" column="theater_hall_id"></result>
+        <result property="theaterHallName" column="theater_hall_name"></result>
+        <result property="theaterHallSpec" column="theater_hall_spec"></result>
+        <result property="seatCount" column="seat_count"></result>
+        <result property="selectedSeatCount" column="selected_seat_count"></result>
+        <result property="subtitleId" column="subtitle_id"></result>
+        <result property="subtitleName" column="subtitle_name"></result>
+        <result property="showTimeTagId" column="show_time_tag_id"></result>
+        <result property="showTimeTagName" column="show_time_tag_name"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
             <result property="description" column="spec_description"></result>
         </collection>
     </resultMap>
-    <select id="userSelectSeat" resultType="com.example.backend.response.UserSelectSeat">
+    <resultMap id="userSelectSeat" type="com.example.backend.response.UserSelectSeat">
+        <result property="movieShowTimeId" column="movie_show_time_id"></result>
+        <result property="movieId" column="movie_id"></result>
+        <result property="movieName" column="movie_name"></result>
+        <result property="moviePoster" column="movie_poster"></result>
+        <result property="date" column="date"></result>
+        <result property="startTime" column="start_time"></result>
+        <result property="endTime" column="end_time"></result>
+        <result property="specName" column="spec_name"></result>
+        <result property="cinemaId" column="cinema_id"></result>
+        <result property="cinemaName" column="cinema_name"></result>
+        <result property="theaterHallId" column="theater_hall_id"></result>
+        <result property="theaterHallName" column="theater_hall_name"></result>
+        <collection property="seat" ofType="com.example.backend.response.UserSelectSeatList">
+            <result property="x" column="x"></result>
+            <result property="y" column="y"></result>
+            <result property="seatId" column="seat_id"></result>
+            <result property="seatName" column="seat_name"></result>
+            <result property="areaName" column="area_name"></result>
+            <result property="areaPrice" column="area_price"></result>
+            <result property="movieTicketTypeId" column="movie_ticket_type_id"></result>
+            <result property="plusPrice" column="plus_price"></result>
+        </collection>
+    </resultMap>
+    <select id="userSelectSeat" resultMap="userSelectSeat">
         SELECT
-            select_seat.user_id,
             select_seat.movie_show_time_id,
             select_seat.theater_hall_id,
             select_seat.x,
             select_seat.y,
+            select_seat.seat_id,
             seat_area.price as area_price,
             seat_area.name as area_name,
             movie.id as movie_id,
             movie.name as movie_name,
             movie.cover as movie_poster,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
             cinema_spec.name as spec_name,
             cinema_spec_spec.plus_price,
             select_seat.movie_ticket_type_id,
+            seat.seat_name as seat_name,
+            cinema.id as cinema_id,
+            cinema.name as cinema_name,
+            theater_hall.name as theater_hall_name
         FROM
             select_seat
-                LEFT JOIN seat ON
-                        seat.theater_hall_id = select_seat.theater_hall_id AND
-                        seat.x_axis = select_seat.x AND
-                        seat.y_axis = select_seat.y AND
-                        seat.deleted = 0
-                LEFT JOIN movie_show_time ON select_seat.movie_show_time_id = movie_show_time.id
-                LEFT JOIN movie ON movie_show_time.movie_id = movie.id
-                LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
-                LEFT JOIN theater_hall ON select_seat.theater_hall_id = theater_hall.id AND theater_hall.deleted = 0
-                LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
-                LEFT JOIN cinema_spec_spec ON cinema_spec_spec.spec_id = theater_hall.cinema_spec_id AND cinema_spec_spec.deleted = 0
+            LEFT JOIN seat ON
+            seat.theater_hall_id = select_seat.theater_hall_id AND
+            seat.x_axis = select_seat.x AND
+            seat.y_axis = select_seat.y AND
+            seat.deleted = 0
+            LEFT JOIN movie_show_time ON select_seat.movie_show_time_id = movie_show_time.id
+            LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+            LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
+            LEFT JOIN theater_hall ON select_seat.theater_hall_id = theater_hall.id AND theater_hall.deleted = 0
+            LEFT JOIN cinema ON  theater_hall.cinema_id = cinema."id"
+            LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+            LEFT JOIN cinema_spec_spec ON cinema_spec_spec.spec_id = theater_hall.cinema_spec_id AND cinema_spec_spec.deleted = 0
         WHERE
             select_seat.user_id = #{userId} AND
             select_seat.movie_show_time_id = #{movieShowTimeId} AND
@@ -133,12 +165,12 @@
                 movie_show_time.update_time DESC
     </select>
     <resultMap id="StatisticsOfDailyMovieScreenings" type="com.example.backend.response.chart.StatisticsOfDailyMovieScreenings">
-        <result property="start_time" column="start_time"></result>
-        <result property="total_count" column="total_count"></result>
+        <result property="startTime" column="start_time"></result>
+        <result property="totalCount" column="total_count"></result>
         <collection property="movie" ofType="com.example.backend.response.chart.Movie">
-            <result property="movie_id" column="movie_id"></result>
-            <result property="movie_name" column="movie_name"></result>
-            <result property="movie_count" column="movie_count"></result>
+            <result property="movieId" column="movie_id"></result>
+            <result property="movieName" column="movie_name"></result>
+            <result property="movieCount" column="movie_count"></result>
         </collection>
     </resultMap>
 
@@ -178,5 +210,25 @@
         WHERE
             dmc.rn &lt; 10 OR dmc.rn IS NULL
         ORDER BY dt.start_time ASC, dmc.movie_count DESC;
+    </select>
+    <select id="appMovieShowTimeDetail" resultType="com.example.backend.response.app.AppMovieShowTimeDetail">
+        SELECT
+            movie_show_time.id as id,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+            movie_show_time.status as status,
+            movie.id as movie_id,
+            movie.name as movie_name,
+            cinema.id as cinema_id,
+            cinema.name as cinema_name,
+            theater_hall.id as theater_hall_id,
+            theater_hall."name" as theater_hall_name
+        FROM movie_show_time
+                 LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+                 LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+        WHERE
+            movie_show_time.id = #{id}
     </select>
 </mapper>

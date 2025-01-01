@@ -10,5 +10,6 @@ import java.util.List;
 @Data
 public class SeatResponse {
   Integer rowAxis;
+  String rowName;
   List<SeatListResponse> children;
 }

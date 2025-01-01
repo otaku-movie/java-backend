@@ -32,6 +32,9 @@ public class SelectSeat {
   @TableField("select_seat_state")
   Integer selectSeatState;
 
+  @TableField("seat_id")
+  Integer seatId;
+
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;
 

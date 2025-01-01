@@ -20,6 +20,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
     public static Integer getUserId () {
@@ -27,6 +29,20 @@ public class Utils {
         Object id = StpUtil.getLoginIdByToken(token);
 
         return Integer.valueOf((String) id);
+    }
+    public static Map<String, String> parseRedisKey(String key) {
+        Map<String, String> result = new HashMap<>();
+        // 匹配 `{key:value}` 格式的内容
+        Pattern pattern = Pattern.compile("\\{(\\w+):(\\w+)}");
+        Matcher matcher = pattern.matcher(key);
+
+        // 遍历匹配结果
+        while (matcher.find()) {
+            String field = matcher.group(1); // 获取键
+            String value = matcher.group(2); // 获取值
+            result.put(field, value);
+        }
+        return result;
     }
 
     public static File MultipartToFile(MultipartFile multipartFile) throws IOException {

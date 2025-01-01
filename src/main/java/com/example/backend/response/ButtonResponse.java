@@ -9,10 +9,10 @@ import java.util.List;
 @Data
 public class ButtonResponse {
   Integer id;
-  String i18n_key;
+  String i18nKey;
   String path;
-  String path_name;
-  Integer parent_id;
+  String pathName;
+  Integer parentId;
   Boolean show;
   Boolean checked;
   List<ButtonResponse> children;

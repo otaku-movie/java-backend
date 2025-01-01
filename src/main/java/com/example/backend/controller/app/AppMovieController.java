@@ -81,7 +81,7 @@ public class AppMovieController {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         try {
           // 将 start_time 字符串解析为 Date 对象
-          Date parsedDate = format.parse(item.getStart_time());
+          Date parsedDate = format.parse(item.getStartTime());
           // 返回 Date 对象作为分组的键
           return format.format(parsedDate);  // 如果需要返回字符串，可以使用 format.format(parsedDate)
         } catch (ParseException e) {
@@ -94,14 +94,14 @@ public class AppMovieController {
 
     for (String key : map.keySet()) {
       AppRootMovieShowTimeResponse data = new AppRootMovieShowTimeResponse();
-      Map<Integer, List<AppBeforeMovieShowTimeResponse>> cinema = map.get(key).stream().collect(Collectors.groupingBy(item -> item.getCinema_id()));
+      Map<Integer, List<AppBeforeMovieShowTimeResponse>> cinema = map.get(key).stream().collect(Collectors.groupingBy(item -> item.getCinemaId()));
 
       List<Time> timeList = cinema.values().stream()
         .flatMap(List::stream)
         .map(item -> {
           Time showTime = new Time();
-          showTime.setStart_time(item.getStart_time());  // 设置日期
-          showTime.setEnd_time(item.getEnd_time());  // 设置电影放映信息
+          showTime.setStartTime(item.getStartTime());  // 设置日期
+          showTime.setEndTime(item.getEndTime());  // 设置电影放映信息
           return showTime;
         })
         .collect(Collectors.toList());
@@ -114,9 +114,9 @@ public class AppMovieController {
 
         // 创建一个新的 AppMovieShowTimeResponse 对象
         AppMovieShowTimeResponse model = new AppMovieShowTimeResponse();
-        model.setCinema_id(first.getCinema_id());  // 设置影院ID
-        model.setCinema_name(first.getCinema_name());  // 设置影院名称
-        model.setCinema_address(first.getCinema_address());  // 设置影院地址
+        model.setCinemaId(first.getCinemaId());  // 设置影院ID
+        model.setCinemaName(first.getCinemaName());  // 设置影院名称
+        model.setCinemaAddress(first.getCinemaAddress());  // 设置影院地址
         model.setTime(timeList);  // 设置放映时间列表
 
         // 将模型添加到影院列表中

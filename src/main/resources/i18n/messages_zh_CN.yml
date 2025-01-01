@@ -6,6 +6,7 @@ success:
   uploadSuccess: "上传成功"
   success: "success"
   send: "发送成功"
+  action: "操作成功"
 error:
   systemError: "系统错误"
   userNotFound: "用户不存在"
@@ -17,6 +18,10 @@ error:
   emailRepeat: "邮箱已存在"
   uploadError: "上传失败"
   get: "{0}不能为空"
+  comment:
+    userRated: "用户已经评分过该电影，无法再次评分"
+  order:
+    payError: "订单已经支付完成"
 email:
   verifyCode:
     title: "验证码"
@@ -56,12 +61,15 @@ validator:
     content:
       required: "评论内容不能为空"
       max: "评论字数不能超过1000字"
+    rate:
+      min: "评论最低分为 0.1 分"
+      max: "评论最高分为 10 分"
   # 电影回复
   movieReply:
     movieCommentId:
       required: "movieCommentId 不能为空"
     content:
-      required: "评论内容不能为空"
+      required: "回复内容不能为空"
       max: "评论字数不能超过1000字"
   # 保存职位
   savePosition:

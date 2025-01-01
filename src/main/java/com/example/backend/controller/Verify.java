@@ -83,7 +83,7 @@ public class Verify {
     String uuid = Generators.timeBasedEpochGenerator().generate().toString().replace("-", "");
     String key = RedisType.verifyCode.getCode() + ":" + uuid;
 
-    redisTemplate.opsForValue().set(key, String.valueOf(code), 120, TimeUnit.SECONDS);
+    redisTemplate.opsForValue().set(key, String.valueOf(code), 60 * 5, TimeUnit.SECONDS);
 
     MailUtil.send(to, subject, content, false);
 

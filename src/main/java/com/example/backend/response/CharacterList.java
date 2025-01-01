@@ -14,14 +14,14 @@ public class CharacterList {
   private Integer id;
   private String cover;
   private String name;
-  private String original_name;
+  private String originalName;
   private String description;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  private Date create_time;
+  private Date createTime;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  private Date update_time;
+  private Date updateTime;
 
   private List<Staff> staff;
 }

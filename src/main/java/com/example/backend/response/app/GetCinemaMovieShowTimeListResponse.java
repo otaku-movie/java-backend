@@ -7,10 +7,10 @@ import java.util.List;
 @Data
 class TheaterHallShowTime {
   Integer id;
-  Integer theater_hall_id;
-  String theater_hall_name;
-  String start_time;
-  String end_time;
+  Integer theaterHallId;
+  String theaterHallName;
+  String startTime;
+  String endTime;
 }
 
 @Data
@@ -21,10 +21,10 @@ class DateGroup {
 
 @Data
 public class GetCinemaMovieShowTimeListResponse {
-  Integer cinema_id;
-  String cinema_name;
-  String cinema_address;
-  String cinema_tel;
+  Integer cinemaId;
+  String cinemaName;
+  String cinemaAddress;
+  String cinemaTel;
   List<DateGroup> data;
 
 }

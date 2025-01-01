@@ -5,9 +5,9 @@ import java.util.List;
 
 @Data
 public class AppMovieShowTimeResponse {
-  Integer cinema_id;
-  String cinema_name;
-  String cinema_address;
+  Integer cinemaId;
+  String cinemaName;
+  String cinemaAddress;
   List<Time> time;
 }
 

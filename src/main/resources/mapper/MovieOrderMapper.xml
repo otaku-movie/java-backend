@@ -3,26 +3,31 @@
 <mapper namespace="com.example.backend.mapper.MovieOrderMapper">
     <resultMap id="orderList" type="com.example.backend.response.order.OrderListResponse">
         <result property="id" column="id"></result>
-        <result property="order_total" column="order_total"></result>
-        <result property="order_state" column="order_state"></result>
-        <result property="order_time" column="order_time"></result>
-        <result property="pay_method" column="pay_method"></result>
-        <result property="pay_state" column="pay_state"></result>
-        <result property="pay_total" column="pay_total"></result>
-        <result property="pay_number" column="pay_number"></result>
-        <result property="pay_time" column="pay_time"></result>
-        <result property="start_time" column="start_time"></result>
-        <result property="end_time" column="end_time"></result>
+        <result property="orderTotal" column="order_total"></result>
+        <result property="orderState" column="order_state"></result>
+        <result property="orderTime" column="order_time"></result>
+        <result property="payMethod" column="pay_method"></result>
+        <result property="payState" column="pay_state"></result>
+        <result property="payTotal" column="pay_total"></result>
+        <result property="payNumber" column="pay_number"></result>
+        <result property="payTime" column="pay_time"></result>
+        <result property="date" column="date"></result>
+        <result property="startTime" column="start_time"></result>
+        <result property="endTime" column="end_time"></result>
         <result property="status" column="status"></result>
-        <result property="movie_name" column="movie_name"></result>
-        <result property="movie_poster" column="movie_poster"></result>
-        <result property="cinema_name" column="cinema_name"></result>
-        <result property="theater_hall_name" column="theater_hall_name"></result>
-        <result property="theater_hall_spec_name" column="theater_hall_spec_name"></result>
+        <result property="movieId" column="movie_id"></result>
+        <result property="movieName" column="movie_name"></result>
+        <result property="moviePoster" column="movie_poster"></result>
+        <result property="cinemaId" column="cinema_id"></result>
+        <result property="cinemaName" column="cinema_name"></result>
+        <result property="theaterHallName" column="theater_hall_name"></result>
+        <result property="theaterHallSpecName" column="theater_hall_spec_name"></result>
+        <result property="payMethod" column="pay_method"></result>
         <collection property="seat" ofType="com.example.backend.response.order.Seat">
-            <result property="seat_x" column="seat_x"></result>
-            <result property="seat_y" column="seat_y"></result>
-            <result property="movie_ticket_type_name" column="movie_ticket_type_name"></result>
+            <result property="seatX" column="seat_x"></result>
+            <result property="seatY" column="seat_y"></result>
+            <result property="seatName" column="seat_name"></result>
+            <result property="movieTicketTypeName" column="movie_ticket_type_name"></result>
         </collection>
     </resultMap>
     <select id="orderList" resultMap="orderList">
@@ -30,7 +35,6 @@
             movie_order.id,
             movie_order.order_total,
             movie_order.order_state,
-            movie_order.pay_method,
             movie_order.pay_state,
             movie_order.pay_total,
             movie_order.pay_time,
@@ -45,7 +49,9 @@
             cinema_spec.name as theater_hall_spec_name,
             select_seat.x as seat_x,
             select_seat.y as seat_y,
-            movie_ticket_type.name as movie_ticket_type_name
+            seat.seat_name,  -- 查询 seat 表中的 seat_name
+            movie_ticket_type.name as movie_ticket_type_name,
+            payment_methods.name as pay_method
         FROM movie_order
             LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
             LEFT JOIN movie ON movie_show_time.movie_id = movie.id
@@ -53,7 +59,9 @@
             LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
             LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
             LEFT JOIN select_seat ON select_seat.movie_order_id = movie_order.id
+            LEFT JOIN seat ON seat.x_axis = select_seat.x AND seat.y_axis = select_seat.y
             LEFT JOIN movie_ticket_type ON select_seat.movie_ticket_type_id = movie_ticket_type.id
+            LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
         <where>
             movie_order.deleted = 0
             <if test="query.movieId != null and !query.movieId.equals('')">
@@ -85,10 +93,48 @@
             </if>
         </where>
     </select>
+    <select id="orderDetail" resultMap="orderList">
+        SELECT
+        movie_order.id,
+        movie_order.order_total,
+        movie_order.order_state,
+        movie_order.pay_state,
+        movie_order.pay_total,
+        movie_order.pay_time,
+        movie_order.pay_number,
+        movie_order.create_time AS order_time,
+        TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+        TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+        TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+        movie.id as movie_id,
+        movie.name as movie_name,
+        movie.cover as movie_poster,
+        cinema.id as cinema_id,
+        cinema.name as cinema_name,
+        theater_hall.name as theater_hall_name,
+        cinema_spec.name as theater_hall_spec_name,
+        select_seat.x as seat_x,
+        select_seat.y as seat_y,
+        seat.seat_name,  -- 查询 seat 表中的 seat_name
+        movie_ticket_type.name as movie_ticket_type_name,
+        payment_methods.name as pay_method
+    FROM movie_order
+        LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+        LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+        LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+        LEFT JOIN select_seat ON select_seat.movie_order_id = movie_order.id
+        LEFT JOIN seat ON seat.x_axis = select_seat.x AND seat.y_axis = select_seat.y
+        LEFT JOIN movie_ticket_type ON select_seat.movie_ticket_type_id = movie_ticket_type.id
+        LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
+    WHERE
+        movie_order.id = #{orderId}
+    </select>
     <resultMap id="DailyOrderStatistics" type="com.example.backend.response.chart.DailyOrderStatistics">
         <result property="date" column="date"></result>
         <result property="count" column="count"></result>
-        <collection property="order_state" ofType="com.example.backend.response.chart.OrderState">
+        <collection property="orderState" ofType="com.example.backend.response.chart.OrderState">
             <result property="state" column="state"></result>
             <result property="count" column="count"></result>
         </collection>
@@ -129,9 +175,38 @@
         ORDER BY
             order_total.date ASC
     </select>
+    <select id="userOrderList" resultMap="orderList">
+        SELECT
+            movie_order.id,
+            movie_order.order_total,
+            movie_order.order_state,
+            movie_order.pay_state,
+            movie_order.pay_total,
+            movie_order.pay_time,
+            movie_order.pay_number,
+            movie_order.create_time AS order_time,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+            movie.name as movie_name,
+            movie.cover as movie_poster,
+            cinema.name as cinema_name,
+            theater_hall.name as theater_hall_name,
+            cinema_spec.name as theater_hall_spec_name
+        FROM select_seat
+                 LEFT JOIN movie_order ON movie_order."id" = select_seat.movie_order_id
+                 LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+                 LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+                 LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+                 LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+        WHERE
+            select_seat.user_id = #{userId}
+            AND select_seat.movie_order_id is NOT NULL
+    </select>
     <resultMap id="DailyTransactionAmount" type="com.example.backend.response.chart.DailyTransactionAmount">
         <result property="date" column="date"></result>
-        <result property="total_amount" column="total_amount"></result>
+        <result property="totalAmount" column="total_amount"></result>
     </resultMap>
     <select id="DailyTransactionAmount" resultMap="DailyTransactionAmount">
         WITH daily_transaction_summary AS (

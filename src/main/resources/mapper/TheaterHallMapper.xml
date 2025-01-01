@@ -4,12 +4,12 @@
     <resultMap id="theaterHallList" type="com.example.backend.response.TheaterHallList">
         <id property="id" column="id"/>
         <result property="name" column="name"/>
-        <result property="row_count" column="row_count"/>
-        <result property="column_count" column="column_count"/>
-        <result property="cinema_id" column="cinema_id"/>
-        <result property="cinema_spec_id" column="cinema_spec_id"/>
-        <result property="cinema_spec_name" column="cinema_spec_name"/>
-        <result property="seat_count" column="seat_count"/>
+        <result property="rowCount" column="row_count"/>
+        <result property="columnCount" column="column_count"/>
+        <result property="cinemaId" column="cinema_id"/>
+        <result property="cinemaSpecId" column="cinema_spec_id"/>
+        <result property="cinemaSpecName" column="cinema_spec_name"/>
+        <result property="seatCount" column="seat_count"/>
     </resultMap>
     <select id="theaterHallList" resultMap="theaterHallList">
         SELECT

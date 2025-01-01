@@ -15,33 +15,29 @@ public class MovieResponse {
   Integer id;
   String cover;
   String name;
-  String original_name;
+  String originalName;
   String description;
-  String home_page;
-  String start_date;
-  String end_date;
+  String homePage;
+  String startDate;
+  String endDate;
   // 1 未上映 2 上映中 3 上映结束
   Integer status;
   // 1 未上映 2 上映中 3 上映结束
   Integer time;
-  Integer cinema_count;
-  Integer theater_count;
-  Integer comment_count;
-  Integer watched_count;
-  Integer want_to_see_count;
-
-  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date create_time;
-
-  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date update_time;
+  Integer cinemaCount;
+  Integer theaterCount;
+  Integer commentCount;
+  Integer watchedCount;
+  Integer wantToSeeCount;
 
 //  private Integer deleted;
   List<Spec> spec;
-  List<HelloMovie> hello_movie;
+  List<HelloMovie> helloMovie;
   List<Tags> tags;
 
-  Integer level_id;
-  String level_name;
-  String level_description;
+  Integer levelId;
+  String levelName;
+  String levelDescription;
+  double rate;
+  Integer totalRatings;
 }

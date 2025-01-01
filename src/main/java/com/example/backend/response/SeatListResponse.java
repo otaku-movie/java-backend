@@ -17,16 +17,18 @@ class SeatAreaResponse {
 @Data
 public class SeatListResponse {
   Integer id;
-  Integer theater_hall_id;
+  Integer theaterHallId;
   Integer x;
   Integer y;
   Integer z;
+  String rowName;
+  String seatName;
   Boolean selected;
   Boolean show;
   Boolean disabled;
   // 轮椅座
-  Boolean wheel_chair;
-  String seat_position_group;
+  Boolean wheelChair;
+  String seatPositionGroup;
   SeatAreaResponse area;
-  Integer select_seat_state;
+  Integer selectSeatState;
 }

@@ -15,8 +15,11 @@ public class Seat {
   @TableField(value = "theater_hall_id")
   Integer theaterHallId;
 
-  @TableField("x_name")
+  @TableField("row_name")
   String rowName;
+
+  @TableField("seat_name")
+  String seatName;
 
   @TableField("x_axis")
   Integer xAxis;

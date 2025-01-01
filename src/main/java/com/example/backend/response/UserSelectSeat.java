@@ -4,42 +4,41 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class UserSelectSeat {
-  @JsonProperty("user_id")
-  private Integer userId;
-
-  @JsonProperty("movie_show_time_id")
   private Integer movieShowTimeId;
-
-  @JsonProperty("movie_ticket_type_id")
-  private Integer movieTicketTypeId;
-
-  @JsonProperty("theater_hall_id")
-  private Integer theaterHallId;
-
-  private Integer x;
-  private Integer y;
-
-  @JsonProperty("area_price")
-  private BigDecimal areaPrice;
-
-  @JsonProperty("area_name")
-  private String areaName;
-
-  @JsonProperty("movie_id")
   private Integer movieId;
 
-  @JsonProperty("movie_name")
+
   private String movieName;
 
-  @JsonProperty("movie_poster")
+
   private String moviePoster;
 
-  @JsonProperty("spec_name")
+
+  private String date;
+
+
+  private String startTime;
+
+
+  private String endTime;
+
+
   private String specName;
 
-  @JsonProperty("plus_price")
-  private BigDecimal plusPrice;
+
+  private Integer cinemaId;
+
+
+  private String cinemaName;
+
+
+  private Integer theaterHallId;
+
+  private String theaterHallName;
+
+  List<UserSelectSeatList> seat;
 }

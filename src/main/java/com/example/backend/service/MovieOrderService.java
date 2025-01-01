@@ -2,21 +2,21 @@ package com.example.backend.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.Update;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.backend.entity.Movie;
 import com.example.backend.entity.MovieOrder;
 import com.example.backend.entity.MovieTicketType;
 import com.example.backend.entity.SelectSeat;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.PayState;
 import com.example.backend.enumerate.SeatState;
-import com.example.backend.mapper.MovieOrderMapper;
-import com.example.backend.mapper.MovieShowTimeMapper;
-import com.example.backend.mapper.MovieTicketTypeMapper;
-import com.example.backend.mapper.SelectSeatMapper;
+import com.example.backend.mapper.*;
 import com.example.backend.query.order.MovieOrderSaveQuery;
 import com.example.backend.query.order.UpdateOrderStateQuery;
 import com.example.backend.response.UserSelectSeat;
+import com.example.backend.response.UserSelectSeatList;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,11 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Data
 class SeatGroupQuery {
   Integer x;
   Integer y;
+  Integer seatId;
   Integer movieTicketTypeId;
   Integer theaterHallId;
   BigDecimal movieTicketTypePrice;
@@ -53,27 +57,44 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   @Autowired
   MovieOrderMapper movieOrderMapper;
 
+  @Autowired
+  PaymentMethodMapper paymentMethodMapper;
+
+  @Autowired
+  PaymentService paymentMethodService;
 
   @Transactional
-  public void createOrder(MovieOrderSaveQuery query) {
+  public MovieOrder createOrder(MovieOrderSaveQuery query) throws Exception {
     Integer movieShowTimeId = query.getMovieShowTimeId();
-    List<UserSelectSeat> result = movieShowTimeMapper.userSelectSeat(StpUtil.getLoginIdAsInt(), movieShowTimeId, SeatState.locked.getCode());
+    Integer userId = StpUtil.getLoginIdAsInt();
+    UserSelectSeat result = movieShowTimeMapper.userSelectSeat(
+      userId,
+      movieShowTimeId,
+      SeatState.selected.getCode()
+    );
+
+    if (result == null) {
+      throw new Exception("234");
+    }
 
     List<SeatGroupQuery> data = query.getSeat().stream().map(item -> {
       SeatGroupQuery modal = new SeatGroupQuery();
       modal.setX(item.getX());
       modal.setY(item.getY());
 
-      UserSelectSeat userSelectSeat = result.stream().filter(children -> children.getX().equals(item.getX()) && children.getY().equals(item.getY()))
+      UserSelectSeatList userSelectSeat = result.getSeat().stream().filter(children -> {
+        return children.getX().equals(item.getX()) && children.getY().equals(item.getY());
+        })
         .findFirst()
         .orElse(null);
 
       MovieTicketType movieTicketType = movieTicketTypeMapper.selectById(item.getMovieTicketTypeId());
-      modal.setTheaterHallId(userSelectSeat.getTheaterHallId());
+      modal.setTheaterHallId(result.getTheaterHallId());
       modal.setAreaPrice(userSelectSeat.getAreaPrice());
       modal.setMovieTicketTypeId(movieTicketType.getId());
       modal.setMovieTicketTypePrice(movieTicketType.getPrice());
       modal.setPlusPrice(userSelectSeat.getPlusPrice());
+      modal.setSeatId(item.getSeatId());
 
       return  modal;
     }).toList();
@@ -114,6 +135,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
       userSelectSeat.setTheaterHallId(item.getTheaterHallId());
       userSelectSeat.setX(item.getX());
       userSelectSeat.setY(item.getY());
+      userSelectSeat.setSeatId(item.getSeatId());
       userSelectSeat.setMovieTicketTypeId(item.getMovieTicketTypeId());
       userSelectSeat.setMovieOrderId(movieOrder.getId());
       userSelectSeat.setSelectSeatState(SeatState.locked.getCode());
@@ -123,8 +145,52 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     }).toList();
 
     selectSeatService.saveBatch(newSelectSeat);
+
+    return movieOrder;
   }
 
+  @Transactional
+  public void pay(Integer orderId, Integer payId) {
+    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    MovieOrder movieOrder = new MovieOrder();
+    movieOrder.setId(orderId);
+    SelectSeat selectSeat = new SelectSeat();
+
+    // 更新用户选座状态
+    UpdateWrapper updateWrapper = new UpdateWrapper();
+
+    selectSeat.setSelectSeatState(SeatState.sold.getCode());
+    updateWrapper.eq("movie_order_id", orderId);
+    selectSeatMapper.update(selectSeat, updateWrapper);
+
+    // 初始更新为支付中
+//    movieOrder.setOrderState(OrderState.order_paying.getCode()); // 设置订单状态为支付中
+    movieOrder.setPayState(PayState.paying.getCode());           // 设置支付状态为支付中
+    movieOrder.setPayMethodId(payId);                              // 设置支付方式
+    movieOrder.setPayTime(new Date());                           // 设置支付时间（支付流程开始时间）
+    movieOrderMapper.updateById(movieOrder);                    // 更新订单状态到数据库
+
+    // 调用支付
+    paymentMethodService.pay();
+
+    // 30 秒后模拟支付完成
+    scheduler.schedule(() -> {
+      try {
+        // 更新为支付成功
+//        movieOrder.setPayTotal();
+        movieOrder.setOrderState(OrderState.order_succeed.getCode()); // 设置订单状态为成功
+        movieOrder.setPayState(PayState.payment_successful.getCode()); // 设置支付状态为成功
+        movieOrder.setPayTime(new Date());                             // 设置支付完成时间
+        movieOrderMapper.updateById(movieOrder);                      // 更新订单状态到数据库
+      } catch (Exception e) {
+        e.printStackTrace(); // 打印异常日志
+      } finally {
+        // 确保定时器正常关闭
+        scheduler.shutdown();
+      }
+    }, 30, TimeUnit.SECONDS);
+  }
   List<SelectSeat> findSelectSeat (Integer movieOrderId) {
     QueryWrapper querySelectSeatWrapper = new QueryWrapper();
     querySelectSeatWrapper.eq("movie_order_id", movieOrderId);

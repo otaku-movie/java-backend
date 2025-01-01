@@ -2,6 +2,7 @@ package com.example.backend.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 import java.util.Date;
 
@@ -9,19 +10,21 @@ import java.util.Date;
 public class MovieReplyResponse {
   Integer id;
   String content;
-  Integer comment_user_id;
-  Integer reply_user_id;
-  String comment_user_name;
-  String reply_user_name;
-  Integer movie_comment_id;
+  Integer commentId;
+  Integer commentUserId;
+  String commentUserName;
+  String commentUserAvatar;
+  Integer replyUserId;
+  String replyUserName;
+  String replyUserAvatar;
+  Integer movieCommentId;
   Boolean like;
-  Boolean unlike;
-  Integer like_count;
-  Integer unlike_count;
-  Integer reply_count;
-  String parent_reply_id;
+  Boolean dislike;
+  Integer likeCount;
+  Integer dislikeCount;
+  String parentReplyId;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date create_time;
+  Date createTime;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
-  Date update_time;
+  Date updateTime;
 }
