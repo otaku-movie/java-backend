@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://docker-postgres-1:5432/test_movie
+    username: postgres
+    password: Apoptoxin4869
+  data:
+    redis:
+      host: docker-redis-1
+      port: 6379
+      database: 2

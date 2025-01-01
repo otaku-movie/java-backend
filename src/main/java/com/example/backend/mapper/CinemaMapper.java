@@ -26,4 +26,4 @@ public interface CinemaMapper extends BaseMapper<Cinema> {
     GetCinemaMovieShowTimeListQuery query,
     Integer showTimeState
   );
-}:
+}
