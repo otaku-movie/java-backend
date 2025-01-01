@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://43.154.172.94:5432/test_movie
+    username: postgres
+    password: Apoptoxin4869
