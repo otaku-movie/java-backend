@@ -13,17 +13,13 @@
         <result property="theaterCount" column="theater_count"></result>
         <result property="brandId" column="brand_id"></result>
         <result property="brandName" column="brand_name"></result>
-        <collection property="spec" ofType="com.example.backend.response.CinemaSpec">
-            <result property="id" column="spec_id"></result>
-            <result property="name" column="spec_name"></result>
-            <result property="plusPrice" column="plus_price"></result>
-        </collection>
     </resultMap>
-        <select id="cinemaSpec" resultType="com.example.backend.response.Spec">
+        <select id="getCinemaSpec" resultType="com.example.backend.response.Spec">
             SELECT
                 cinema_spec.id,
                 cinema_spec.name,
-                cinema_spec.description
+                cinema_spec.description,
+                cinema_spec_spec.plus_price
             FROM cinema_spec_spec
                      LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             WHERE
@@ -39,8 +35,6 @@
             cinema.home_page,
             cinema.tel,
             cinema.max_select_seat_count,
-            cinema_spec."id" as spec_id,
-            cinema_spec."name" as spec_name,
             brand.id as brand_id,
             brand.name as brand_name,
             (
@@ -53,8 +47,6 @@
                 ) AS theater_count
             FROM cinema
             LEFT JOIN brand ON cinema.brand_id = brand.id
-            LEFT JOIN cinema_spec_spec ON cinema_spec_spec.cinema_id = cinema.id
-            LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             <where>
                 cinema.deleted = 0
                 <if test="query.name != null and !query.name.equals('')">

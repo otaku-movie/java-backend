@@ -7,8 +7,11 @@ import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.SaveMovieQuery;
+import com.example.backend.response.Spec;
+import com.example.backend.response.movie.HelloMovie;
 import com.example.backend.response.movie.MovieResponse;
 import com.example.backend.response.MovieStaffResponse;
+import com.example.backend.response.movie.Tags;
 import com.example.backend.service.MovieService;
 import com.example.backend.utils.MessageUtils;
 import org.apache.ibatis.jdbc.Null;
@@ -59,8 +62,22 @@ public class MovieController {
     Page<MovieResponse> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieResponse> list = movieMapper.movieList(query, page);
+    List<MovieResponse> result =  list.getRecords().stream().map(item -> {
+        List<Tags> tags = movieMapper.getMovieTags(item.getId());
+        List<Spec> spec = movieMapper.getMovieSpec(item.getId());
+        List<HelloMovie> helloMovies = movieMapper.getHelloMovie(item.getId());
 
-    return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
+        item.setTags(tags);
+        item.setSpec(spec);
+        item.setHelloMovie(helloMovies);
+        item.setCommentCount(movieMapper.getMovieCommentCount(item.getId()));
+        item.setCinemaCount(movieMapper.getAllCinemaCount(item.getId()));
+        item.setTheaterCount(movieMapper.getAllTheaterCount(item.getId()));
+
+        return item;
+    }).toList();
+
+    return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
   @GetMapping("/api/movie/spec")
   public RestBean<List<CinemaSpec>> spec()  {
@@ -81,6 +98,17 @@ public class MovieController {
       result.setRate(data.getRate());
       result.setTotalRatings(data.getTotalRatings());
     }
+
+    List<Tags> tags = movieMapper.getMovieTags(result.getId());
+    List<Spec> spec = movieMapper.getMovieSpec(result.getId());
+    List<HelloMovie> helloMovies = movieMapper.getHelloMovie(result.getId());
+
+    result.setTags(tags);
+    result.setSpec(spec);
+    result.setHelloMovie(helloMovies);
+    result.setCommentCount(movieMapper.getMovieCommentCount(result.getId()));
+    result.setCinemaCount(movieMapper.getAllCinemaCount(result.getId()));
+    result.setTheaterCount(movieMapper.getAllTheaterCount(result.getId()));
 
 
     return RestBean.success(result, MessageUtils.getMessage("success.remove"));

@@ -86,14 +86,23 @@ public class CinemaController {
     Page<CinemaResponse> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<CinemaResponse> list = cinemaMapper.cinemaList(query, page);
+    List<CinemaResponse> result =  list.getRecords().stream().map(item -> {
+      List<com.example.backend.response.Spec> spec = cinemaMapper.getCinemaSpec(item.getId());
+      item.setSpec(spec);
 
-    return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
+      return item;
+    }).toList();
+
+    return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
   @GetMapping("/api/cinema/detail")
   public RestBean<CinemaResponse> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     CinemaResponse result = cinemaMapper.cinemaDetail(id);
+    // 获取影院规格
+    List<com.example.backend.response.Spec> spec = cinemaMapper.getCinemaSpec(result.getId());
+    result.setSpec(spec);
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }

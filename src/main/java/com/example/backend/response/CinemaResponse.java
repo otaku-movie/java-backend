@@ -3,12 +3,6 @@ import lombok.Data;
 
 import java.util.List;
 
-@Data
-class CinemaSpec {
-  Integer id;
-  String name;
-  Integer plusPrice;
-}
 
 @Data
 public class CinemaResponse {
@@ -22,5 +16,5 @@ public class CinemaResponse {
   Integer theaterCount;
   Integer brandId;
   String brandName;
-  List<CinemaSpec> spec;
+  List<Spec> spec;
 }

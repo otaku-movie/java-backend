@@ -20,7 +20,7 @@ public interface CinemaMapper extends BaseMapper<Cinema> {
   IPage<CinemaResponse> cinemaList(CinemaListQuery query, IPage<CinemaResponse> page);
 
   CinemaResponse cinemaDetail(Integer id);
-  List<Spec> cinemaSpec(Integer cinemaId);
+  List<Spec> getCinemaSpec(Integer cinemaId);
   List<MovieShowingResponse> getMovieShowing(Integer cinemaId);
   GetCinemaMovieShowTimeListResponse getCinemaMovieShowTimeList(
     GetCinemaMovieShowTimeListQuery query,
