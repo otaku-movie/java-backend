@@ -1,7 +1,6 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-<<<<<<< HEAD
     url: jdbc:postgresql://docker-postgres-1:5432/test_movie
     username: postgres
     password: Apoptoxin4869
@@ -10,16 +9,3 @@ spring:
       host: docker-redis-1
       port: 6379
       database: 2
-=======
-    url: jdbc:postgresql://43.154.172.94:5432/test_movie
-    username: postgres
-    password: Apoptoxin4869
-<<<<<<< HEAD
->>>>>>> 16655e3 (build: 添加多环境配置)
-=======
-  data:
-    redis:
-      host: redis
-      port: 6379
-      database: 2
->>>>>>> e1b9c6e (build: 修改docker内redis請求配置)
