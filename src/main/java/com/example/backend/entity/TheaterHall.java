@@ -15,6 +15,9 @@ public class TheaterHall {
   @TableField("name")
   String name;
 
+  @TableField("seat_naming_rules")
+  String seatNamingRules;
+
   @TableField("row_count")
   Integer rowCount;
 

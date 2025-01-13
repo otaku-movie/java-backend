@@ -102,7 +102,51 @@ public class CinemaController {
     CinemaResponse result = cinemaMapper.cinemaDetail(id);
     // 获取影院规格
     List<com.example.backend.response.Spec> spec = cinemaMapper.getCinemaSpec(result.getId());
-    result.setSpec(spec);
+    if (spec != null) {
+      result.setSpec(spec);
+    }
+
+
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+  }
+  @GetMapping("/api/cinema/screening")
+  public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+
+    QueryWrapper queryWrapper = new QueryWrapper();
+    queryWrapper.eq("cinema_id", id);
+    List<TheaterHall> theaterHallList = theaterHallMapper.selectList(queryWrapper);
+
+    // 获取当前日期
+    LocalDate currentDate = LocalDate.parse(date);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    String today = currentDate.format(formatter);
+
+    // 获取今日上映的电影
+    MovieShowTimeListQuery movieShowTimeListQuery = new MovieShowTimeListQuery();
+
+    movieShowTimeListQuery.setDate(today);
+    movieShowTimeListQuery.setCinemaId(id);
+    List<MovieShowTimeList> movieShowTimeListList =  movieShowTimeMapper.movieShowTimeList(movieShowTimeListQuery, OrderState.order_succeed.getCode());
+
+    // 组装返回结果
+    List<CinemaScreeningResponse> result = theaterHallList.stream().map(item -> {
+      CinemaScreeningResponse cinemaScreeningResponse = new CinemaScreeningResponse();
+
+      cinemaScreeningResponse.setId(item.getId());
+      cinemaScreeningResponse.setName(item.getName());
+      cinemaScreeningResponse.setDate(today);
+
+
+      List<MovieShowTimeList> screening = movieShowTimeListList
+        .stream()
+        .filter(children -> Objects.equals(children.getTheaterHallId(), item.getId()))
+        .toList();
+      cinemaScreeningResponse.setChildren(screening);
+
+      return cinemaScreeningResponse;
+    }).toList();
+
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
@@ -176,6 +220,7 @@ public class CinemaController {
 
       if (Objects.equals(old.getName(), query.getName())) {
         saveCinema(query);
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
         QueryWrapper wrapper = new QueryWrapper<>();
         wrapper.eq("name", query.getName());
@@ -201,4 +246,12 @@ public class CinemaController {
 
     return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
+  @GetMapping("/api/cinema/spec")
+  public RestBean<List<com.example.backend.response.Spec>> cinemaSpec (@RequestParam Integer cinemaId) {
+      if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+
+      List<com.example.backend.response.Spec> result = cinemaMapper.getCinemaSpec(cinemaId);
+
+      return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    }
 }

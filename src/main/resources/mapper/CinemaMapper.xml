@@ -66,9 +66,6 @@
                 cinema.home_page,
                 cinema.max_select_seat_count,
                 cinema.tel,
-                cinema_spec.id AS spec_id,
-                cinema_spec.name AS spec_name,
-                cinema_spec_spec.plus_price,
                 brand.id as brand_id,
                 brand.name as brand_name,
                 (
@@ -81,8 +78,6 @@
                 ) AS theater_count
             FROM cinema
             LEFT JOIN brand ON cinema.brand_id = brand.id
-            LEFT JOIN cinema_spec_spec ON cinema_spec_spec.cinema_id = cinema.id
-            LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             WHERE
                 cinema.id = #{id}
         </select>

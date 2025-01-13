@@ -44,6 +44,16 @@ public class Utils {
         }
         return result;
     }
+    public static String getRowName(int rowIndex) {
+        StringBuilder rowName = new StringBuilder();
+        rowIndex++; // 从 1 开始
+        while (rowIndex > 0) {
+            rowIndex--; // 调整索引范围到 0 开始
+            rowName.insert(0, (char) ('A' + (rowIndex % 26)));
+            rowIndex /= 26;
+        }
+        return rowName.toString();
+    }
 
     public static File MultipartToFile(MultipartFile multipartFile) throws IOException {
         File file = new File(System.getProperty("java.io.tmpdir") + File.separator + multipartFile.getOriginalFilename());

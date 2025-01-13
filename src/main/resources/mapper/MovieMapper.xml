@@ -34,7 +34,7 @@
             movie_tag_tags.movie_id =#{movieId}
     </select>
     <!--    根据电影id 获取上映规格 -->
-    <select id="getMovieSpec" resultType="com.example.backend.response.Spec">
+    <select id="getMovieSpec" resultType="com.example.backend.entity.CinemaSpec">
         SELECT
             cinema_spec.id,
             cinema_spec.name,
@@ -70,24 +70,26 @@
     <!--    获取电影所有上映的影院数量 -->
     <select id="getAllCinemaCount" resultType="integer">
         SELECT
-            movie_show_time.movie_id,
+--             movie_show_time.movie_id,
             COUNT(DISTINCT movie_show_time.cinema_id) AS cinema_count
         FROM
             movie_show_time
         WHERE
             movie_show_time.deleted = 0
+            AND movie_show_time.movie_id = #{movieId}
         GROUP BY
             movie_show_time.movie_id
     </select>
     <!--    获取电影上映的所有场次数量-->
     <select id="getAllTheaterCount" resultType="integer">
         SELECT
-            movie_show_time.movie_id,
+--             movie_show_time.movie_id,
             COUNT(movie_show_time.cinema_id) AS theater_count
         FROM
             movie_show_time
         WHERE
             movie_show_time.deleted = 0
+            AND movie_show_time.movie_id = #{movieId}
         GROUP BY
             movie_show_time.movie_id
     </select>
