@@ -140,6 +140,16 @@ public class CinemaController {
 
       List<MovieShowTimeList> screening = movieShowTimeListList
         .stream()
+        .map(movie -> {
+          movie.setMovieShowTimeTags(
+            movieShowTimeMapper.getMovieShowTimeTags(movie.getMovieShowTimeTagsId())
+          );
+          movie.setSubtitle(
+            movieShowTimeMapper.getMovieShowTimeSubtitle(movie.getSubtitleId())
+          );
+
+          return movie;
+        })
         .filter(children -> Objects.equals(children.getTheaterHallId(), item.getId()))
         .toList();
       cinemaScreeningResponse.setChildren(screening);

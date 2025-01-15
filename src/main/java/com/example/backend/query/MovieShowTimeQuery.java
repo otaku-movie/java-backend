@@ -3,6 +3,8 @@ package com.example.backend.query;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class MovieShowTimeQuery {
   Integer id;
@@ -17,6 +19,8 @@ public class MovieShowTimeQuery {
   String startTime;
   @NotNull
   String endTime;
-  Integer subtitleId;
-  Integer showTimeTagId;
+  @NotNull
+  Integer specId;
+  List<Integer> subtitleId;
+  List<Integer> showTimeTagId;
 }

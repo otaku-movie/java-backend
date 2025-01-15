@@ -1,11 +1,14 @@
 package com.example.backend.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.example.backend.typeHandler.IntegerArrayTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @TableName("movie_show_time")
@@ -34,16 +37,21 @@ public class MovieShowTime {
   @TableField("status")
   Integer status;
 
-  @TableField("subtitle_id")
-  Integer subtitleId;
+  @TableField(value = "subtitle_id", typeHandler = IntegerArrayTypeHandler.class)
+  List<Integer> subtitleId;
 
-  @TableField("show_time_tag_id")
-  Integer showTimeTagId;
+  @TableField(value = "show_time_tag_id", typeHandler = IntegerArrayTypeHandler.class)
+  List<Integer>  showTimeTagId;
 
+  @TableField("spec_id")
+  Integer  specId;
+
+  @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;
 
+  @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
   Date updateTime;

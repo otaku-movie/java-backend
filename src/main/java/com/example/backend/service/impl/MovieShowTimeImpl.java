@@ -51,12 +51,16 @@ public class MovieShowTimeImpl implements MovieShowTimeService {
     movieShowTime.setStartTime(query.getStartTime());
     movieShowTime.setEndTime(query.getEndTime());
     movieShowTime.setOpen(query.getOpen());
+    movieShowTime.setSpecId(query.getSpecId());
+    movieShowTime.setSubtitleId(query.getSubtitleId());
+    movieShowTime.setShowTimeTagId(query.getShowTimeTagId());
+//    movieShowTime.set
 
     if (query.getShowTimeTagId() != null) {
-      movieShowTime.setShowTimeTagId(query.getShowTimeTagId());
+//      movieShowTime.setShowTimeTagId( query.getShowTimeTagId());
     }
     if (query.getSubtitleId() != null) {
-      movieShowTime.setSubtitleId(query.getSubtitleId());
+//      movieShowTime.setSubtitleId(query.getSubtitleId());
     }
 
     if (query.getId() == null) {

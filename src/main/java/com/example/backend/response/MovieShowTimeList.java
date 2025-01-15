@@ -1,29 +1,30 @@
 package com.example.backend.response;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.example.backend.entity.Language;
+import com.example.backend.entity.MovieShowTimeTag;
+import com.example.backend.response.showTime.MovieShowTimeDetail;
+import com.example.backend.typeHandler.IntegerArrayTypeHandler;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class MovieShowTimeList {
-    private Integer id;
-    private Boolean open;
-    private String startTime;
-    private String endTime;
-    private Integer status;
-    private Integer movieId;
-    private String movieName;
-    private String movieCover;
-    private Integer cinemaId;
-    private String cinemaName;
-    private Integer theaterHallId;
-    private String theaterHallName;
-    private String theaterHallSpec;
-    private long selectedSeatCount;
-    private List<Spec> spec;
-    private  Integer seatCount;
-    private Integer subtitleId;
-    private String subtitleName;
-    private Integer showTimeTagId;
-    private String showTimeTagName;
+public class MovieShowTimeList extends MovieShowTimeDetail {
+//    Integer id;
+    Boolean open;
+//    String startTime;
+//    String endTime;
+//    Integer status;
+//    Integer movieId;
+//    String movieName;
+//    String moviePoster;
+//    Integer cinemaId;
+//    String cinemaName;
+//    Integer theaterHallId;
+//    String theaterHallName;
+//    String theaterHallSpec;
+      String theaterHallSpec;
+     Integer seatCount;
+
 }
