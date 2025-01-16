@@ -29,6 +29,6 @@ public class OrderListResponse {
   Integer cinemaId;
   String cinemaName;
   String theaterHallName;
-  String theaterHallSpecName;
+  String specName;
   List<MovieOrderSeat> seat;
 }
