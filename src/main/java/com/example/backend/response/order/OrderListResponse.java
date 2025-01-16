@@ -20,7 +20,7 @@ public class OrderListResponse {
   Date orderTime;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   Date payTime;
-//  String date;
+  String date;
   String startTime;
   String endTime;
   Integer movieId;

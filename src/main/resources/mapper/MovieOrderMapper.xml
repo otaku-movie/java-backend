@@ -12,7 +12,7 @@
         <result property="payTotal" column="pay_total"></result>
         <result property="payNumber" column="pay_number"></result>
         <result property="payTime" column="pay_time"></result>
-<!--        <result property="date" column="date"></result>-->
+        <result property="date" column="date"></result>
         <result property="startTime" column="start_time"></result>
         <result property="endTime" column="end_time"></result>
 <!--        <result property="status" column="status"></result>-->
@@ -72,6 +72,7 @@
             movie_order.pay_time,
             movie_order.pay_number,
             movie_order.create_time AS order_time,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
             movie_show_time.start_time,
             movie_show_time.end_time,
             movie.id as movie_id,
