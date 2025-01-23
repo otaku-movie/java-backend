@@ -48,6 +48,7 @@
             </if>
         </where>
     </select>
+
     <select id="getMovieOrderSeatList" resultType="com.example.backend.response.order.MovieOrderSeat">
         SELECT
             select_seat.movie_order_id,

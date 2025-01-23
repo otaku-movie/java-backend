@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.entity.*;
 import com.example.backend.entity.Character;
 import com.example.backend.enumerate.ResponseCode;
@@ -22,7 +23,7 @@ class MovieResponse {
 }
 
 @Service
-public class MovieService {
+public class MovieService extends ServiceImpl<MovieMapper, Movie> {
   @Autowired
   private GenericService<Movie> genericService;
 
@@ -65,27 +66,28 @@ public class MovieService {
       updateQueryWrapper.eq("id", query.getId());
       movieMapper.update(movie, updateQueryWrapper);
     }
+    int movieId = query.getId() == null ? movie.getId() : query.getId();
 
     if (query.getSpec() != null) {
-      movieSpecMapper.deleteSpec(movie.getId());
+      movieSpecMapper.deleteSpec(movieId);
 
       query.getSpec().forEach(item -> {
         MovieSpec movieSpec = new MovieSpec();
         movieSpec.setSpecId(item);
-        movieSpec.setMovieId(movie.getId());
+        movieSpec.setMovieId(movieId);
 
         movieSpecMapper.insert(movieSpec);
       });
     }
 
     if (query.getStaffList() != null) {
-      movieStaffMapper.deleteStaff(query.getId());
+      movieStaffMapper.deleteStaff(movieId);
 
       movieStaffService.saveBatch(
         query.getStaffList().stream()
           .map(item -> {
             MovieStaff data = new MovieStaff();
-            data.setMovieId(query.getId());
+            data.setMovieId(movieId);
             data.setStaffId(item.getStaffId());
             data.setPositionId(item.getPositionId());
 
@@ -95,13 +97,13 @@ public class MovieService {
       );
     }
     if (query.getCharacterList() != null) {
-      movieCharacterMapper.deleteCharacter(query.getId());
+      movieCharacterMapper.deleteCharacter(movieId);
 
       movieCharacterService.saveBatch(
         query.getCharacterList().stream()
           .map(item -> {
             MovieCharacter data = new MovieCharacter();
-            data.setMovieId(query.getId());
+            data.setMovieId(movieId);
             data.setCharacterId(item.getCharacterId());
 
             return data;
@@ -111,13 +113,14 @@ public class MovieService {
     }
     // 保存标签
     if (query.getTags() != null) {
-      movieTagTagsMapper.deleteMovieTags(query.getId());
+      movieTagTagsMapper.deleteMovieTags(movieId);
 
       movieTagTagsService.saveBatch(
         query.getTags().stream()
           .map(item -> {
             MovieTagTags data = new MovieTagTags();
-            data.setMovieId(query.getId());
+
+            data.setMovieId(movieId);
             data.setMovieTagId(item);
 
             return data;
@@ -127,13 +130,13 @@ public class MovieService {
     }
 
     if (query.getHelloMovie() != null) {
-      helloMovieMapper.deleteHelloMovie(query.getId());
+      helloMovieMapper.deleteHelloMovie(movieId);
 
       helloMovieService.saveBatch(
         query.getHelloMovie().stream()
           .map(item -> {
             HelloMovie data = new HelloMovie();
-            data.setMovieId(query.getId());
+            data.setMovieId(movieId);
             data.setCode(item.getCode());
             data.setDate(item.getDate());
 
