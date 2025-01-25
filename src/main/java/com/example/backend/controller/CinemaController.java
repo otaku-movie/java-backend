@@ -12,6 +12,7 @@ import com.example.backend.entity.Cinema;
 import com.example.backend.entity.TheaterHall;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
+import com.example.backend.enumerate.ShowTimeState;
 import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.mapper.TheaterHallMapper;
@@ -108,6 +109,12 @@ public class CinemaController {
 
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
+  }
+  @PostMapping("/api/app/cinema/movie/showTime")
+  public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
+    GetCinemaMovieShowTimeListResponse list = cinemaMapper.getCinemaMovieShowTimeList(query, ShowTimeState.no_started.getCode());
+
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/cinema/screening")
   public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {

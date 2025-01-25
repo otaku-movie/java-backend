@@ -96,6 +96,7 @@
                 <result property="id" column="id"/>
                 <result property="startTime" column="start_time"/>
                 <result property="endTime" column="end_time"/>
+                <result property="specName" column="spec_name"/>
                 <result property="theaterHallId" column="theater_hall_id"/>
                 <result property="theaterHallName" column="theater_hall_name"/>
             </collection>
@@ -112,19 +113,20 @@
             TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
             TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
             theater_hall.id as theater_hall_id,
-            theater_hall.name as theater_hall_name
+            theater_hall.name as theater_hall_name,
+            cinema_spec.name as spec_name
         FROM
             movie_show_time
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall."id"
+        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         WHERE
             movie_show_time.deleted = 0
             AND movie_show_time.cinema_id = #{query.cinemaId}
             AND movie_show_time.movie_id = #{query.movieId}
-         <!-- AND movie_show_time.status = #{showTimeState} -->
-        <!-- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now() -->
+         AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now()
         GROUP BY
-            date, movie_show_time.id, cinema.id, cinema.name, cinema.address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name"
+            date, movie_show_time.id, cinema.id, cinema.name, cinema.address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name", cinema_spec.name
         ORDER BY
             date, movie_show_time.start_time
     </select>
@@ -140,8 +142,8 @@
                  LEFT JOIN "level" ON movie.level_id = level.id
         WHERE
             movie_show_time.cinema_id = #{id}
-          --- AND movie_show_time."open" = TRUE
-          --- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') > now()
+           AND movie_show_time."open" = TRUE
+           AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') > now()
           AND movie_show_time.deleted = 0
     </select>
 </mapper>

@@ -163,35 +163,42 @@
     </resultMap>
 
     <select id="nowMovieShowing" resultMap="nowMovieShowing">
-        SELECT DISTINCT
+        SELECT
             movie.id,
             movie.name,
             movie.cover,
-            "staff".id AS staff_id,
-            "staff"."name" AS staff_name,
             level.name AS level_name,
             hello_movie.id AS hello_movie_id,
             hello_movie.code AS hello_movie_code,
-            hello_movie.date AS hello_movie_date
--- 	*
+            hello_movie.date AS hello_movie_date,
+            TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') AS show_time
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
-                 LEFT JOIN movie_staff ON movie.id = movie_staff.movie_id
-                 LEFT JOIN "staff_character" ON staff_character.staff_id = "movie_staff".staff_id
-                 LEFT JOIN "staff" ON staff_character.staff_id = "staff"."id"
                  LEFT JOIN level ON movie.level_id = level.id
                  LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
-        WHERE
-            movie_show_time.deleted = 0
-            -- 查询当前时间以后的电影
---          AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= CURRENT_TIMESTAMP
-        ORDER BY movie.id
+        WHERE movie_show_time.deleted = 0
+          AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= CURRENT_TIMESTAMP
+        ORDER BY TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') DESC
+
+
     </select>
     <select id="getMovieComingSoon" resultType="com.example.backend.entity.Movie">
         SELECT movie.*
         FROM "movie"
         WHERE
             movie.deleted = 0
+          AND (
+                movie.start_date IS NULL
+                OR movie.start_date = ''
+                OR TO_DATE(
+                     CASE
+                         WHEN movie.start_date LIKE '____-__-__' THEN movie.start_date  -- 完整日期
+                         WHEN movie.start_date LIKE '____-__' THEN movie.start_date || '-01'  -- 补充日期
+                         WHEN movie.start_date LIKE '____' THEN movie.start_date || '-01-01'  -- 补充年月日
+                         ELSE '1900-01-01'  -- 默认值
+                         END, 'YYYY-MM-DD'
+                       ) >= CURRENT_DATE  -- 筛选发布日期大于今天
+            )
         ORDER BY
             CASE
                 WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1  -- 如果没有日期数据，排到最后
@@ -204,7 +211,8 @@
                   WHEN movie.start_date LIKE '____' THEN movie.start_date || '-01-01'  -- 补充年月日
                   ELSE '1900-01-01'  -- 默认值
                   END, 'YYYY-MM-DD'
-            ) ASC
+                ) ASC
+
     </select>
     <select id="movieDetail" resultMap="movieList">
         SELECT
@@ -296,8 +304,8 @@
                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema."id"
         WHERE
             movie_show_time.deleted = 0
-            <!-- AND movie_show_time.status = #{showTimeState} -->
-            <!-- AND movie_show_time.id = #{query.movieId} -->
-            <!-- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now() -->
+             AND movie_show_time.status = #{showTimeState}
+             AND movie_show_time.movie_id = #{query.movieId}
+             AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now()
     </select>
 </mapper>

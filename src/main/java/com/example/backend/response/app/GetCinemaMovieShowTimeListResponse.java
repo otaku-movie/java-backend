@@ -11,6 +11,7 @@ class TheaterHallShowTime {
   String theaterHallName;
   String startTime;
   String endTime;
+  String specName;
 }
 
 @Data

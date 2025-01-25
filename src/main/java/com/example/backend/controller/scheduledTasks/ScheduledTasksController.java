@@ -140,18 +140,23 @@ public class ScheduledTasksController {
     queryWrapper.ne("status", ShowTimeState.ended.getCode());
     List<MovieShowTime> data = movieShowTimeMapper.selectList(queryWrapper);
     List<MovieShowTime> result = data.stream().map(item -> {
-      LocalDate currentDate = LocalDate.now();
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+      LocalDateTime currentDateTime = LocalDateTime.now(); // 当前时间
 
-      LocalDate startDate = LocalDate.parse(item.getStartTime(), formatter);
-      LocalDate endDate = LocalDate.parse(item.getEndTime(), formatter);
+      // 解析放映时间
+      LocalDateTime startDate = LocalDateTime.parse(item.getStartTime(), formatter);
+      LocalDateTime endDate = LocalDateTime.parse(item.getEndTime(), formatter);
 
-      if (!currentDate.isBefore(startDate) && currentDate.isBefore(endDate)) {
+      // 根据时间设置状态
+      if (currentDateTime.isAfter(startDate) && currentDateTime.isBefore(endDate)) {
         // 设置为上映中
         item.setStatus(ShowTimeState.screening.getCode());
-      } else if (currentDate.isAfter(endDate)) {
+      } else if (currentDateTime.isAfter(endDate)) {
         // 设置为已结束
         item.setStatus(ShowTimeState.ended.getCode());
+      } else {
+        // 设置为未上映
+        item.setStatus(ShowTimeState.no_started.getCode());
       }
       return item;
     }).toList();
