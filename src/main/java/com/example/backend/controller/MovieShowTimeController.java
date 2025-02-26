@@ -15,7 +15,7 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.response.UserSelectSeat;
-import com.example.backend.response.app.AppMovieShowTimeDetail;
+import com.example.backend.response.showTime.MovieShowTimeDetail;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.service.SeatService;
 import com.example.backend.service.SelectSeatService;
@@ -30,7 +30,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
-import java.util.List;
+import java.util.*;
 
 
 @Data
@@ -83,23 +83,52 @@ public class MovieShowTimeController {
     Page<MovieShowTime> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieShowTimeList> list = movieShowTimeMapper.movieShowTimeList(query, OrderState.order_succeed.getCode(), page);
+    Map<Integer, Language> languageMap = new HashMap();
+    Set<Integer> languageSet = new HashSet();
 
+    List<MovieShowTimeList> result = list.getRecords().stream().map(item -> {
+      // 获取字幕的语言存到set里面，从而减少查询次数
+      item.getSubtitleId().forEach(children -> languageSet.add(children));
+      item.setMovieShowTimeTags(
+        movieShowTimeMapper.getMovieShowTimeTags(item.getMovieShowTimeTagsId())
+      );
 
-    return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
-  }
-  @GetMapping("/api/app/movie_show_time/detail")
-  public RestBean<AppMovieShowTimeDetail> GetAppMovieShowTimeDetail(@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+      return item;
+    }).toList();
 
-    AppMovieShowTimeDetail result = movieShowTimeMapper.appMovieShowTimeDetail(id);
+    // 根据set里面的数据去数据库查询然后存到map里面
+    movieShowTimeMapper.getMovieShowTimeSubtitle(languageSet.stream().toList()).stream().forEach(item -> {
+      languageMap.put(item.getId(), item);
+    });
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    // 从map里面获取数据，根据数组的值从map获取值进行添加
+    result.stream().forEach(item -> {
+      if (item.getSubtitleId() != null && item.getSubtitleId().size() != 0) {
+        List<Language> languageList = new ArrayList<>();
+        item.getSubtitleId().stream().forEach(id -> {
+          languageList.add(languageMap.get(id));
+        });
+        item.setSubtitle(
+          languageList
+        );
+      } else {
+        item.setSubtitle(new ArrayList<>());
+      }
+    });
+
+    return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
   @GetMapping("/api/movie_show_time/detail")
-  public RestBean<MovieShowTime> detail (@RequestParam Integer id) {
+  public RestBean<MovieShowTimeDetail> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
-    MovieShowTime result = movieShowTimeMapper.selectById(id);
+    MovieShowTimeDetail result = movieShowTimeMapper.movieShowTimeDetail(id);
+    result.setMovieShowTimeTags(
+      movieShowTimeMapper.getMovieShowTimeTags(result.getMovieShowTimeTagsId())
+    );
+    result.setSubtitle(
+      movieShowTimeMapper.getMovieShowTimeSubtitle(result.getSubtitleId())
+    );
 
     return RestBean.success(result, MessageUtils.getMessage("success.remove"));
   }

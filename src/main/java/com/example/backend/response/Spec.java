@@ -7,4 +7,5 @@ public class Spec {
   Integer id;
   String name;
   String description;
+  String plusPrice;
 }

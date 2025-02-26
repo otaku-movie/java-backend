@@ -15,4 +15,5 @@ public class TheaterHallList {
   Integer cinemaSpecId;
   String cinemaSpecName;
   Integer seatCount;
+  String seatNamingRules;
 }

@@ -17,6 +17,7 @@ import com.example.backend.query.SaveSeatQuery;
 import com.example.backend.response.TheaterHallList;
 import com.example.backend.service.SeatService;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.Utils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -88,12 +89,15 @@ public class TheaterHallController {
 
     // 创建座位列表
     List<Seat> seats = new ArrayList<>();
-    for (int i = 0; i <= query.getRowCount(); i++) {
-      for (int j = 0; j <= query.getColumnCount(); j++) {
+    for (int i = 0; i < query.getRowCount(); i++) {
+      for (int j = 0; j < query.getColumnCount(); j++) {
         Seat seat = new Seat();
+        String rowName = Utils.getRowName(i);
         seat.setXAxis(i);
         seat.setYAxis(j);
         seat.setTheaterHallId(id);
+        seat.setRowName(rowName);
+        seat.setSeatName(String.format("%s-%d", rowName, j + 1));
         seats.add(seat);
       }
     }
@@ -117,6 +121,7 @@ public class TheaterHallController {
     if (query.getId() == null) {
       modal.setRowCount(query.getRowCount());
       modal.setColumnCount(query.getColumnCount());
+      modal.setSeatNamingRules("{alphabet}-{columnNumber}");
     }
 
     if (query.getId() == null) {

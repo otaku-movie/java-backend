@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.controller.TheaterHallSaveQuery;
@@ -63,7 +64,10 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
     seatAisleMapper.delete(queryWrapper);
     seatAreaMapper.delete(queryWrapper);
 
-
+    TheaterHall theaterHall = new TheaterHall();
+    theaterHall.setId(query.getTheaterHallId());
+    theaterHall.setSeatNamingRules(query.getSeatNamingRules());
+    theaterHallMapper.updateById(theaterHall);
 
     List<SeatArea> seatAreaList = query.getArea().stream().map(item -> {
       SeatArea seatArea = new SeatArea();
@@ -102,6 +106,8 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
       seat.setDisabled(item.getDisabled());
       seat.setWheelChair(item.getWheelChair());
       seat.setTheaterHallId(query.getTheaterHallId());
+      seat.setSeatName(item.getSeatName());
+      seat.setRowName(item.getRowName());
 
       String position = item.getX() + "-" + item.getY();
       SeatArea area = map.get(position);

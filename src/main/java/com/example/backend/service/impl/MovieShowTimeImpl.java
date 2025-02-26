@@ -1,7 +1,10 @@
 package com.example.backend.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.backend.entity.HelloMovie;
 import com.example.backend.entity.MovieShowTime;
+import com.example.backend.mapper.HelloMovieMapper;
 import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.service.MovieShowTimeService;
@@ -14,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 
 @Service
-public class MovieShowTimeImpl implements MovieShowTimeService {
+public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieShowTime>  implements MovieShowTimeService  {
 
   @Autowired
   private MovieShowTimeMapper movieShowTimeMapper;
@@ -51,12 +54,16 @@ public class MovieShowTimeImpl implements MovieShowTimeService {
     movieShowTime.setStartTime(query.getStartTime());
     movieShowTime.setEndTime(query.getEndTime());
     movieShowTime.setOpen(query.getOpen());
+    movieShowTime.setSpecId(query.getSpecId());
+    movieShowTime.setSubtitleId(query.getSubtitleId());
+    movieShowTime.setShowTimeTagId(query.getShowTimeTagId());
+//    movieShowTime.set
 
     if (query.getShowTimeTagId() != null) {
-      movieShowTime.setShowTimeTagId(query.getShowTimeTagId());
+//      movieShowTime.setShowTimeTagId( query.getShowTimeTagId());
     }
     if (query.getSubtitleId() != null) {
-      movieShowTime.setSubtitleId(query.getSubtitleId());
+//      movieShowTime.setSubtitleId(query.getSubtitleId());
     }
 
     if (query.getId() == null) {

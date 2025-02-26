@@ -87,26 +87,36 @@ public class CinemaController {
     Page<CinemaResponse> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<CinemaResponse> list = cinemaMapper.cinemaList(query, page);
+    List<CinemaResponse> result =  list.getRecords().stream().map(item -> {
+      List<com.example.backend.response.Spec> spec = cinemaMapper.getCinemaSpec(item.getId());
+      item.setSpec(spec);
 
-    return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
+      return item;
+    }).toList();
+
+    return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
   @GetMapping("/api/cinema/detail")
   public RestBean<CinemaResponse> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     CinemaResponse result = cinemaMapper.cinemaDetail(id);
+    // 获取影院规格
+    List<com.example.backend.response.Spec> spec = cinemaMapper.getCinemaSpec(result.getId());
+    if (spec != null) {
+      result.setSpec(spec);
+    }
+
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  // 获取影院上映中的电影
-  @GetMapping("/api/cinema/movieShowing")
-  public RestBean<Object> GetMovieShowing(@RequestParam("id") Integer id) {
-    List<MovieShowingResponse> result = cinemaMapper.getMovieShowing(id);
+  @PostMapping("/api/app/cinema/movie/showTime")
+  public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
+    GetCinemaMovieShowTimeListResponse list = cinemaMapper.getCinemaMovieShowTimeList(query, ShowTimeState.no_started.getCode());
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
-  // 获取影院排片
-  @GetMapping("/api/cinema/movieScheduleList")
+  @GetMapping("/api/cinema/screening")
   public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -137,6 +147,16 @@ public class CinemaController {
 
       List<MovieShowTimeList> screening = movieShowTimeListList
         .stream()
+        .map(movie -> {
+          movie.setMovieShowTimeTags(
+            movieShowTimeMapper.getMovieShowTimeTags(movie.getMovieShowTimeTagsId())
+          );
+          movie.setSubtitle(
+            movieShowTimeMapper.getMovieShowTimeSubtitle(movie.getSubtitleId())
+          );
+
+          return movie;
+        })
         .filter(children -> Objects.equals(children.getTheaterHallId(), item.getId()))
         .toList();
       cinemaScreeningResponse.setChildren(screening);
@@ -147,19 +167,12 @@ public class CinemaController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/cinema/spec")
-  public RestBean<List<com.example.backend.response.Spec>> cinemaSpec (@RequestParam Integer cinemaId) {
-    if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
-
-    List<com.example.backend.response.Spec> result = cinemaMapper.cinemaSpec(cinemaId);
+  // 获取影院上映中的电影
+  @GetMapping("/api/cinema/movieShowing")
+  public RestBean<Object> GetMovieShowing(@RequestParam("id") Integer id) {
+    List<MovieShowingResponse> result = cinemaMapper.getMovieShowing(id);
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
-  }
-  @PostMapping("/api/app/cinema/movie/showTime")
-  public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
-    GetCinemaMovieShowTimeListResponse list = cinemaMapper.getCinemaMovieShowTimeList(query, ShowTimeState.no_started.getCode());
-
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @Transactional
   public void saveCinema(SaveCinemaQuery query) {
@@ -224,6 +237,7 @@ public class CinemaController {
 
       if (Objects.equals(old.getName(), query.getName())) {
         saveCinema(query);
+        return RestBean.success(null, MessageUtils.getMessage("success.save"));
       } else {
         QueryWrapper wrapper = new QueryWrapper<>();
         wrapper.eq("name", query.getName());
@@ -249,4 +263,12 @@ public class CinemaController {
 
     return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
+  @GetMapping("/api/cinema/spec")
+  public RestBean<List<com.example.backend.response.Spec>> cinemaSpec (@RequestParam Integer cinemaId) {
+      if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+
+      List<com.example.backend.response.Spec> result = cinemaMapper.getCinemaSpec(cinemaId);
+
+      return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    }
 }

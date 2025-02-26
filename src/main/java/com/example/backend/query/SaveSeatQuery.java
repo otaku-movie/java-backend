@@ -12,8 +12,8 @@ import java.util.List;
 @Data
 public class SaveSeatQuery {
   @NotEmpty(message = "{validator.saveSeat.theaterHallId.required}")
-
   Integer theaterHallId;
+  String seatNamingRules;
   List<SeatQuery> seat;
   List<SeatAreaQuery> area;
   List<SeatAisleQuery> aisle;

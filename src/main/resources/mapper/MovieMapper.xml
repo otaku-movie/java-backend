@@ -21,81 +21,85 @@
         <result property="levelId" column="level_id"></result>
         <result property="levelName" column="level_name"></result>
         <result property="levelDescription" column="level_description"></result>
-        <collection property="spec" ofType="com.example.backend.response.Spec">
-            <result property="id" column="spec_id"></result>
-            <result property="name" column="spec_name"></result>
-            <result property="description" column="spec_description"></result>
-        </collection>
-        <collection property="tags" ofType="com.example.backend.response.movie.Tags">
-            <result property="id" column="tag_id"></result>
-            <result property="name" column="tag_name"></result>
-        </collection>
-        <collection property="helloMovie" ofType="com.example.backend.response.movie.HelloMovie">
-            <result property="id" column="hello_movie_id"></result>
-            <result property="code" column="hello_movie_code"></result>
-            <result property="date" column="hello_movie_date"></result>
-        </collection>
     </resultMap>
+    <!--    根据电影id 获取标签 -->
+    <select id="getMovieTags" resultType="com.example.backend.response.movie.Tags">
+        SELECT
+            movie_tag.id AS id,
+            movie_tag.name AS name
+        FROM
+            movie_tag
+        LEFT JOIN movie_tag_tags ON movie_tag.id = movie_tag_tags.movie_tag_id
+        WHERE
+            movie_tag_tags.movie_id =#{movieId}
+    </select>
+    <!--    根据电影id 获取上映规格 -->
+    <select id="getMovieSpec" resultType="com.example.backend.entity.CinemaSpec">
+        SELECT
+            cinema_spec.id,
+            cinema_spec.name,
+            cinema_spec.description
+        FROM
+            cinema_spec
+                LEFT JOIN movie_spec ON movie_spec.spec_id = cinema_spec.id
+        WHERE
+            movie_spec.movie_id =#{movieId}
+    </select>
+    <select id="getHelloMovie" resultType="com.example.backend.response.movie.HelloMovie">
+        SELECT
+            hello_movie.id,
+            hello_movie.code,
+            hello_movie.date
+        FROM
+            hello_movie
+        WHERE
+            hello_movie.movie_id =#{movieId}
+    </select>
+    <select id="getMovieCommentCount" resultType="integer">
+        SELECT
+            COUNT(movie_comment.id) + COUNT(movie_reply.id) AS comment_count
+        FROM
+            movie_comment
+                LEFT JOIN movie_reply ON movie_comment.id = movie_reply.movie_comment_id AND movie_reply.deleted = 0
+        WHERE
+            movie_comment.movie_id = #{movieId}
+            AND movie_comment.deleted = 0
+        GROUP BY
+            movie_comment.movie_id
+    </select>
+    <!--    获取电影所有上映的影院数量 -->
+    <select id="getAllCinemaCount" resultType="integer">
+        SELECT
+--             movie_show_time.movie_id,
+            COUNT(DISTINCT movie_show_time.cinema_id) AS cinema_count
+        FROM
+            movie_show_time
+        WHERE
+            movie_show_time.deleted = 0
+            AND movie_show_time.movie_id = #{movieId}
+        GROUP BY
+            movie_show_time.movie_id
+    </select>
+    <!--    获取电影上映的所有场次数量-->
+    <select id="getAllTheaterCount" resultType="integer">
+        SELECT
+--             movie_show_time.movie_id,
+            COUNT(movie_show_time.cinema_id) AS theater_count
+        FROM
+            movie_show_time
+        WHERE
+            movie_show_time.deleted = 0
+            AND movie_show_time.movie_id = #{movieId}
+        GROUP BY
+            movie_show_time.movie_id
+    </select>
     <select id="movieList" resultMap="movieList" resultType="com.example.backend.response.movie.MovieResponse">
             SELECT
                 movie.*,
-                COALESCE(cinema_counts.cinema_count, 0) AS cinema_count,
-                COALESCE(theater_counts.theater_count, 0) AS theater_count,
-                COALESCE(comment_counts.comment_count, 0) AS comment_count,
-                level.name AS level_name,
-                cinema_spec.id AS spec_id,
-                cinema_spec.name AS spec_name,
-                cinema_spec.description AS spec_description,
-                movie_tag.id AS tag_id,
-                movie_tag.name AS tag_name,
-                hello_movie.id AS hello_movie_id,
-                hello_movie.code AS hello_movie_code,
-                hello_movie.date AS hello_movie_date
+                level.name AS level_name
             FROM
                 movie
-            LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
-            LEFT JOIN movie_tag_tags ON movie.id = movie_tag_tags.movie_id
-            LEFT JOIN movie_tag ON movie_tag_tags.movie_tag_id = movie_tag.id
-            --- 统计评论数量
-            LEFT JOIN (
-                SELECT
-                    movie_comment.movie_id,
-                    COUNT(DISTINCT movie_comment.id) + COUNT(DISTINCT movie_reply.id) AS comment_count
-                FROM
-                    movie_comment
-                LEFT JOIN movie_reply ON movie_comment.id = movie_reply.movie_comment_id AND movie_reply.deleted = 0
-                WHERE
-                    movie_comment.deleted = 0
-                GROUP BY
-                    movie_comment.movie_id
-                ) AS comment_counts ON movie.id = comment_counts.movie_id
-            -- 统计独立影院数量
-            LEFT JOIN (
-                SELECT
-                    movie_show_time.movie_id,
-                    COUNT(DISTINCT movie_show_time.cinema_id) AS cinema_count
-                    FROM
-                        movie_show_time
-                    WHERE
-                        movie_show_time.deleted = 0
-                    GROUP BY
-                        movie_show_time.movie_id
-                    ) AS cinema_counts ON movie.id = cinema_counts.movie_id
-            -- 统计影院放映次数
-            LEFT JOIN (
-                SELECT
-                    movie_show_time.movie_id,
-                     COUNT(movie_show_time.cinema_id) AS theater_count
-                FROM
-                    movie_show_time
-                WHERE
-                    movie_show_time.deleted = 0
-                GROUP BY
-                    movie_show_time.movie_id
-                ) AS theater_counts ON movie.id = theater_counts.movie_id
             LEFT JOIN level ON movie.level_id = level.id
-            LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
-            LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
             <where>
                 movie.deleted = 0
                 <if test="query.id != null">
@@ -159,35 +163,42 @@
     </resultMap>
 
     <select id="nowMovieShowing" resultMap="nowMovieShowing">
-        SELECT DISTINCT
+        SELECT
             movie.id,
             movie.name,
             movie.cover,
-            "staff".id AS staff_id,
-            "staff"."name" AS staff_name,
             level.name AS level_name,
             hello_movie.id AS hello_movie_id,
             hello_movie.code AS hello_movie_code,
-            hello_movie.date AS hello_movie_date
--- 	*
+            hello_movie.date AS hello_movie_date,
+            TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') AS show_time
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
-                 LEFT JOIN movie_staff ON movie.id = movie_staff.movie_id
-                 LEFT JOIN "staff_character" ON staff_character.staff_id = "movie_staff".staff_id
-                 LEFT JOIN "staff" ON staff_character.staff_id = "staff"."id"
                  LEFT JOIN level ON movie.level_id = level.id
                  LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
-        WHERE
-            movie_show_time.deleted = 0
-            -- 查询当前时间以后的电影
---          AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= CURRENT_TIMESTAMP
-        ORDER BY movie.id
+        WHERE movie_show_time.deleted = 0
+          AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= CURRENT_TIMESTAMP
+        ORDER BY TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') DESC
+
+
     </select>
     <select id="getMovieComingSoon" resultType="com.example.backend.entity.Movie">
         SELECT movie.*
         FROM "movie"
         WHERE
             movie.deleted = 0
+          AND (
+                movie.start_date IS NULL
+                OR movie.start_date = ''
+                OR TO_DATE(
+                     CASE
+                         WHEN movie.start_date LIKE '____-__-__' THEN movie.start_date  -- 完整日期
+                         WHEN movie.start_date LIKE '____-__' THEN movie.start_date || '-01'  -- 补充日期
+                         WHEN movie.start_date LIKE '____' THEN movie.start_date || '-01-01'  -- 补充年月日
+                         ELSE '1900-01-01'  -- 默认值
+                         END, 'YYYY-MM-DD'
+                       ) >= CURRENT_DATE  -- 筛选发布日期大于今天
+            )
         ORDER BY
             CASE
                 WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1  -- 如果没有日期数据，排到最后
@@ -200,69 +211,17 @@
                   WHEN movie.start_date LIKE '____' THEN movie.start_date || '-01-01'  -- 补充年月日
                   ELSE '1900-01-01'  -- 默认值
                   END, 'YYYY-MM-DD'
-            ) ASC
+                ) ASC
+
     </select>
     <select id="movieDetail" resultMap="movieList">
         SELECT
             movie.*,
-            COALESCE(cinema_counts.cinema_count, 0) AS cinema_count,
-            COALESCE(theater_counts.theater_count, 0) AS theater_count,
-            COALESCE(comment_counts.comment_count, 0) AS comment_count,
             level.name AS level_name,
-            level.description AS level_description,
-            cinema_spec.id AS spec_id,
-            cinema_spec.name AS spec_name,
-            cinema_spec.description AS spec_description,
-            movie_tag.id AS tag_id,
-            movie_tag.name AS tag_name,
-            hello_movie.id AS hello_movie_id,
-            hello_movie.code AS hello_movie_code,
-            hello_movie.date AS hello_movie_date
+            level.description AS level_description
         FROM
             movie
-                --- 统计评论数量
-                LEFT JOIN (
-                SELECT
-                    movie_comment.movie_id,
-                    COUNT(DISTINCT movie_comment.id) + COUNT(DISTINCT movie_reply.id) AS comment_count
-                FROM
-                    movie_comment
-                        LEFT JOIN movie_reply ON movie_comment.id = movie_reply.movie_comment_id AND movie_reply.deleted = 0
-                WHERE
-                    movie_comment.deleted = 0
-                GROUP BY
-                    movie_comment.movie_id
-            ) AS comment_counts ON movie.id = comment_counts.movie_id
-                -- 统计独立影院数量
-                LEFT JOIN (
-                SELECT
-                    movie_show_time.movie_id,
-                    COUNT(DISTINCT movie_show_time.cinema_id) AS cinema_count
-                FROM
-                    movie_show_time
-                WHERE
-                    movie_show_time.deleted = 0
-                GROUP BY
-                    movie_show_time.movie_id
-            ) AS cinema_counts ON movie.id = cinema_counts.movie_id
-                -- 统计影院放映次数
-                LEFT JOIN (
-                SELECT
-                    movie_show_time.movie_id,
-                    COUNT(movie_show_time.cinema_id) AS theater_count
-                FROM
-                    movie_show_time
-                WHERE
-                    movie_show_time.deleted = 0
-                GROUP BY
-                    movie_show_time.movie_id
-            ) AS theater_counts ON movie.id = theater_counts.movie_id
-                LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
-                LEFT JOIN movie_tag_tags ON movie.id = movie_tag_tags.movie_id
-                LEFT JOIN movie_tag ON movie_tag_tags.movie_tag_id = movie_tag.id
                 LEFT JOIN level ON movie.level_id = level.id
-                LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id
-                LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
         WHERE
             movie.id = #{id}
     </select>
@@ -345,8 +304,8 @@
                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema."id"
         WHERE
             movie_show_time.deleted = 0
-            <!-- AND movie_show_time.status = #{showTimeState} -->
-            <!-- AND movie_show_time.id = #{query.movieId} -->
-            <!-- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now() -->
+             AND movie_show_time.status = #{showTimeState}
+             AND movie_show_time.movie_id = #{query.movieId}
+             AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now()
     </select>
 </mapper>

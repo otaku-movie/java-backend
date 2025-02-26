@@ -3,30 +3,24 @@
 <mapper namespace="com.example.backend.mapper.MovieShowTimeMapper">
     <resultMap id="movie_show_time_list" type="com.example.backend.response.MovieShowTimeList">
         <id property="id" column="id"></id>
-        <result property="id" column="id"></result>
         <result property="open" column="open"></result>
         <result property="startTime" column="start_time"></result>
         <result property="endTime" column="end_time"></result>
         <result property="status" column="status"></result>
         <result property="movieId" column="movie_id"></result>
         <result property="movieName" column="movie_name"></result>
-        <result property="movieCover" column="movie_cover"></result>
+        <result property="moviePoster" column="movie_cover"></result>
         <result property="cinemaId" column="cinema_id"></result>
         <result property="cinemaName" column="cinema_name"></result>
         <result property="theaterHallId" column="theater_hall_id"></result>
         <result property="theaterHallName" column="theater_hall_name"></result>
         <result property="theaterHallSpec" column="theater_hall_spec"></result>
+        <result property="specId" column="spec_id"></result>
+        <result property="specName" column="spec_name"></result>
         <result property="seatCount" column="seat_count"></result>
         <result property="selectedSeatCount" column="selected_seat_count"></result>
-        <result property="subtitleId" column="subtitle_id"></result>
-        <result property="subtitleName" column="subtitle_name"></result>
-        <result property="showTimeTagId" column="show_time_tag_id"></result>
-        <result property="showTimeTagName" column="show_time_tag_name"></result>
-        <collection property="spec" ofType="com.example.backend.response.Spec">
-            <result property="id" column="spec_id"></result>
-            <result property="name" column="spec_name"></result>
-            <result property="description" column="spec_description"></result>
-        </collection>
+        <result property="subtitleId" column="subtitle_id"  typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
+        <result property="movieShowTimeTagsId" column="show_time_tag_id"  typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
     </resultMap>
     <resultMap id="userSelectSeat" type="com.example.backend.response.UserSelectSeat">
         <result property="movieShowTimeId" column="movie_show_time_id"></result>
@@ -94,6 +88,36 @@
             select_seat.select_seat_state = #{seatState} AND
             select_seat.deleted = 0
     </select>
+    <select id="getMovieShowTimeSubtitle" resultType="com.example.backend.entity.Language">
+        SELECT id, name, code
+        FROM language
+        <where>
+            <if test="languageId != null and languageId.size() > 0">
+                id IN
+                <foreach item="id" collection="languageId" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="languageId == null or languageId.size() == 0">
+                1 = 0
+            </if>
+        </where>
+    </select>
+    <select id="getMovieShowTimeTags" resultType="com.example.backend.entity.MovieShowTimeTag">
+        SELECT id, name
+        FROM movie_show_time_tag
+        <where>
+            <if test="tagsId != null and tagsId.size() > 0">
+                id IN
+                <foreach item="id" collection="tagsId" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="tagsId == null or tagsId.size() == 0">
+                1 = 0
+            </if>
+        </where>
+    </select>
     <select id="movieShowTimeList" resultMap="movie_show_time_list">
             SELECT
                 movie_show_time.id,
@@ -101,6 +125,8 @@
                 movie_show_time.end_time,
                 movie_show_time.status,
                 movie_show_time.open,
+                movie_show_time.subtitle_id,
+                movie_show_time.show_time_tag_id,
                 movie.id AS movie_id,
                 movie.name AS movie_name,
                 movie.cover AS movie_cover,
@@ -108,10 +134,6 @@
                 cinema.name AS cinema_name,
                 theater_hall.id AS theater_hall_id,
                 theater_hall.name AS theater_hall_name,
-                language.id as subtitle_id,
-                language.name as subtitle_name,
-                movie_show_time_tag.id as show_time_tag_id,
-                movie_show_time_tag.name as show_time_tag_name,
                 (
                     SELECT
                         COUNT(seat.show)
@@ -132,20 +154,16 @@
                         select_seat.deleted = 0 AND
                         movie_order.order_state = #{orderState}
                 ) AS selected_seat_count,
-                cinema_spec.id AS spec_id,
-                cinema_spec.name AS spec_name,
-                cinema_spec.description AS spec_description,
-                cs2.name as theater_hall_spec
+                cs2.name as theater_hall_spec,
+                cs3.name as spec_name
             FROM
                 movie_show_time
-            LEFT JOIN language ON movie_show_time.subtitle_id = language.id
-            LEFT JOIN movie_show_time_tag ON movie_show_time.show_time_tag_id = movie_show_time_tag.id
             LEFT JOIN movie ON movie.id = movie_show_time.movie_id AND movie.deleted = 0
-            LEFT JOIN movie_spec ON movie.id = movie_spec.movie_id AND movie_spec.deleted = 0
-            LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id AND cinema_spec.deleted = 0
             LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id AND cinema.deleted = 0
             LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id AND theater_hall.deleted = 0
             LEFT JOIN cinema_spec cs2 ON theater_hall.cinema_spec_id = cs2.id AND cs2.deleted = 0
+            LEFT JOIN cinema_spec cs3 ON movie_show_time.spec_id = cs3.id AND cs3.deleted = 0
+
             <where>
                 movie_show_time.deleted = 0
                 <if test="query.movieId != null and !query.movieId.equals('')">
@@ -211,23 +229,27 @@
             dmc.rn &lt; 10 OR dmc.rn IS NULL
         ORDER BY dt.start_time ASC, dmc.movie_count DESC;
     </select>
-    <select id="appMovieShowTimeDetail" resultType="com.example.backend.response.app.AppMovieShowTimeDetail">
+    <select id="movieShowTimeDetail"  resultMap="movie_show_time_list">
         SELECT
             movie_show_time.id as id,
-            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
-            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
-            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+            movie_show_time.start_time,
+            movie_show_time.end_time,
             movie_show_time.status as status,
+            movie_show_time.subtitle_id,
+            movie_show_time.show_time_tag_id,
+            movie_show_time.spec_id,
             movie.id as movie_id,
             movie.name as movie_name,
             cinema.id as cinema_id,
             cinema.name as cinema_name,
             theater_hall.id as theater_hall_id,
-            theater_hall."name" as theater_hall_name
+            theater_hall."name" as theater_hall_name,
+            cinema_spec."name" as spec_name
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
                  LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+                 LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         WHERE
             movie_show_time.id = #{id}
     </select>

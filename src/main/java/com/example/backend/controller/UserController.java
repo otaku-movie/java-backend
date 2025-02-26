@@ -22,6 +22,8 @@ import com.example.backend.utils.MessageUtils;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +43,20 @@ class UserLoginQuery {
   String email;
   @NotEmpty(message = "{validator.login.password.required}")
   String password;
+}
+
+@Data
+class UpdateUserInfoQuery {
+  @NotNull
+  Integer id;
+
+  @NotEmpty(message = "{validator.login.email.required}")
+  @Email(message = "{validator.login.email.notEmail}")
+  String email;
+
+  @NotEmpty
+  String username;
+  String cover;
 }
 
 @Data
@@ -87,6 +103,19 @@ public class UserController {
       return RestBean.error(ResponseCode.ERROR.getCode(), messageUtils.getMessage("error.userNotFound"));
     }
   }
+  @PostMapping("/api/user/updateUserInfo")
+  public RestBean<Null> updateUserInfo(@RequestBody @Validated UpdateUserInfoQuery query){
+    User modal = new User();
+
+    modal.setCover(query.getCover());
+    modal.setName(query.getUsername());
+    modal.setId(query.getId());
+
+    userMapper.updateById(modal);
+
+    return  RestBean.success(null, messageUtils.getMessage("success.save"));
+  }
+
   @PostMapping("/api/user/register")
   public RestBean<LoginResponse> save(@RequestBody @Validated UserSaveQuery query) {
     User user = new User();

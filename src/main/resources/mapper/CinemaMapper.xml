@@ -13,17 +13,13 @@
         <result property="theaterCount" column="theater_count"></result>
         <result property="brandId" column="brand_id"></result>
         <result property="brandName" column="brand_name"></result>
-        <collection property="spec" ofType="com.example.backend.response.CinemaSpec">
-            <result property="id" column="spec_id"></result>
-            <result property="name" column="spec_name"></result>
-            <result property="plusPrice" column="plus_price"></result>
-        </collection>
     </resultMap>
-        <select id="cinemaSpec" resultType="com.example.backend.response.Spec">
+        <select id="getCinemaSpec" resultType="com.example.backend.response.Spec">
             SELECT
                 cinema_spec.id,
                 cinema_spec.name,
-                cinema_spec.description
+                cinema_spec.description,
+                cinema_spec_spec.plus_price
             FROM cinema_spec_spec
                      LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             WHERE
@@ -39,8 +35,6 @@
             cinema.home_page,
             cinema.tel,
             cinema.max_select_seat_count,
-            cinema_spec."id" as spec_id,
-            cinema_spec."name" as spec_name,
             brand.id as brand_id,
             brand.name as brand_name,
             (
@@ -53,8 +47,6 @@
                 ) AS theater_count
             FROM cinema
             LEFT JOIN brand ON cinema.brand_id = brand.id
-            LEFT JOIN cinema_spec_spec ON cinema_spec_spec.cinema_id = cinema.id
-            LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             <where>
                 cinema.deleted = 0
                 <if test="query.name != null and !query.name.equals('')">
@@ -74,9 +66,6 @@
                 cinema.home_page,
                 cinema.max_select_seat_count,
                 cinema.tel,
-                cinema_spec.id AS spec_id,
-                cinema_spec.name AS spec_name,
-                cinema_spec_spec.plus_price,
                 brand.id as brand_id,
                 brand.name as brand_name,
                 (
@@ -89,8 +78,6 @@
                 ) AS theater_count
             FROM cinema
             LEFT JOIN brand ON cinema.brand_id = brand.id
-            LEFT JOIN cinema_spec_spec ON cinema_spec_spec.cinema_id = cinema.id
-            LEFT JOIN cinema_spec ON cinema_spec_spec.spec_id = cinema_spec.id
             WHERE
                 cinema.id = #{id}
         </select>
@@ -109,6 +96,7 @@
                 <result property="id" column="id"/>
                 <result property="startTime" column="start_time"/>
                 <result property="endTime" column="end_time"/>
+                <result property="specName" column="spec_name"/>
                 <result property="theaterHallId" column="theater_hall_id"/>
                 <result property="theaterHallName" column="theater_hall_name"/>
             </collection>
@@ -125,19 +113,20 @@
             TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
             TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
             theater_hall.id as theater_hall_id,
-            theater_hall.name as theater_hall_name
+            theater_hall.name as theater_hall_name,
+            cinema_spec.name as spec_name
         FROM
             movie_show_time
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall."id"
+        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         WHERE
             movie_show_time.deleted = 0
             AND movie_show_time.cinema_id = #{query.cinemaId}
             AND movie_show_time.movie_id = #{query.movieId}
-         <!-- AND movie_show_time.status = #{showTimeState} -->
-        <!-- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now() -->
+         AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now()
         GROUP BY
-            date, movie_show_time.id, cinema.id, cinema.name, cinema.address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name"
+            date, movie_show_time.id, cinema.id, cinema.name, cinema.address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name", cinema_spec.name
         ORDER BY
             date, movie_show_time.start_time
     </select>
@@ -153,8 +142,8 @@
                  LEFT JOIN "level" ON movie.level_id = level.id
         WHERE
             movie_show_time.cinema_id = #{id}
-          --- AND movie_show_time."open" = TRUE
-          --- AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') > now()
+           AND movie_show_time."open" = TRUE
+           AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') > now()
           AND movie_show_time.deleted = 0
     </select>
 </mapper>

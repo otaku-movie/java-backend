@@ -10,6 +10,7 @@
         <result property="cinemaSpecId" column="cinema_spec_id"/>
         <result property="cinemaSpecName" column="cinema_spec_name"/>
         <result property="seatCount" column="seat_count"/>
+        <result property="seatNamingRules" column="seat_naming_rules"/>
     </resultMap>
     <select id="theaterHallList" resultMap="theaterHallList">
         SELECT
@@ -19,6 +20,7 @@
             theater_hall.column_count,
             theater_hall.cinema_id,
             theater_hall.cinema_spec_id,
+            theater_hall.seat_naming_rules,
             cinema_spec.name AS cinema_spec_name,
             (
             SELECT
@@ -29,7 +31,8 @@
                 seat.theater_hall_id = theater_hall.id AND
                 seat.show = TRUE
             ) AS seat_count
-        FROM theater_hall
+        FROM
+            theater_hall
         LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
         <where>
             theater_hall.deleted = 0

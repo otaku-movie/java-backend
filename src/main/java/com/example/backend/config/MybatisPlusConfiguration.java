@@ -2,14 +2,25 @@ package com.example.backend.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.autoconfigure.ConfigurationCustomizer;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.example.backend.typeHandler.IntegerArrayTypeHandler;
+import org.apache.ibatis.type.JdbcType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 // mybatis plus 分页拦截器
 @Configuration
 public class MybatisPlusConfiguration {
+    @Bean
+    public MybatisConfiguration mybatisConfiguration() {
+        MybatisConfiguration configuration = new MybatisConfiguration();
+        configuration.getTypeHandlerRegistry().register(List.class, JdbcType.ARRAY, new IntegerArrayTypeHandler());
+        return configuration;
+    }
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
 //        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();

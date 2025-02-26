@@ -8,14 +8,6 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-class Seat {
-  Integer seatX;
-  Integer seatY;
-  String seatName;
-  String movieTicketTypeName;
-}
-
-@Data
 public class OrderListResponse {
   Integer id;
   BigDecimal orderTotal;
@@ -28,16 +20,15 @@ public class OrderListResponse {
   Date orderTime;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   Date payTime;
-  private String date;
-  private String startTime;
-  private String endTime;
-  private Integer status;
-  private Integer movieId;
-  private String movieName;
-  private String moviePoster;
-  private Integer cinemaId;
-  private String cinemaName;
-  private String theaterHallName;
-  private String theaterHallSpecName;
-  List<Seat> seat;
+  String date;
+  String startTime;
+  String endTime;
+  Integer movieId;
+  String movieName;
+  String moviePoster;
+  Integer cinemaId;
+  String cinemaName;
+  String theaterHallName;
+  String specName;
+  List<MovieOrderSeat> seat;
 }

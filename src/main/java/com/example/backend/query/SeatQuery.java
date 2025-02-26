@@ -9,6 +9,8 @@ public class SeatQuery {
   Integer x;
   Integer y;
   Integer z;
+  String rowName;
+  String seatName;
 //  Integer xAxis;
 //  Integer yAxis;
 //  Integer zAxis;

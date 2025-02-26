@@ -9,7 +9,7 @@ public enum ShowTimeState {
   // 未开始
   no_started(1),
   // 上映中
-  started(2),
+  screening(2),
   // 已结束
   ended(3);
 

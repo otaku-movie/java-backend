@@ -5,4 +5,8 @@
 - Spring boot
 - Spring Security
 - mybatis plus
+- Redis
 - PostgreSQL
+- sa-token
+- minio
+- maven
