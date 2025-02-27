@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.ReReleaseMapper">
+    <resultMap id="reReleaseList" type="com.example.backend.response.reRelease.ReReleaseListResponse">
+        <id property="id" column="id"></id>
+        <result property="id" column="id"></result>
+        <result property="name" column="name"></result>
+        <result property="cover" column="cover"></result>
+        <result property="startDate" column="start_date"></result>
+        <result property="endDate" column="end_date"></result>
+<!--        <result property="status" column="status"></result>-->
+    </resultMap>
+    <select id="reReleaseList" resultMap="reReleaseList" resultType="com.example.backend.response.reRelease.ReReleaseListResponse">
+        SELECT
+            movie."name",
+            movie.cover,
+            re_release.movie_id,
+            re_release."id",
+            re_release.start_date,
+            re_release.end_date
+        FROM
+            re_release
+        LEFT JOIN movie ON re_release.movie_id = movie.id
+            <where>
+                re_release.deleted = 0
+                <if test="query.id != null">
+                    AND movie.id = #{query.id}
+                </if>
+                <if test="query.name != null and !query.name.equals('')">
+                    AND movie.name LIKE concat('%', #{query.name}, '%')
+                </if>
+                <if test="query.status != null and !query.status.equals('')">
+                    AND movie.status = #{query.status}
+                </if>
+            </where>
+    </select>
+</mapper>
