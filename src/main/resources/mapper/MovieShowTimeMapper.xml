@@ -155,6 +155,7 @@
                         movie_order.order_state = #{orderState}
                 ) AS selected_seat_count,
                 cs2.name as theater_hall_spec,
+                cs3.id as spec_id,
                 cs3.name as spec_name
             FROM
                 movie_show_time

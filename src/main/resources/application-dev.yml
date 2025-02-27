@@ -1,9 +1,14 @@
 spring:
+#  datasource:
+#    driver-class-name: org.postgresql.Driver
+#    url: jdbc:postgresql://localhost:5432/test-movie
+#    username: postgres
+#    password: 123456
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/test-movie
+    url: jdbc:postgresql://43.154.172.94:5432/test_movie
     username: postgres
-    password: 123456
+    password: Apoptoxin4869
   data:
     redis:
       host: localhost

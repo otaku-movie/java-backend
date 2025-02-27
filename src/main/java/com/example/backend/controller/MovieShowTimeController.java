@@ -88,10 +88,14 @@ public class MovieShowTimeController {
 
     List<MovieShowTimeList> result = list.getRecords().stream().map(item -> {
       // 获取字幕的语言存到set里面，从而减少查询次数
-      item.getSubtitleId().forEach(children -> languageSet.add(children));
+      if (item.getSubtitleId() != null) {
+        item.getSubtitleId().forEach(children -> languageSet.add(children));
+
+      }
       item.setMovieShowTimeTags(
         movieShowTimeMapper.getMovieShowTimeTags(item.getMovieShowTimeTagsId())
       );
+
 
       return item;
     }).toList();
