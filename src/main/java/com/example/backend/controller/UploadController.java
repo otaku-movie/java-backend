@@ -88,8 +88,8 @@ public class UploadController {
       s3Client.putObject(objectRequest, RequestBody.fromFile(f));
 
       String url = new StringBuilder()
-        .append(minioConfiguration.getPreviewURL())
-        .append(minioConfiguration.getBucket())
+//        .append(minioConfiguration.getPreviewURL())
+//        .append(minioConfiguration.getBucket())
         .append("/") + path;
 
       UploadResponse map = new UploadResponse();
