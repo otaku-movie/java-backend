@@ -178,6 +178,7 @@
                  LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
         WHERE movie_show_time.deleted = 0
           AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= CURRENT_TIMESTAMP
+          AND movie_show_time.open = TRUE
         ORDER BY TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') DESC
 
 
