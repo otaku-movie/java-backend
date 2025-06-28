@@ -1,4 +1,6 @@
 package com.example.backend.response;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.util.List;
@@ -17,4 +19,8 @@ public class CinemaResponse {
   Integer brandId;
   String brandName;
   List<Spec> spec;
+  private Integer regionId;
+  private Integer prefectureId;
+  private Integer cityId;
+  private String fullAddress;
 }

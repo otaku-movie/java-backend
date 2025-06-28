@@ -35,6 +35,18 @@ public class Cinema {
   @TableField("brand_id")
   Integer brandId;
 
+  @TableField("region_id")
+  Integer regionId;
+
+  @TableField("prefecture_id")
+  Integer prefectureId;
+
+  @TableField(value = "city_id", updateStrategy = FieldStrategy.IGNORED)
+  Integer cityId;
+
+  @TableField("full_address")
+  String fullAddress;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

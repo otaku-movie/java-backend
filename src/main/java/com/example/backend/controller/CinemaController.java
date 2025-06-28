@@ -65,6 +65,14 @@ class SaveCinemaQuery {
   private Integer brandId;
   private Integer maxSelectSeatCount;
   private List<Spec> spec;
+
+  @NotNull
+  private Integer regionId;
+  @NotNull
+  private Integer prefectureId;
+  private Integer cityId;
+  @NotEmpty
+  private String fullAddress;
 }
 
 @RestController
@@ -185,6 +193,12 @@ public class CinemaController {
     cinema.setDescription(query.getDescription());
     cinema.setMaxSelectSeatCount(query.getMaxSelectSeatCount());
 
+    // 设置地区
+    cinema.setRegionId(query.getRegionId());
+    cinema.setPrefectureId(query.getPrefectureId());
+    cinema.setCityId(query.getCityId());
+    cinema.setFullAddress(query.getFullAddress());
+
     if (query.getBrandId() != null) {
       cinema.setBrandId(query.getBrandId());
     }
@@ -247,10 +261,9 @@ public class CinemaController {
           return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
         } else {
           saveCinema(query);
+          return RestBean.success(null, MessageUtils.getMessage("success.save"));
         }
       }
-
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
     }
   }
   @SaCheckLogin

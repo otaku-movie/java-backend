@@ -13,6 +13,10 @@
         <result property="theaterCount" column="theater_count"></result>
         <result property="brandId" column="brand_id"></result>
         <result property="brandName" column="brand_name"></result>
+        <result property="regionId" column="region_id"></result>
+        <result property="prefectureId" column="prefecture_id"></result>
+        <result property="cityId" column="city_id"></result>
+        <result property="fullAddress" column="full_address"></result>
     </resultMap>
         <select id="getCinemaSpec" resultType="com.example.backend.response.Spec">
             SELECT
@@ -31,10 +35,10 @@
             cinema.id,
             cinema.name,
             cinema.description,
-            cinema.address,
             cinema.home_page,
             cinema.tel,
             cinema.max_select_seat_count,
+            cinema.full_address,
             brand.id as brand_id,
             brand.name as brand_name,
             (
@@ -66,6 +70,10 @@
                 cinema.home_page,
                 cinema.max_select_seat_count,
                 cinema.tel,
+                cinema.region_id,
+                cinema.prefecture_id,
+                cinema.city_id,
+                cinema.full_address,
                 brand.id as brand_id,
                 brand.name as brand_name,
                 (
