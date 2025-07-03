@@ -3,6 +3,7 @@ success:
   remove: "Delete successful"
   get: "Retrieve successful"
   login: "Login successful"
+  logout: "Logout successful"
   uploadSuccess: "Upload successful"
   success: "Success"
   send: "Send successful"

@@ -3,6 +3,7 @@ success:
   remove: "删除成功"
   get: "获取成功"
   login: "登录成功"
+  logout: "退出成功"
   uploadSuccess: "上传成功"
   success: "success"
   send: "发送成功"

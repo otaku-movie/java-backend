@@ -3,6 +3,7 @@ success:
   remove: "削除成功"
   get: "取得成功"
   login: "ログイン成功"
+  logout: "ログアウトに成功しました"
   uploadSuccess: "アップロード成功"
   success: "成功"
   send: "送信成功"

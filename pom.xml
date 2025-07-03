@@ -125,7 +125,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjweaver</artifactId>
+			<version>1.9.24</version>
+			<scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -142,7 +151,19 @@
 		<dependency>
 			<groupId>cn.dev33</groupId>
 			<artifactId>sa-token-spring-boot3-starter</artifactId>
-			<version>1.38.0</version>
+			<version>1.44.0</version>
+		</dependency>
+		<!-- Sa-Token 整合 RedisTemplate -->
+		<dependency>
+			<groupId>cn.dev33</groupId>
+			<artifactId>sa-token-redis-template</artifactId>
+			<version>1.44.0</version>
+		</dependency>
+
+		<!-- 提供 Redis 连接池 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
 		</dependency>
 		<!-- md5-->
 		<dependency>

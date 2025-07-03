@@ -197,4 +197,9 @@ public class UserController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
+  @PostMapping("/api/user/logout")
+  public RestBean<Null> logout() {
+    StpUtil.logout(StpUtil.getLoginId());
+    return RestBean.success(null, MessageUtils.getMessage("success.logout"));
+  }
 }
