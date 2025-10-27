@@ -1,9 +1,9 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
 import cn.hutool.extra.qrcode.QrConfig;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
@@ -12,11 +12,12 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.MovieOrderMapper;
-import com.example.backend.mapper.PaymentMethodMapper;
+import com.example.backend.query.order.CancelOrderQuery;
+import com.example.backend.query.order.MyTicketsQuery;
 import com.example.backend.query.order.MovieOrderListQuery;
 import com.example.backend.query.order.MovieOrderSaveQuery;
-import com.example.backend.query.order.UpdateOrderStateQuery;
 import com.example.backend.response.order.MovieOrderSeat;
+import com.example.backend.response.order.MyTicketsResponse;
 import com.example.backend.response.order.OrderListResponse;
 import com.example.backend.service.MovieOrderService;
 import com.example.backend.utils.MessageUtils;
@@ -58,11 +59,16 @@ public class MovieOrderController {
 //  @SaCheckLogin
   @GetMapping("/api/movieOrder/detail")
   public RestBean<OrderListResponse> OrderDetail( @RequestParam("id") Integer id) {
-    OrderListResponse order =  movieOrderMapper.orderDetail(id);
+    OrderListResponse order = movieOrderMapper.orderDetail(id);
+    
+    if (order == null) {
+      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.order.notFound"));
+    }
 
-    order.setSeat(movieOrderMapper.getMovieOrderSeatListByOrderIds(List.of(id)));
+    List<MovieOrderSeat> seats = movieOrderMapper.getMovieOrderSeatListByOrderIds(List.of(id));
+    order.setSeat(seats != null ? seats : Collections.emptyList());
 
-    return RestBean.success(order, MessageUtils.getMessage("success.save"));
+    return RestBean.success(order, MessageUtils.getMessage("success.get"));
   }
   @PostMapping("/api/admin/movieOrder/list")
   public RestBean<List<OrderListResponse>> orderList(@RequestBody MovieOrderListQuery query) {
@@ -117,6 +123,25 @@ public class MovieOrderController {
     } else {
       return  RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.order.payError"));
     }
+  }
+
+  @SaCheckLogin
+  @PostMapping("/api/movieOrder/cancel")
+  public RestBean<Null> cancelOrder(@RequestBody @Validated CancelOrderQuery query) {
+    try {
+      movieOrderService.cancelOrder(query.getOrderId());
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    } catch (Exception e) {
+      return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
+    }
+  }
+
+  @SaCheckLogin
+  @PostMapping("/api/movieOrder/myTickets")
+  public RestBean<List<MyTicketsResponse>> getMyTickets(@RequestBody @Validated MyTicketsQuery query) {
+    IPage<MyTicketsResponse> result = movieOrderService.getMyTicketsPage(query);
+    
+    return RestBean.success(result.getRecords(), query.getPage(), result.getTotal(), query.getPageSize());
   }
   @GetMapping("/api/movieOrder/generatorQRcode")
   public ResponseEntity<ByteArrayResource> generatorQRcode() {
