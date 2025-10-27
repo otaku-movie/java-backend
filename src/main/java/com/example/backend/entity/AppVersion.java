@@ -7,19 +7,19 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("api")
-public class Api {
+@TableName("app_version")
+public class AppVersion {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;
 
-  @TableField("name")
-  String name;
+  @TableField("platform")
+  String platform;
 
-  @TableField("path")
-  String path;
+  @TableField("version")
+  String version;
 
-  @TableField("code")
-  String code;
+  @TableField("change_log")
+  String changeLog;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
