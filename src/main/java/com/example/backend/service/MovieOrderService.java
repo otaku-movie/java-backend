@@ -2,10 +2,10 @@ package com.example.backend.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.Update;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.example.backend.entity.Movie;
 import com.example.backend.entity.MovieOrder;
 import com.example.backend.entity.MovieTicketType;
 import com.example.backend.entity.SelectSeat;
@@ -14,20 +14,27 @@ import com.example.backend.enumerate.PayState;
 import com.example.backend.enumerate.SeatState;
 import com.example.backend.mapper.*;
 import com.example.backend.query.order.MovieOrderSaveQuery;
+import com.example.backend.query.order.MyTicketsQuery;
 import com.example.backend.query.order.UpdateOrderStateQuery;
 import com.example.backend.response.UserSelectSeat;
 import com.example.backend.response.UserSelectSeatList;
+import com.example.backend.response.order.MovieOrderSeat;
+import com.example.backend.response.order.MyTicketsResponse;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Data
 class SeatGroupQuery {
@@ -63,7 +70,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   @Autowired
   PaymentService paymentMethodService;
 
-  @Transactional
+  @Transactional(isolation = Isolation.SERIALIZABLE)
   public MovieOrder createOrder(MovieOrderSaveQuery query) throws Exception {
     Integer movieShowTimeId = query.getMovieShowTimeId();
     Integer userId = StpUtil.getLoginIdAsInt();
@@ -123,6 +130,11 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     List<Integer> x = data.stream().map(item -> item.getX()).toList();
     List<Integer> y = data.stream().map(item -> item.getY()).toList();
 
+    // 检查座位是否被其他用户选择（并发检查）
+    if (!isSeatsAvailable(movieShowTimeId, data.get(0).getTheaterHallId(), x, y, userId)) {
+      throw new Exception("座位已被其他用户选择，请重新选择");
+    }
+
     // 移除旧的选座信息
     selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), data.get(0).getTheaterHallId(), StpUtil.getLoginIdAsInt(), x, y);
 
@@ -147,6 +159,15 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     selectSeatService.saveBatch(newSelectSeat);
 
     return movieOrder;
+  }
+
+  /**
+   * 检查座位是否可用（并发控制）
+   */
+  private boolean isSeatsAvailable(Integer movieShowTimeId, Integer theaterHallId, List<Integer> x, List<Integer> y, Integer userId) {
+    // 检查是否有其他用户已经选择了这些座位（排除当前用户）
+    Integer count = selectSeatMapper.countSeatsByCoordinates(movieShowTimeId, theaterHallId, x, y, userId);
+    return count == 0;
   }
 
   @Transactional
@@ -271,5 +292,93 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
       }
     }
 
+  }
+
+  @Transactional
+  public void cancelOrder(Integer orderId) {
+    MovieOrder movieOrder = movieOrderMapper.selectById(orderId);
+    
+    // 只有已创建的订单才能取消
+    if (movieOrder.getOrderState() != OrderState.order_created.getCode()) {
+      throw new RuntimeException("只有已创建的订单才能取消");
+    }
+    
+    // 更新订单状态为取消
+    movieOrder.setId(orderId);
+    movieOrder.setOrderState(OrderState.canceled_order.getCode());
+    movieOrderMapper.updateById(movieOrder);
+
+    // 删除选座信息
+    QueryWrapper<SelectSeat> deleteQueryWrapper = new QueryWrapper<>();
+    deleteQueryWrapper.eq("movie_order_id", orderId);
+    selectSeatMapper.delete(deleteQueryWrapper);
+  }
+
+  public List<MyTicketsResponse> getMyTickets(Integer userId) {
+    // 第一步：获取用户的有效订单ID列表
+    List<Integer> orderIds = movieOrderMapper.getUserValidOrderIds(userId);
+    
+    if (orderIds == null || orderIds.isEmpty()) {
+      return Collections.emptyList();
+    }
+    
+    // 第二步：批量获取订单基本信息
+    List<MyTicketsResponse> tickets = movieOrderMapper.getMyTicketsByIds(orderIds);
+    
+    // 第三步：批量获取座位信息
+    List<MovieOrderSeat> seatList = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds);
+    
+    // 第四步：按订单ID分组座位信息
+    Map<Integer, List<MovieOrderSeat>> seatMap = seatList.stream()
+      .collect(Collectors.groupingBy(MovieOrderSeat::getMovieOrderId));
+    
+    // 第五步：设置座位信息到对应的订单
+    tickets.forEach(ticket -> {
+      List<MovieOrderSeat> seats = seatMap.getOrDefault(ticket.getId(), Collections.emptyList());
+      ticket.setSeat(seats);
+    });
+    
+    return tickets;
+  }
+
+  public IPage<MyTicketsResponse> getMyTicketsPage(MyTicketsQuery query) {
+    // 设置用户ID
+    query.setUserId(StpUtil.getLoginIdAsInt());
+    
+    // 第一步：获取用户的有效订单ID列表（带分页）
+    Page<Integer> orderIdPage = new Page<>(query.getPage(), query.getPageSize());
+    IPage<Integer> orderIdResult = movieOrderMapper.getUserValidOrderIdsPage(query, orderIdPage);
+    
+    if (orderIdResult.getRecords() == null || orderIdResult.getRecords().isEmpty()) {
+      // 返回空的分页结果
+      Page<MyTicketsResponse> emptyPage = new Page<>(query.getPage(), query.getPageSize());
+      emptyPage.setTotal(0);
+      return emptyPage;
+    }
+    
+    List<Integer> orderIds = orderIdResult.getRecords();
+    
+    // 第二步：批量获取订单基本信息
+    List<MyTicketsResponse> tickets = movieOrderMapper.getMyTicketsByIds(orderIds);
+    
+    // 第三步：批量获取座位信息
+    List<MovieOrderSeat> seatList = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds);
+    
+    // 第四步：按订单ID分组座位信息
+    Map<Integer, List<MovieOrderSeat>> seatMap = seatList.stream()
+      .collect(Collectors.groupingBy(MovieOrderSeat::getMovieOrderId));
+    
+    // 第五步：设置座位信息到对应的订单
+    tickets.forEach(ticket -> {
+      List<MovieOrderSeat> seats = seatMap.getOrDefault(ticket.getId(), Collections.emptyList());
+      ticket.setSeat(seats);
+    });
+    
+    // 第六步：构造分页结果
+    Page<MyTicketsResponse> result = new Page<>(query.getPage(), query.getPageSize());
+    result.setRecords(tickets);
+    result.setTotal(orderIdResult.getTotal());
+    
+    return result;
   }
 }

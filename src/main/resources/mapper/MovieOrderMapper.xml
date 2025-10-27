@@ -18,9 +18,11 @@
 <!--        <result property="status" column="status"></result>-->
         <result property="movieId" column="movie_id"></result>
         <result property="movieName" column="movie_name"></result>
+        <result property="originalName" column="movie_original_name"></result>
         <result property="moviePoster" column="movie_poster"></result>
         <result property="cinemaId" column="cinema_id"></result>
         <result property="cinemaName" column="cinema_name"></result>
+        <result property="cinemaFullAddress" column="cinema_full_address"></result>
         <result property="theaterHallName" column="theater_hall_name"></result>
         <result property="specName" column="spec_name"></result>
     </resultMap>
@@ -28,15 +30,12 @@
         SELECT
             select_seat.movie_order_id,
             select_seat.id,
-            seat.seat_name,  -- 查询 seat 表中的 seat_name
+            seat.seat_name,
             movie_ticket_type.name AS movie_ticket_type_name,
             seat_area.name as area_name,
             seat_area.price as area_price
         FROM select_seat
-        LEFT JOIN seat ON
-            select_seat.x = seat.x_axis
-            AND select_seat.y = seat.y_axis
-            AND seat.theater_hall_id = select_seat.theater_hall_id
+        LEFT JOIN seat ON select_seat.seat_id = seat.id
         LEFT JOIN movie_ticket_type ON select_seat.movie_ticket_type_id = movie_ticket_type.id
         LEFT JOIN seat_area ON seat.seat_area_id = seat_area."id"
         <where>
@@ -46,7 +45,9 @@
                     #{id}
                 </foreach>
             </if>
+            AND select_seat.deleted = 0
         </where>
+        ORDER BY select_seat.movie_order_id, select_seat.id
     </select>
 
     <select id="getMovieOrderSeatList" resultType="com.example.backend.response.order.MovieOrderSeat">
@@ -79,8 +80,10 @@
             movie.id as movie_id,
             movie.name as movie_name,
             movie.cover as movie_poster,
+            movie.original_name as movie_original_name,
             cinema.id as cinema_id,
             cinema.name as cinema_name,
+            cinema.full_address as cinema_full_address,
             theater_hall.name as theater_hall_name,
             cinema_spec.name as spec_name
         FROM movie_order
@@ -210,20 +213,26 @@
             TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
             TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
             movie.name as movie_name,
+            movie.original_name as movie_original_name,
             movie.cover as movie_poster,
             cinema.name as cinema_name,
+            cinema.full_address as cinema_full_address,
             theater_hall.name as theater_hall_name,
             cinema_spec.name as theater_hall_spec_name
-        FROM select_seat
-                 LEFT JOIN movie_order ON movie_order."id" = select_seat.movie_order_id
-                 LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
-                 LEFT JOIN movie ON movie_show_time.movie_id = movie.id
-                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
-                 LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
-                 LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
-        WHERE
-            select_seat.user_id = #{userId}
-            AND select_seat.movie_order_id is NOT NULL
+        FROM movie_order
+        LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+        LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+        LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+        WHERE movie_order.id IN (
+            SELECT DISTINCT movie_order_id 
+            FROM select_seat 
+            WHERE user_id = #{userId} 
+            AND movie_order_id IS NOT NULL
+            AND deleted = 0
+        )
+        AND movie_order.deleted = 0
     </select>
     <resultMap id="DailyTransactionAmount" type="com.example.backend.response.chart.DailyTransactionAmount">
         <result property="date" column="date"></result>
@@ -252,5 +261,205 @@
         ORDER BY
             date ASC
 
+    </select>
+
+    <!-- 我的电影票查询 -->
+    <resultMap id="myTicketsResult" type="com.example.backend.response.order.MyTicketsResponse">
+        <result property="id" column="id"/>
+        <result property="orderTotal" column="order_total"/>
+        <result property="orderState" column="order_state"/>
+        <result property="orderTime" column="order_time"/>
+        <result property="payMethod" column="pay_method"/>
+        <result property="payState" column="pay_state"/>
+        <result property="payTotal" column="pay_total"/>
+        <result property="payNumber" column="pay_number"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="date" column="date"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="movieId" column="movie_id"/>
+        <result property="movieName" column="movie_name"/>
+        <result property="originalName" column="movie_original_name"/>
+        <result property="moviePoster" column="movie_poster"/>
+        <result property="cinemaId" column="cinema_id"/>
+        <result property="cinemaName" column="cinema_name"/>
+        <result property="cinemaFullAddress" column="cinema_full_address"/>
+        <result property="cinemaTel" column="cinema_tel"/>
+        <result property="theaterHallId" column="theater_hall_id"/>
+        <result property="theaterHallName" column="theater_hall_name"/>
+        <result property="specName" column="spec_name"/>
+    </resultMap>
+
+    <select id="getMyTickets" resultMap="myTicketsResult">
+        SELECT DISTINCT
+            movie_order.id,
+            movie_order.order_total,
+            movie_order.order_state,
+            movie_order.create_time AS order_time,
+            payment_methods.name AS pay_method,
+            movie_order.pay_state,
+            movie_order.pay_total,
+            NULL AS pay_number,
+            movie_order.pay_time,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+            movie.id AS movie_id,
+            movie.name AS movie_name,
+            movie.original_name AS movie_original_name,
+            movie.cover AS movie_poster,
+            cinema.id AS cinema_id,
+            cinema.name AS cinema_name,
+            cinema.full_address AS cinema_full_address,
+            cinema.tel AS cinema_tel,
+            theater_hall.id AS theater_hall_id,
+            theater_hall.name AS theater_hall_name,
+            cinema_spec.name AS spec_name
+        FROM movie_order
+        INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
+        LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+        LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
+        LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
+        WHERE select_seat.user_id = #{userId}
+        AND select_seat.deleted = 0
+        AND movie_order.order_state = 2  -- 订单成功
+        AND movie_order.pay_state = 3    -- 支付成功
+        AND movie_show_time.status = 1   -- 未开始
+        AND movie_order.deleted = 0
+        AND movie_show_time.deleted = 0
+        ORDER BY movie_show_time.start_time ASC
+    </select>
+
+    <select id="getMyTicketsPage" resultMap="myTicketsResult">
+        SELECT DISTINCT
+            movie_order.id,
+            movie_order.order_total,
+            movie_order.order_state,
+            movie_order.create_time AS order_time,
+            payment_methods.name AS pay_method,
+            movie_order.pay_state,
+            movie_order.pay_total,
+            NULL AS pay_number,
+            movie_order.pay_time,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+            movie.id AS movie_id,
+            movie.name AS movie_name,
+            movie.original_name AS movie_original_name,
+            movie.cover AS movie_poster,
+            cinema.id AS cinema_id,
+            cinema.name AS cinema_name,
+            cinema.full_address AS cinema_full_address,
+            cinema.tel AS cinema_tel,
+            theater_hall.id AS theater_hall_id,
+            theater_hall.name AS theater_hall_name,
+            cinema_spec.name AS spec_name
+        FROM movie_order
+        INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
+        LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+        LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
+        LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
+        WHERE select_seat.user_id = #{query.userId}
+        AND select_seat.deleted = 0
+        AND movie_order.order_state = 2  -- 订单成功
+        AND movie_order.pay_state = 3    -- 支付成功
+        AND movie_show_time.status = 1   -- 未开始
+        AND movie_order.deleted = 0
+        AND movie_show_time.deleted = 0
+        <if test="query.movieName != null and query.movieName != ''">
+            AND movie.name LIKE CONCAT('%', #{query.movieName}, '%')
+        </if>
+        <if test="query.cinemaName != null and query.cinemaName != ''">
+            AND cinema.name LIKE CONCAT('%', #{query.cinemaName}, '%')
+        </if>
+        ORDER BY movie_show_time.start_time ASC
+    </select>
+
+    <!-- 拆分后的查询方法 -->
+    
+    <!-- 第一步：获取用户的有效订单ID列表 -->
+    <select id="getUserValidOrderIds" resultType="java.lang.Integer">
+        SELECT DISTINCT movie_order.id
+        FROM movie_order
+        INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
+        INNER JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+        WHERE select_seat.user_id = #{userId}
+        AND select_seat.deleted = 0
+        AND movie_order.order_state = 2  -- 订单成功
+        AND movie_order.pay_state = 3     -- 支付成功
+        AND movie_show_time.status = 1    -- 未开始
+        AND movie_order.deleted = 0
+        AND movie_show_time.deleted = 0
+        ORDER BY movie_show_time.start_time ASC
+    </select>
+
+    <!-- 第一步（分页）：获取用户的有效订单ID列表（带分页） -->
+    <select id="getUserValidOrderIdsPage" resultType="java.lang.Integer">
+        SELECT DISTINCT movie_order.id
+        FROM movie_order
+        INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
+        INNER JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+        WHERE select_seat.user_id = #{query.userId}
+        AND select_seat.deleted = 0
+        AND movie_order.order_state = 2  -- 订单成功
+        AND movie_order.pay_state = 3    -- 支付成功
+        AND movie_show_time.status = 1   -- 未开始
+        AND movie_order.deleted = 0
+        AND movie_show_time.deleted = 0
+        <if test="query.movieName != null and query.movieName != ''">
+            AND movie.name LIKE CONCAT('%', #{query.movieName}, '%')
+        </if>
+        <if test="query.cinemaName != null and query.cinemaName != ''">
+            AND cinema.name LIKE CONCAT('%', #{query.cinemaName}, '%')
+        </if>
+    </select>
+
+    <!-- 第二步：根据订单ID列表批量获取订单详细信息 -->
+    <select id="getMyTicketsByIds" resultMap="myTicketsResult">
+        SELECT
+            movie_order.id,
+            movie_order.order_total,
+            movie_order.order_state,
+            movie_order.create_time AS order_time,
+            payment_methods.name AS pay_method,
+            movie_order.pay_state,
+            movie_order.pay_total,
+            NULL AS pay_number,
+            movie_order.pay_time,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
+            movie.id AS movie_id,
+            movie.name AS movie_name,
+            movie.original_name AS movie_original_name,
+            movie.cover AS movie_poster,
+            cinema.id AS cinema_id,
+            cinema.name AS cinema_name,
+            cinema.full_address AS cinema_full_address,
+            cinema.tel AS cinema_tel,
+            theater_hall.id AS theater_hall_id,
+            theater_hall.name AS theater_hall_name,
+            cinema_spec.name AS spec_name
+        FROM movie_order
+        LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
+        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
+        LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
+        LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
+        WHERE movie_order.id IN
+        <foreach collection="orderIds" item="orderId" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+        ORDER BY movie_show_time.start_time ASC
     </select>
 </mapper>
