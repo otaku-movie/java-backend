@@ -122,6 +122,27 @@ public class CinemaController {
   public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
     GetCinemaMovieShowTimeListResponse list = cinemaMapper.getCinemaMovieShowTimeList(query, ShowTimeState.no_started.getCode());
 
+    // 获取所有场次的字幕和特殊场次标签详细信息
+    if (list != null && list.getData() != null) {
+      for (var dateGroup : list.getData()) {
+        if (dateGroup.getData() != null) {
+          for (var theaterHallShowTime : dateGroup.getData()) {
+            // 获取字幕信息
+            if (theaterHallShowTime.getSubtitleId() != null && !theaterHallShowTime.getSubtitleId().isEmpty()) {
+              var subtitles = movieShowTimeMapper.getMovieShowTimeSubtitle(theaterHallShowTime.getSubtitleId());
+              theaterHallShowTime.setSubtitle(subtitles);
+            }
+            
+            // 获取特殊场次标签信息
+            if (theaterHallShowTime.getShowTimeTagId() != null && !theaterHallShowTime.getShowTimeTagId().isEmpty()) {
+              var showTimeTags = movieShowTimeMapper.getMovieShowTimeTags(theaterHallShowTime.getShowTimeTagId());
+              theaterHallShowTime.setShowTimeTags(showTimeTags);
+            }
+          }
+        }
+      }
+    }
+
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   @GetMapping("/api/cinema/screening")

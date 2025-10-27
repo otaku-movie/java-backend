@@ -96,28 +96,37 @@ public class AppMovieController {
       AppRootMovieShowTimeResponse data = new AppRootMovieShowTimeResponse();
       Map<Integer, List<AppBeforeMovieShowTimeResponse>> cinema = map.get(key).stream().collect(Collectors.groupingBy(item -> item.getCinemaId()));
 
-      List<Time> timeList = cinema.values().stream()
-        .flatMap(List::stream)
-        .map(item -> {
-          Time showTime = new Time();
-          showTime.setStartTime(item.getStartTime());  // 设置日期
-          showTime.setEndTime(item.getEndTime());  // 设置电影放映信息
-          return showTime;
-        })
-        .collect(Collectors.toList());
-
-      List<AppMovieShowTimeResponse> cinemaList = new ArrayList<>(); // 创建一个空的 ArrayList
+      List<AppMovieShowTimeResponse> cinemaList = new ArrayList<>();
 
       for (Integer cinemaId : cinema.keySet()) {
         // 获取每个影院的第一条数据
         AppBeforeMovieShowTimeResponse first = cinema.get(cinemaId).get(0);
 
+        // 创建场次信息列表
+        List<ShowTimeInfo> showTimes = cinema.get(cinemaId).stream().map(item -> {
+          ShowTimeInfo showTime = new ShowTimeInfo();
+          showTime.setId(item.getId());
+          showTime.setTheaterHallId(item.getTheaterHallId());
+          showTime.setTheaterHallName(item.getTheaterHallName());
+          showTime.setStartTime(item.getStartTime());
+          showTime.setEndTime(item.getEndTime());
+          showTime.setSpecName(item.getSpecName());
+          showTime.setTotalSeats(item.getTotalSeats());
+          showTime.setSelectedSeats(item.getSelectedSeats());
+          // 计算可用座位数
+          Integer availableSeats = item.getTotalSeats() - item.getSelectedSeats();
+          showTime.setAvailableSeats(availableSeats);
+          return showTime;
+        }).collect(Collectors.toList());
+
         // 创建一个新的 AppMovieShowTimeResponse 对象
         AppMovieShowTimeResponse model = new AppMovieShowTimeResponse();
-        model.setCinemaId(first.getCinemaId());  // 设置影院ID
-        model.setCinemaName(first.getCinemaName());  // 设置影院名称
-        model.setCinemaAddress(first.getCinemaAddress());  // 设置影院地址
-        model.setTime(timeList);  // 设置放映时间列表
+        model.setCinemaId(first.getCinemaId());
+        model.setCinemaName(first.getCinemaName());
+        model.setCinemaAddress(first.getCinemaAddress());
+        model.setCinemaTel(first.getCinemaTel());
+        model.setTotalShowTimes(showTimes.size());  // 设置总场次数
+        model.setShowTimes(showTimes);
 
         // 将模型添加到影院列表中
         cinemaList.add(model);

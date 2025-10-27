@@ -289,24 +289,77 @@
         <result property="cinemaId" column="cinema_id"></result>
         <result property="cinemaName" column="cinema_name"></result>
         <result property="cinemaAddress" column="cinema_address"></result>
+        <result property="cinemaTel" column="cinema_tel"></result>
+        <result property="id" column="id"></result>
+        <result property="theaterHallId" column="theater_hall_id"></result>
+        <result property="theaterHallName" column="theater_hall_name"></result>
         <result property="startTime" column="start_time"></result>
         <result property="endTime" column="end_time"></result>
+        <result property="specName" column="spec_name"></result>
+        <result property="totalSeats" column="total_seats"></result>
+        <result property="selectedSeats" column="selected_seats"></result>
     </resultMap>
     <select id="getMovieShowTime" resultMap="getMovieShowTime">
 
         SELECT
             cinema.id AS cinema_id,
             cinema.name AS cinema_name,
-            cinema.address AS cinema_address,
+            cinema.full_address AS cinema_address,
+            cinema.tel AS cinema_tel,
+            movie_show_time.id AS id,
             movie_show_time.start_time AS start_time,
-            movie_show_time.end_time AS end_time
+            movie_show_time.end_time AS end_time,
+            theater_hall.id AS theater_hall_id,
+            theater_hall.name AS theater_hall_name,
+            cinema_spec.name AS spec_name,
+            movie_show_time.subtitle_id,
+            movie_show_time.show_time_tag_id,
+            (
+                SELECT COUNT(seat.id)
+                FROM seat
+                WHERE seat.theater_hall_id = theater_hall.id
+                AND seat.deleted = 0
+                AND seat.show = TRUE
+            ) AS total_seats,
+            (
+                SELECT COUNT(select_seat.id)
+                FROM select_seat
+                LEFT JOIN movie_order ON movie_order.id = select_seat.movie_order_id
+                WHERE select_seat.movie_show_time_id = movie_show_time.id
+                AND select_seat.deleted = 0
+                AND movie_order.order_state = 2
+            ) AS selected_seats
         FROM
             movie_show_time
                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema."id"
+                LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
+                LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         WHERE
             movie_show_time.deleted = 0
              AND movie_show_time.status = #{showTimeState}
              AND movie_show_time.movie_id = #{query.movieId}
              AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now()
+        <if test="query.regionId != null">
+            AND cinema.region_id = #{query.regionId}
+        </if>
+
+        <if test="query.prefectureId != null">
+            AND cinema.prefecture_id = #{query.prefectureId}
+        </if>
+
+        <if test="query.cityId != null">
+            AND cinema.city_id = #{query.cityId}
+        </if>
+
+        <if test="query.subtitleId != null">
+            AND #{query.subtitleId} = ANY(movie_show_time.subtitle_id)
+        </if>
+
+        <if test="query.specId != null and query.specId.size() > 0">
+            AND movie_show_time.spec_id IN
+            <foreach collection="query.specId" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
     </select>
 </mapper>

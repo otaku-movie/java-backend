@@ -8,6 +8,8 @@ public class AppMovieShowTimeResponse {
   Integer cinemaId;
   String cinemaName;
   String cinemaAddress;
-  List<Time> time;
+  String cinemaTel;
+  Integer totalShowTimes;  // 新增：总场次数
+  List<ShowTimeInfo> showTimes;
 }
 

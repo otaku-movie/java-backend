@@ -5,26 +5,10 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-class TheaterHallShowTime {
-  Integer id;
-  Integer theaterHallId;
-  String theaterHallName;
-  String startTime;
-  String endTime;
-  String specName;
-}
-
-@Data
-class DateGroup {
-  String date;
-  List<TheaterHallShowTime> data;
-}
-
-@Data
 public class GetCinemaMovieShowTimeListResponse {
   Integer cinemaId;
   String cinemaName;
-  String cinemaAddress;
+  String cinemaFullAddress;
   String cinemaTel;
   List<DateGroup> data;
 
