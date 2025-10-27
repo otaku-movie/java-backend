@@ -53,6 +53,16 @@ class SaveSelectSeatQuery {
   List<SeatPosition> seatPosition;
 }
 
+@Data
+class CancelSelectSeatQuery {
+  @NotNull(message = "${validator.saveSelectSeat.movieShowTimeId.required}")
+  Integer movieShowTimeId;
+  @NotNull(message = "${validator.saveSelectSeat.theaterHallId.required}")
+  Integer theaterHallId;
+  @NotEmpty(message = "${validator.saveSelectSeat.seatPosition.required}")
+  List<SeatPosition> seatPosition;
+}
+
 @RestController
 public class MovieShowTimeController {
   @Autowired
@@ -216,6 +226,49 @@ public class MovieShowTimeController {
 
     return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
+
+  @SaCheckLogin
+  @PostMapping("/api/movie_show_time/select_seat/cancel")
+  public RestBean<Object> cancelSelectSeat(@RequestBody @Validated CancelSelectSeatQuery query) {
+    Integer userId = StpUtil.getLoginIdAsInt();
+    
+    // 验证用户是否有权限取消这些座位
+    QueryWrapper<SelectSeat> queryWrapper = new QueryWrapper<>();
+    List<Integer> queryX = query.getSeatPosition().stream().map(item -> item.getX()).toList();
+    List<Integer> queryY = query.getSeatPosition().stream().map(item -> item.getY()).toList();
+
+    queryWrapper.in("x", queryX);
+    queryWrapper.in("y", queryY);
+    queryWrapper.eq("theater_hall_id", query.getTheaterHallId());
+    queryWrapper.eq("movie_show_time_id", query.getMovieShowTimeId());
+    queryWrapper.eq("user_id", userId);
+    queryWrapper.eq("select_seat_state", SeatState.selected.getCode());
+    queryWrapper.eq("deleted", 0);
+
+    List<SelectSeat> existingSeats = selectSeatMapper.selectList(queryWrapper);
+    
+    // 检查是否所有要取消的座位都存在且属于当前用户
+    for (SeatPosition item : query.getSeatPosition()) {
+      boolean seatExists = existingSeats.stream().anyMatch(seat -> 
+        seat.getX().equals(item.getX()) && 
+        seat.getY().equals(item.getY()) && 
+        seat.getSeatId().equals(item.getSeatId())
+      );
+      
+      if (!seatExists) {
+        return RestBean.error(ResponseCode.ERROR.getCode(), "座位不存在或不属于当前用户：" + item.getX() + "," + item.getY());
+      }
+    }
+
+    // 删除选座信息
+    List<Integer> x = query.getSeatPosition().stream().map(item -> item.getX()).toList();
+    List<Integer> y = query.getSeatPosition().stream().map(item -> item.getY()).toList();
+
+    selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), query.getTheaterHallId(), userId, x, y);
+
+    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+  }
+
   @SaCheckLogin
   @GetMapping("/api/movie_show_time/user_select_seat")
   public RestBean<Object> selectSeatList(

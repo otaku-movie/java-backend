@@ -62,31 +62,26 @@
             TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
             TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
             cinema_spec.name as spec_name,
-            cinema_spec_spec.plus_price,
             select_seat.movie_ticket_type_id,
             seat.seat_name as seat_name,
             cinema.id as cinema_id,
             cinema.name as cinema_name,
-            theater_hall.name as theater_hall_name
-        FROM
-            select_seat
-            LEFT JOIN seat ON
-            seat.theater_hall_id = select_seat.theater_hall_id AND
-            seat.x_axis = select_seat.x AND
-            seat.y_axis = select_seat.y AND
-            seat.deleted = 0
-            LEFT JOIN movie_show_time ON select_seat.movie_show_time_id = movie_show_time.id
-            LEFT JOIN movie ON movie_show_time.movie_id = movie.id
-            LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
-            LEFT JOIN theater_hall ON select_seat.theater_hall_id = theater_hall.id AND theater_hall.deleted = 0
-            LEFT JOIN cinema ON  theater_hall.cinema_id = cinema."id"
-            LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
-            LEFT JOIN cinema_spec_spec ON cinema_spec_spec.spec_id = theater_hall.cinema_spec_id AND cinema_spec_spec.deleted = 0
-        WHERE
-            select_seat.user_id = #{userId} AND
-            select_seat.movie_show_time_id = #{movieShowTimeId} AND
-            select_seat.select_seat_state = #{seatState} AND
-            select_seat.deleted = 0
+            theater_hall.name as theater_hall_name,
+            cinema_spec_spec.plus_price
+        FROM select_seat
+        LEFT JOIN seat ON select_seat.seat_id = seat.id AND seat.deleted = 0
+        LEFT JOIN movie_show_time ON select_seat.movie_show_time_id = movie_show_time.id
+        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
+        LEFT JOIN theater_hall ON select_seat.theater_hall_id = theater_hall.id AND theater_hall.deleted = 0
+        LEFT JOIN cinema ON theater_hall.cinema_id = cinema.id
+        LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+        LEFT JOIN cinema_spec_spec ON cinema_spec_spec.spec_id = theater_hall.cinema_spec_id 
+            AND cinema_spec_spec.deleted = 0
+        WHERE select_seat.user_id = #{userId} 
+            AND select_seat.movie_show_time_id = #{movieShowTimeId} 
+            AND select_seat.select_seat_state = #{seatState} 
+            AND select_seat.deleted = 0
     </select>
     <select id="getMovieShowTimeSubtitle" resultType="com.example.backend.entity.Language">
         SELECT id, name, code
