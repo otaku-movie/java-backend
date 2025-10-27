@@ -25,10 +25,12 @@ public class OrderListResponse {
   String endTime;
   Integer movieId;
   String movieName;
+  String originalName;
   String moviePoster;
   Integer cinemaId;
   String cinemaName;
   String theaterHallName;
   String specName;
+  String cinemaFullAddress;
   List<MovieOrderSeat> seat;
 }

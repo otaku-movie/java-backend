@@ -42,6 +42,30 @@
                 </if>
             </where>
     </delete>
+    
+    <!-- 统计指定坐标的座位数量（并发控制） -->
+    <select id="countSeatsByCoordinates" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM select_seat
+        WHERE select_seat.movie_show_time_id = #{movieShowTimeId}
+        AND select_seat.theater_hall_id = #{theaterHallId}
+        AND select_seat.deleted = 0
+        AND select_seat.select_seat_state IN (2, 3) -- 已选择或已锁定状态
+        AND select_seat.user_id != #{userId} -- 排除当前用户
+        <if test="x != null and x.size() > 0">
+            AND select_seat.x IN
+            <foreach collection="x" item="x" open="(" separator="," close=")">
+                #{x}
+            </foreach>
+        </if>
+        <if test="y != null and y.size() > 0">
+            AND select_seat.y IN
+            <foreach collection="y" item="y" open="(" separator="," close=")">
+                #{y}
+            </foreach>
+        </if>
+    </select>
+    
     <select id="selectSeatList" resultMap="seatListResponseMap">
         SELECT
             seat.theater_hall_id,

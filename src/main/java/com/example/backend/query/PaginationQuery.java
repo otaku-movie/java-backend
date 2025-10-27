@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class PaginationQuery {
-  private Integer page;
-  private Integer pageSize;
+  Integer page;
+  Integer pageSize;
 
   public PaginationQuery() {
     this.page = 1; // 默认页数为1
