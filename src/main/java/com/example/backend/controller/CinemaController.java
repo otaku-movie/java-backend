@@ -96,8 +96,13 @@ public class CinemaController {
 
     IPage<CinemaResponse> list = cinemaMapper.cinemaList(query, page);
     List<CinemaResponse> result =  list.getRecords().stream().map(item -> {
+      // 获取影院规格
       List<com.example.backend.response.Spec> spec = cinemaMapper.getCinemaSpec(item.getId());
       item.setSpec(spec);
+      
+      // 获取当前上映的电影
+      List<MovieShowingResponse> nowShowingMovies = cinemaMapper.getMovieShowing(item.getId());
+      item.setNowShowingMovies(nowShowingMovies);
 
       return item;
     }).toList();

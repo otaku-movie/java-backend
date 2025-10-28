@@ -23,4 +23,6 @@ public class CinemaResponse {
   private Integer prefectureId;
   private Integer cityId;
   private String fullAddress;
+  // 新增：当前上映的电影列表
+  List<com.example.backend.response.cinema.MovieShowingResponse> nowShowingMovies;
 }
