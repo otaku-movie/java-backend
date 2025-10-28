@@ -35,7 +35,9 @@ public interface MovieMapper extends BaseMapper<Movie> {
     // 热映电影
     IPage<NowMovieShowingResponse> nowMovieShowing(AppMovieListQuery query, IPage<MovieMapper> page);
     List<AppMovieStaffResponse> appMovieStaff(Integer movieId);
-    IPage<Movie> getMovieComingSoon(AppMovieListQuery query, IPage<MovieMapper> page);
+    // 批量获取Hello Movie信息
+    List<com.example.backend.response.movie.HelloMovie> getHelloMoviesByMovieIds(List<Integer> movieIds);
+    IPage<com.example.backend.response.app.MovieComingSoonResponse> getMovieComingSoon(AppMovieListQuery query, IPage<MovieMapper> page);
 
     List<MovieStaffResponse> movieStaffList(Integer id);
 

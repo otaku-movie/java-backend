@@ -3,6 +3,7 @@ package com.example.backend.controller.app;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.entity.HelloMovie;
 import com.example.backend.entity.Movie;
 import com.example.backend.entity.MovieShowTime;
 import com.example.backend.entity.RestBean;
@@ -47,7 +48,28 @@ public class AppMovieController {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<MovieMapper> page = new Page<>(query.getPage(), query.getPageSize());
 
+    // 第一步：获取基本的电影信息
     IPage<NowMovieShowingResponse> list = movieMapper.nowMovieShowing(query, page);
+    
+    if (list.getRecords() != null && !list.getRecords().isEmpty()) {
+      // 第二步：提取电影ID列表
+      List<Integer> movieIds = list.getRecords().stream()
+        .map(NowMovieShowingResponse::getId)
+        .toList();
+      
+      // 第三步：批量获取Hello Movie信息
+      List<com.example.backend.response.movie.HelloMovie> helloMovies = movieMapper.getHelloMoviesByMovieIds(movieIds);
+      
+      // 第四步：按电影ID分组Hello Movie信息
+      Map<Integer, List<com.example.backend.response.movie.HelloMovie>> helloMovieMap = helloMovies.stream()
+        .collect(Collectors.groupingBy(com.example.backend.response.movie.HelloMovie::getMovieId));
+      
+      // 第五步：组装结果
+      list.getRecords().forEach(movie -> {
+        List<com.example.backend.response.movie.HelloMovie> movieHelloMovies = helloMovieMap.getOrDefault(movie.getId(), Collections.emptyList());
+        movie.setHelloMovie(movieHelloMovies);
+      });
+    }
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
@@ -62,10 +84,10 @@ public class AppMovieController {
   }
 
   @GetMapping("/api/app/movie/comingSoon")
-  public RestBean<List<Movie>> getComingSoon (@ModelAttribute AppMovieListQuery query) {
+  public RestBean<List<MovieComingSoonResponse>> getComingSoon (@ModelAttribute AppMovieListQuery query) {
     Page<MovieMapper> page = new Page<>(query.getPage(), query.getPageSize());
 
-    IPage list = movieMapper.getMovieComingSoon(query, page);
+    IPage<MovieComingSoonResponse> list = movieMapper.getMovieComingSoon(query, page);
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }

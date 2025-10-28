@@ -163,29 +163,49 @@
     </resultMap>
 
     <select id="nowMovieShowing" resultMap="nowMovieShowing">
-        SELECT
+        SELECT DISTINCT
             movie.id,
             movie.name,
             movie.cover,
+            movie.start_date,
             level.name AS level_name,
-            hello_movie.id AS hello_movie_id,
-            hello_movie.code AS hello_movie_code,
-            hello_movie.date AS hello_movie_date,
-            TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') AS show_time
+            MIN(movie_show_time.start_time::timestamp) AS show_time
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN level ON movie.level_id = level.id
-                 LEFT JOIN hello_movie ON movie.id = hello_movie.movie_id
         WHERE movie_show_time.deleted = 0
-          AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= CURRENT_TIMESTAMP
+          AND movie_show_time.start_time::timestamp >= CURRENT_TIMESTAMP
           AND movie_show_time.open = TRUE
-        ORDER BY TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') DESC
-
-
+        GROUP BY movie.id, movie.name, movie.cover, movie.start_date, level.name
+        ORDER BY MIN(movie_show_time.start_time::timestamp) ASC
     </select>
-    <select id="getMovieComingSoon" resultType="com.example.backend.entity.Movie">
-        SELECT movie.*
+
+    <!-- 批量获取Hello Movie信息 -->
+    <select id="getHelloMoviesByMovieIds" resultType="com.example.backend.response.movie.HelloMovie">
+        SELECT 
+            id,
+            movie_id AS movieId,
+            code,
+            date
+        FROM hello_movie
+        WHERE movie_id IN
+        <foreach collection="movieIds" item="movieId" open="(" separator="," close=")">
+            #{movieId}
+        </foreach>
+        AND deleted = 0
+    </select>
+    <select id="getMovieComingSoon" resultType="com.example.backend.response.app.MovieComingSoonResponse">
+        SELECT 
+            movie.*,
+            level.name AS levelName,
+            COUNT(DISTINCT movie_show_time.id) AS presaleShowTimeCount,
+            MIN(movie_show_time.start_time::timestamp) AS earliestShowTime
         FROM "movie"
+        LEFT JOIN level ON movie.level_id = level.id
+        LEFT JOIN movie_show_time ON movie.id = movie_show_time.movie_id 
+            AND movie_show_time.deleted = 0 
+            AND movie_show_time.open = TRUE
+            AND movie_show_time.start_time::timestamp > CURRENT_TIMESTAMP
         WHERE
             movie.deleted = 0
           AND (
@@ -200,6 +220,9 @@
                          END, 'YYYY-MM-DD'
                        ) >= CURRENT_DATE  -- 筛选发布日期大于今天
             )
+        GROUP BY movie.id, movie.name, movie.cover, movie.start_date, movie.time, movie.original_name, 
+                 movie.description, movie.level_id, movie.status, movie.deleted, movie.create_time, 
+                 movie.update_time, level.name
         ORDER BY
             CASE
                 WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1  -- 如果没有日期数据，排到最后
@@ -213,7 +236,6 @@
                   ELSE '1900-01-01'  -- 默认值
                   END, 'YYYY-MM-DD'
                 ) ASC
-
     </select>
     <select id="movieDetail" resultMap="movieList">
         SELECT
