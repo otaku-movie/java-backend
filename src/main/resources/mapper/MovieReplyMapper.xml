@@ -29,7 +29,7 @@
             movie_reply.comment_user_id AS comment_user_id, -- 评论的用户
             movie_reply.parent_reply_id AS parent_reply_id,
             movie_reply.like_count AS like_count,
-            movie_reply.dislike_count AS dislike_count,
+            movie_reply.unlike_count AS dislike_count,
             movie_reply.create_time AS create_time,
             movie_reply.update_time AS update_time,
             movie_reply.movie_comment_id AS movie_comment_id,
