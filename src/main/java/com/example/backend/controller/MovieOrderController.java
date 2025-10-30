@@ -20,6 +20,8 @@ import com.example.backend.response.order.MovieOrderSeat;
 import com.example.backend.response.order.MyTicketsResponse;
 import com.example.backend.response.order.OrderListResponse;
 import com.example.backend.service.MovieOrderService;
+import com.example.backend.query.CreditCardPayQuery;
+import com.example.backend.service.PaymentService;
 import com.example.backend.utils.MessageUtils;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -47,6 +49,9 @@ public class MovieOrderController {
 
   @Autowired
   MovieOrderMapper movieOrderMapper;
+
+  @Autowired
+  PaymentService paymentService;
 
 
   @SaCheckLogin
@@ -125,11 +130,53 @@ public class MovieOrderController {
     }
   }
 
+  /**
+   * 信用卡支付接口
+   */
+  @SaCheckLogin
+  @PostMapping("/movieOrder/pay")
+  public RestBean<Null> payCreditCard(@RequestBody @Validated CreditCardPayQuery query) {
+    try {
+      MovieOrder movieOrder = movieOrderMapper.selectById(query.getOrderId());
+      
+      if (movieOrder == null) {
+        return RestBean.error(ResponseCode.ERROR.getCode(), "订单不存在");
+      }
+
+      if (movieOrder.getOrderState() != OrderState.order_created.getCode()) {
+        return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.order.payError"));
+      }
+
+      // 处理信用卡支付
+      boolean paymentResult = paymentService.processCreditCardPayment(query);
+      
+      if (paymentResult) {
+        // 支付成功，更新订单状态
+        movieOrderService.pay(query.getOrderId(), null);
+        return RestBean.success(null, "支付成功");
+      } else {
+        return RestBean.error(ResponseCode.ERROR.getCode(), "支付失败");
+      }
+    } catch (Exception e) {
+      return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
+    }
+  }
+
   @SaCheckLogin
   @PostMapping("/api/movieOrder/cancel")
   public RestBean<Null> cancelOrder(@RequestBody @Validated CancelOrderQuery query) {
     try {
-      movieOrderService.cancelOrder(query.getOrderId());
+      movieOrderService.updateCancelOrTimeoutOrder(query.getOrderId(), "cancel");
+      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    } catch (Exception e) {
+      return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
+    }
+  }
+  @SaCheckLogin
+  @PostMapping("/api/movieOrder/timeout")
+  public RestBean<Null> timeoutOrder(@RequestBody @Validated CancelOrderQuery query) {
+    try {
+      movieOrderService.updateCancelOrTimeoutOrder(query.getOrderId(), "timeout");
       return RestBean.success(null, MessageUtils.getMessage("success.save"));
     } catch (Exception e) {
       return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());

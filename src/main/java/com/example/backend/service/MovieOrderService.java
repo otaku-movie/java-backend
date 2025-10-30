@@ -18,6 +18,7 @@ import com.example.backend.query.order.MyTicketsQuery;
 import com.example.backend.query.order.UpdateOrderStateQuery;
 import com.example.backend.response.UserSelectSeat;
 import com.example.backend.response.UserSelectSeatList;
+import com.example.backend.response.Spec;
 import com.example.backend.response.order.MovieOrderSeat;
 import com.example.backend.response.order.MyTicketsResponse;
 import lombok.Data;
@@ -31,6 +32,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -70,11 +72,14 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   @Autowired
   PaymentService paymentMethodService;
 
+  @Autowired
+  CinemaMapper cinemaMapper;
+
   @Transactional(isolation = Isolation.SERIALIZABLE)
   public MovieOrder createOrder(MovieOrderSaveQuery query) throws Exception {
     Integer movieShowTimeId = query.getMovieShowTimeId();
     Integer userId = StpUtil.getLoginIdAsInt();
-    UserSelectSeat result = movieShowTimeMapper.userSelectSeat(
+    UserSelectSeat result = movieShowTimeMapper.userSelectSeatWithoutSpec(
       userId,
       movieShowTimeId,
       SeatState.selected.getCode()
@@ -84,6 +89,9 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
       throw new Exception("234");
     }
 
+    // 获取影院规格信息
+    List<Spec> cinemaSpecs = cinemaMapper.getCinemaSpec(result.getCinemaId());
+    
     List<SeatGroupQuery> data = query.getSeat().stream().map(item -> {
       SeatGroupQuery modal = new SeatGroupQuery();
       modal.setX(item.getX());
@@ -100,7 +108,12 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
       modal.setAreaPrice(userSelectSeat.getAreaPrice());
       modal.setMovieTicketTypeId(movieTicketType.getId());
       modal.setMovieTicketTypePrice(movieTicketType.getPrice());
-      modal.setPlusPrice(userSelectSeat.getPlusPrice());
+      
+      // 从影院规格中获取plusPrice (假设使用第一个规格，或者根据具体业务逻辑选择)
+      BigDecimal plusPrice = cinemaSpecs.isEmpty() ? BigDecimal.ZERO : 
+        new BigDecimal(cinemaSpecs.get(0).getPlusPrice() != null ? cinemaSpecs.get(0).getPlusPrice() : "0");
+      modal.setPlusPrice(plusPrice);
+      
       modal.setSeatId(item.getSeatId());
 
       return  modal;
@@ -172,6 +185,27 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
 
   @Transactional
   public void pay(Integer orderId, Integer payId) {
+    // 增加支付失败概率（30%失败率）
+    Random random = new Random();
+    if (random.nextDouble() < 0.3) {
+      // 支付失败，更新订单状态
+      MovieOrder movieOrder = new MovieOrder();
+      movieOrder.setId(orderId);
+      movieOrder.setOrderState(OrderState.order_failed.getCode()); // 设置订单状态为失败
+      movieOrder.setPayState(PayState.payment_failed.getCode()); // 设置支付状态为失败
+      movieOrderMapper.updateById(movieOrder);
+      
+      // 恢复座位状态
+      SelectSeat selectSeat = new SelectSeat();
+      UpdateWrapper updateWrapper = new UpdateWrapper();
+      selectSeat.setSelectSeatState(SeatState.available.getCode());
+      updateWrapper.eq("movie_order_id", orderId);
+      selectSeatMapper.update(selectSeat, updateWrapper);
+      
+      System.out.println("支付失败，订单ID: " + orderId);
+      return;
+    }
+
     ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     MovieOrder movieOrder = new MovieOrder();
@@ -195,15 +229,33 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     // 调用支付
     paymentMethodService.pay();
 
-    // 30 秒后模拟支付完成
+    // 30 秒后模拟支付完成，增加失败概率
     scheduler.schedule(() -> {
       try {
+        // 增加支付失败概率（20%失败率）
+        Random random2 = new Random();
+        if (random2.nextDouble() < 0.2) {
+          // 支付失败，更新订单状态
+          movieOrder.setOrderState(OrderState.order_failed.getCode()); // 设置订单状态为失败
+          movieOrder.setPayState(PayState.payment_failed.getCode()); // 设置支付状态为失败
+          movieOrderMapper.updateById(movieOrder);
+          
+          // 恢复座位状态
+          selectSeat.setSelectSeatState(SeatState.available.getCode());
+          selectSeatMapper.update(selectSeat, updateWrapper);
+          
+          System.out.println("支付失败，订单ID: " + orderId);
+          return;
+        }
+        
         // 更新为支付成功
 //        movieOrder.setPayTotal();
         movieOrder.setOrderState(OrderState.order_succeed.getCode()); // 设置订单状态为成功
         movieOrder.setPayState(PayState.payment_successful.getCode()); // 设置支付状态为成功
         movieOrder.setPayTime(new Date());                             // 设置支付完成时间
         movieOrderMapper.updateById(movieOrder);                      // 更新订单状态到数据库
+        
+        System.out.println("支付成功，订单ID: " + orderId);
       } catch (Exception e) {
         e.printStackTrace(); // 打印异常日志
       } finally {
@@ -295,18 +347,26 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   }
 
   @Transactional
-  public void cancelOrder(Integer orderId) {
+  public void updateCancelOrTimeoutOrder(Integer orderId, String state) {
     MovieOrder movieOrder = movieOrderMapper.selectById(orderId);
     
     // 只有已创建的订单才能取消
     if (movieOrder.getOrderState() != OrderState.order_created.getCode()) {
       throw new RuntimeException("只有已创建的订单才能取消");
     }
-    
-    // 更新订单状态为取消
-    movieOrder.setId(orderId);
-    movieOrder.setOrderState(OrderState.canceled_order.getCode());
-    movieOrderMapper.updateById(movieOrder);
+
+    if (state == "cancel") {
+      // 更新订单状态为取消
+      movieOrder.setId(orderId);
+      movieOrder.setOrderState(OrderState.canceled_order.getCode());
+      movieOrderMapper.updateById(movieOrder);
+    }
+    if (state == "timeout") {
+      // 更新订单状态为取消
+      movieOrder.setId(orderId);
+      movieOrder.setOrderState(OrderState.order_timeout.getCode());
+      movieOrderMapper.updateById(movieOrder);
+    }
 
     // 删除选座信息
     QueryWrapper<SelectSeat> deleteQueryWrapper = new QueryWrapper<>();

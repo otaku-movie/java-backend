@@ -45,7 +45,7 @@
                     #{id}
                 </foreach>
             </if>
-            AND select_seat.deleted = 0
+--             AND select_seat.deleted = 0
         </where>
         ORDER BY select_seat.movie_order_id, select_seat.id
     </select>
@@ -230,7 +230,6 @@
             FROM select_seat 
             WHERE user_id = #{userId} 
             AND movie_order_id IS NOT NULL
-            AND deleted = 0
         )
         AND movie_order.deleted = 0
     </select>
