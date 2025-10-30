@@ -15,7 +15,11 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.response.UserSelectSeat;
+import com.example.backend.response.UserSelectSeatList;
 import com.example.backend.response.showTime.MovieShowTimeDetail;
+
+import java.math.BigDecimal;
+import java.util.List;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.service.SeatService;
 import com.example.backend.service.SelectSeatService;
@@ -71,6 +75,9 @@ public class MovieShowTimeController {
   private TheaterHallMapper theaterHallMapper;
   @Autowired
   private SeatMapper seatMapper;
+
+  @Autowired
+  CinemaMapper cinemaMapper;
 
   @Autowired
   private SelectSeatMapper selectSeatMapper;
@@ -274,12 +281,32 @@ public class MovieShowTimeController {
   public RestBean<Object> selectSeatList(
     @RequestParam("movieShowTimeId") Integer movieShowTimeId
   ) {
-    UserSelectSeat result = movieShowTimeMapper.userSelectSeat(
+
+    // 获取用户选择的座位信息（不包含spec）
+    UserSelectSeat result = movieShowTimeMapper.userSelectSeatWithoutSpec(
       StpUtil.getLoginIdAsInt(),
-      // 获取用户选择的座位
       movieShowTimeId,
       SeatState.selected.getCode()
     );
+
+    if (result != null && result.getCinemaId() != null) {
+      // 单独获取影院规格信息
+      List<com.example.backend.response.Spec> specs = cinemaMapper.getCinemaSpec(result.getCinemaId());
+      
+      // 组装spec信息到结果中
+      if (!specs.isEmpty()) {
+        // 设置第一个规格的名称（根据业务逻辑可能需要调整）
+        result.setSpecName(specs.get(0).getName());
+        
+        // 为每个座位设置plusPrice
+        if (result.getSeat() != null) {
+          BigDecimal plusPrice = new BigDecimal(specs.get(0).getPlusPrice() != null ? specs.get(0).getPlusPrice() : "0");
+          for (com.example.backend.response.UserSelectSeatList seat : result.getSeat()) {
+            seat.setPlusPrice(plusPrice);
+          }
+        }
+      }
+    }
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }

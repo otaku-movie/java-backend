@@ -20,6 +20,7 @@ import java.util.List;
 @Mapper
 public interface MovieShowTimeMapper extends BaseMapper<MovieShowTime> {
   UserSelectSeat userSelectSeat(Integer userId, Integer movieShowTimeId, Integer seatState);
+  UserSelectSeat userSelectSeatWithoutSpec(Integer userId, Integer movieShowTimeId, Integer seatState);
   List<Language> getMovieShowTimeSubtitle(List<Integer> languageId);
   List<MovieShowTimeTag> getMovieShowTimeTags(List<Integer> tagsId);
 
