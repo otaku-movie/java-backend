@@ -147,7 +147,10 @@ public class AppMovieController {
         model.setCinemaName(first.getCinemaName());
         model.setCinemaAddress(first.getCinemaAddress());
         model.setCinemaTel(first.getCinemaTel());
+        model.setCinemaLatitude(first.getCinemaLatitude());  // 设置影院纬度
+        model.setCinemaLongitude(first.getCinemaLongitude());  // 设置影院经度
         model.setTotalShowTimes(showTimes.size());  // 设置总场次数
+        model.setDistance(first.getDistance());  // 设置距离
         model.setShowTimes(showTimes);
 
         // 将模型添加到影院列表中

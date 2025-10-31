@@ -312,6 +312,8 @@
         <result property="cinemaName" column="cinema_name"></result>
         <result property="cinemaAddress" column="cinema_address"></result>
         <result property="cinemaTel" column="cinema_tel"></result>
+        <result property="cinemaLatitude" column="cinema_latitude"></result>
+        <result property="cinemaLongitude" column="cinema_longitude"></result>
         <result property="id" column="id"></result>
         <result property="theaterHallId" column="theater_hall_id"></result>
         <result property="theaterHallName" column="theater_hall_name"></result>
@@ -320,14 +322,17 @@
         <result property="specName" column="spec_name"></result>
         <result property="totalSeats" column="total_seats"></result>
         <result property="selectedSeats" column="selected_seats"></result>
+        <result property="distance" column="distance"></result>
     </resultMap>
     <select id="getMovieShowTime" resultMap="getMovieShowTime">
 
-        SELECT
+        SELECT DISTINCT
             cinema.id AS cinema_id,
             cinema.name AS cinema_name,
             cinema.full_address AS cinema_address,
             cinema.tel AS cinema_tel,
+            cinema.latitude AS cinema_latitude,
+            cinema.longitude AS cinema_longitude,
             movie_show_time.id AS id,
             movie_show_time.start_time AS start_time,
             movie_show_time.end_time AS end_time,
@@ -350,7 +355,21 @@
                 WHERE select_seat.movie_show_time_id = movie_show_time.id
                 AND select_seat.deleted = 0
                 AND movie_order.order_state = 2
-            ) AS selected_seats
+            ) AS selected_seats,
+            <if test="query.latitude != null and query.longitude != null">
+                (
+                    6371000 * acos(
+                        cos(radians(#{query.latitude}))
+                        * cos(radians(cinema.latitude))
+                        * cos(radians(cinema.longitude) - radians(#{query.longitude}))
+                        + sin(radians(#{query.latitude}))
+                        * sin(radians(cinema.latitude))
+                    )
+                ) AS distance
+            </if>
+            <if test="query.latitude == null or query.longitude == null">
+                NULL AS distance
+            </if>
         FROM
             movie_show_time
                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema."id"
@@ -361,6 +380,7 @@
              AND movie_show_time.status = #{showTimeState}
              AND movie_show_time.movie_id = #{query.movieId}
              AND TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS') >= now()
+             AND cinema.deleted = 0
         <if test="query.regionId != null">
             AND cinema.region_id = #{query.regionId}
         </if>
@@ -382,6 +402,27 @@
             <foreach collection="query.specId" item="id" open="(" separator="," close=")">
                 #{id}
             </foreach>
+        </if>
+
+        <if test="query.showTimeTagId != null">
+            AND #{query.showTimeTagId} = ANY(movie_show_time.show_time_tag_id)
+        </if>
+
+        <if test="query.latitude != null and query.longitude != null and query.radius != null">
+            AND cinema.latitude IS NOT NULL
+            AND cinema.longitude IS NOT NULL
+            AND (
+                6371000 * acos(
+                    cos(radians(#{query.latitude}))
+                    * cos(radians(cinema.latitude))
+                    * cos(radians(cinema.longitude) - radians(#{query.longitude}))
+                    + sin(radians(#{query.latitude}))
+                    * sin(radians(cinema.latitude))
+                )
+            ) &lt;= #{query.radius}
+        </if>
+        <if test="query.latitude != null and query.longitude != null">
+            ORDER BY distance ASC
         </if>
     </select>
 </mapper>
