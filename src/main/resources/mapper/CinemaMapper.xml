@@ -17,6 +17,10 @@
         <result property="prefectureId" column="prefecture_id"></result>
         <result property="cityId" column="city_id"></result>
         <result property="fullAddress" column="full_address"></result>
+        <result property="latitude" column="latitude"></result>
+        <result property="longitude" column="longitude"></result>
+        <result property="postalCode" column="postal_code"></result>
+        <result property="distance" column="distance"></result>
     </resultMap>
         <select id="getCinemaSpec" resultType="com.example.backend.response.Spec">
             SELECT
@@ -31,7 +35,7 @@
                 cinema_spec_spec.cinema_id = #{cinemaId}
         </select>
         <select id="cinemaList" resultMap="cinemaList">
-            SELECT
+            SELECT DISTINCT
             cinema.id,
             cinema.name,
             cinema.description,
@@ -39,6 +43,9 @@
             cinema.tel,
             cinema.max_select_seat_count,
             cinema.full_address,
+            cinema.latitude,
+            cinema.longitude,
+            cinema.postal_code,
             brand.id as brand_id,
             brand.name as brand_name,
             (
@@ -48,9 +55,26 @@
                     WHERE
                         theater_hall.cinema_id = cinema.id AND
                         theater_hall.deleted = 0
-                ) AS theater_count
+                ) AS theater_count,
+            <if test="query.latitude != null and query.longitude != null">
+                (
+                    6371000 * acos(
+                        cos(radians(#{query.latitude}))
+                        * cos(radians(cinema.latitude))
+                        * cos(radians(cinema.longitude) - radians(#{query.longitude}))
+                        + sin(radians(#{query.latitude}))
+                        * sin(radians(cinema.latitude))
+                    )
+                ) AS distance
+            </if>
+            <if test="query.latitude == null or query.longitude == null">
+                NULL AS distance
+            </if>
             FROM cinema
             LEFT JOIN brand ON cinema.brand_id = brand.id
+            <if test="query.specId != null">
+                LEFT JOIN cinema_spec_spec ON cinema.id = cinema_spec_spec.cinema_id
+            </if>
             <where>
                 cinema.deleted = 0
                 <if test="query.name != null and !query.name.equals('')">
@@ -59,7 +83,39 @@
                 <if test="query.id != null and !query.id.equals('')">
                     AND cinema.id = #{query.id}
                 </if>
+                <if test="query.regionId != null">
+                    AND cinema.region_id = #{query.regionId}
+                </if>
+                <if test="query.prefectureId != null">
+                    AND cinema.prefecture_id = #{query.prefectureId}
+                </if>
+                <if test="query.cityId != null">
+                    AND cinema.city_id = #{query.cityId}
+                </if>
+                <if test="query.brandId != null">
+                    AND cinema.brand_id = #{query.brandId}
+                </if>
+                <if test="query.specId != null">
+                    AND cinema_spec_spec.spec_id = #{query.specId}
+                    AND cinema_spec_spec.deleted = 0
+                </if>
+                <if test="query.latitude != null and query.longitude != null and query.radius != null">
+                    AND cinema.latitude IS NOT NULL
+                    AND cinema.longitude IS NOT NULL
+                    AND (
+                        6371000 * acos(
+                            cos(radians(#{query.latitude}))
+                            * cos(radians(cinema.latitude))
+                            * cos(radians(cinema.longitude) - radians(#{query.longitude}))
+                            + sin(radians(#{query.latitude}))
+                            * sin(radians(cinema.latitude))
+                        )
+                    ) &lt;= #{query.radius}
+                </if>
             </where>
+            <if test="query.latitude != null and query.longitude != null">
+                ORDER BY distance ASC
+            </if>
         </select>
         <select id="cinemaDetail" resultMap="cinemaList">
             SELECT
@@ -74,6 +130,9 @@
                 cinema.prefecture_id,
                 cinema.city_id,
                 cinema.full_address,
+                cinema.latitude,
+            cinema.longitude,
+            cinema.postal_code,
                 brand.id as brand_id,
                 brand.name as brand_name,
                 (

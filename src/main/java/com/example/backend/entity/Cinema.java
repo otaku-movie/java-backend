@@ -41,6 +41,15 @@ public class Cinema {
   @TableField("prefecture_id")
   Integer prefectureId;
 
+  @TableField("latitude")
+  Double latitude;
+
+  @TableField("longitude")
+  Double longitude;
+
+  @TableField("postal_code")
+  String postalCode;
+
   @TableField(value = "city_id", updateStrategy = FieldStrategy.IGNORED)
   Integer cityId;
 

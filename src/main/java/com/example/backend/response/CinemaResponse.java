@@ -23,6 +23,11 @@ public class CinemaResponse {
   private Integer prefectureId;
   private Integer cityId;
   private String fullAddress;
+  private Double latitude;
+  private Double longitude;
+  private String postalCode;
+  // 距离（米），仅在附近查询时返回
+  private Double distance;
   // 新增：当前上映的电影列表
   List<com.example.backend.response.cinema.MovieShowingResponse> nowShowingMovies;
 }
