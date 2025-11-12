@@ -164,4 +164,39 @@ validator:
       required: "Name cannot be empty"
     code:
       required: "Code cannot be empty"
+  promotion:
+    cinemaId:
+      required: "cinemaId cannot be empty"
+    name:
+      required: "Promotion name cannot be empty"
+    monthlyDay:
+      name:
+        required: "Monthly day name cannot be empty"
+      day:
+        required: "Monthly day value cannot be empty"
+      price:
+        required: "Monthly day price cannot be empty"
+    weeklyDay:
+      name:
+        required: "Weekly day name cannot be empty"
+      weekday:
+        required: "Weekday cannot be empty"
+      price:
+        required: "Weekly day price cannot be empty"
+    specificDate:
+      name:
+        required: "Specific date name cannot be empty"
+      date:
+        required: "Specific date cannot be empty"
+      price:
+        required: "Specific date price cannot be empty"
+    timeRange:
+      name:
+        required: "Time range name cannot be empty"
+      startTime:
+        required: "Start time cannot be empty"
+      endTime:
+        required: "End time cannot be empty"
+      price:
+        required: "Time range price cannot be empty"
 

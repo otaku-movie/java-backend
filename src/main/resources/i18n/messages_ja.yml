@@ -164,4 +164,39 @@ validator:
       required: "名前は空にできません"
     code:
       required: "コードは空にできません"
+  promotion:
+    cinemaId:
+      required: "cinemaIdは空にできません"
+    name:
+      required: "プロモーション名は空にできません"
+    monthlyDay:
+      name:
+        required: "毎月指定日の名称は空にできません"
+      day:
+        required: "毎月指定日の日付は空にできません"
+      price:
+        required: "毎月指定日の価格は空にできません"
+    weeklyDay:
+      name:
+        required: "毎週指定日の名称は空にできません"
+      weekday:
+        required: "曜日は空にできません"
+      price:
+        required: "毎週指定日の価格は空にできません"
+    specificDate:
+      name:
+        required: "指定日の名称は空にできません"
+      date:
+        required: "指定日は空にできません"
+      price:
+        required: "指定日の価格は空にできません"
+    timeRange:
+      name:
+        required: "時間帯名称は空にできません"
+      startTime:
+        required: "開始時刻は空にできません"
+      endTime:
+        required: "終了時刻は空にできません"
+      price:
+        required: "時間帯の価格は空にできません"
 

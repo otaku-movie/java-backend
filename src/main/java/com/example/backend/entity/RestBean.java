@@ -6,7 +6,6 @@ import com.alibaba.fastjson2.JSONWriter;
 //import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.example.backend.utils.MessageUtils;
 import lombok.Data;
-import org.apache.ibatis.jdbc.Null;
 
 @Data
 class Pagination<T> {
@@ -45,15 +44,16 @@ public class RestBean<T> {
   }
 
 
+  @SuppressWarnings("unchecked")
   public static <T> RestBean<T> success(T data, int page, long total, int pageSize) {
-    return (RestBean<T>) new RestBean<>(200, new Pagination(data, total, page, pageSize), MessageUtils.getMessage("success.get"));
+    return (RestBean<T>) new RestBean<>(200, new Pagination<>(data, total, page, pageSize), MessageUtils.getMessage("success.get"));
   }
 
   public static <T> RestBean<T> success(T data, String message) {
     return new RestBean<>(200, data, message);
   }
 
-  public static  RestBean error(int code, String message ) {
+  public static <T> RestBean<T> error(int code, String message ) {
     return new RestBean<>(code, null, message);
   }
 

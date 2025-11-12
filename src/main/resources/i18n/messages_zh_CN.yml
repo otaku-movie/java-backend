@@ -179,3 +179,38 @@ validator:
       required: "name 不能为空"
     code:
       required: "code 不能为空"
+  promotion:
+    cinemaId:
+      required: "影院ID不能为空"
+    name:
+      required: "活动名称不能为空"
+    monthlyDay:
+      name:
+        required: "每月指定日名称不能为空"
+      day:
+        required: "每月指定日日期不能为空"
+      price:
+        required: "每月指定日票价不能为空"
+    weeklyDay:
+      name:
+        required: "每周指定日名称不能为空"
+      weekday:
+        required: "每周指定日星期不能为空"
+      price:
+        required: "每周指定日票价不能为空"
+    specificDate:
+      name:
+        required: "指定日期名称不能为空"
+      date:
+        required: "指定日期不能为空"
+      price:
+        required: "指定日期票价不能为空"
+    timeRange:
+      name:
+        required: "按时段定价名称不能为空"
+      startTime:
+        required: "开始时间不能为空"
+      endTime:
+        required: "结束时间不能为空"
+      price:
+        required: "按时段定价票价不能为空"
