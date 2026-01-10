@@ -27,6 +27,7 @@ import cn.hutool.core.lang.hash.Hash;
 import cn.hutool.extra.mail.MailAccount;
 import cn.hutool.extra.mail.MailUtil;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.RedisType;
 import com.example.backend.utils.MessageUtils;
@@ -78,8 +79,8 @@ public class Verify {
     int code = 100000 + secureRandom.nextInt(900000);
 
     String to = query.getEmail();
-    String subject = MessageUtils.getMessage("email.verifyCode.title");
-    String content = MessageUtils.getMessage("email.verifyCode.content", String.valueOf(code));
+    String subject = MessageUtils.getMessage(MessageKeys.Common.User.VerifyCode.TITLE);
+    String content = MessageUtils.getMessage(MessageKeys.Common.User.VerifyCode.CONTENT, String.valueOf(code));
 
     String uuid = Generators.timeBasedEpochGenerator().generate().toString().replace("-", "");
     String key = RedisType.verifyCode.getCode() + ":" + uuid;
@@ -92,7 +93,7 @@ public class Verify {
 
     map.put("token", uuid);
 
-    return RestBean.success(map, MessageUtils.getMessage("success.send"));
+    return RestBean.success(map, MessageUtils.getMessage(MessageKeys.Success.SEND));
   }
   @PostMapping(ApiPaths.Verify.CAPTCHA)
   public CaptchaResponse<ImageCaptchaVO>  verify () {

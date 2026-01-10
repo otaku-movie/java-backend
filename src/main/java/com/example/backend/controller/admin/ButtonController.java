@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.Button;
 import com.example.backend.entity.Menu;
 import com.example.backend.entity.RestBean;
@@ -65,27 +66,27 @@ public class ButtonController {
 
     List list = buttonMapper.buttonList();
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @GetMapping(ApiPaths.Admin.Button.DETAIL)
   public RestBean<Button> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<Button> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Button result = buttonMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "button.remove")
   @DeleteMapping(ApiPaths.Admin.Button.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     buttonMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "button.save")
@@ -99,14 +100,14 @@ public class ButtonController {
 
     if (query.getId() == null) {
       buttonMapper.insert(data);
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
     } else {
       data.setId(query.getId());
       UpdateWrapper updateQueryWrapper = new UpdateWrapper();
       updateQueryWrapper.eq("id", query.getId());
       buttonMapper.update(data, updateQueryWrapper);
 
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
     }
   }
 }

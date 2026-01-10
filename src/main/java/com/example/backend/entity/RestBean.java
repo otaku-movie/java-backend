@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONWriter;
 //import com.fasterxml.jackson.core.json.JsonWriteFeature;
 //import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.utils.MessageUtils;
 import lombok.Data;
 
@@ -46,7 +47,7 @@ public class RestBean<T> {
 
   @SuppressWarnings("unchecked")
   public static <T> RestBean<T> success(T data, int page, long total, int pageSize) {
-    return (RestBean<T>) new RestBean<>(200, new Pagination<>(data, total, page, pageSize), MessageUtils.getMessage("success.get"));
+    return (RestBean<T>) new RestBean<>(200, new Pagination<>(data, total, page, pageSize), MessageUtils.getMessage(MessageKeys.Success.GET));
   }
 
   public static <T> RestBean<T> success(T data, String message) {
@@ -83,10 +84,10 @@ public class RestBean<T> {
 //            total = total,
 //            pageSize = pageSize,
 //            list = data
-//        }, MessageUtils.getMessage("success.get"));
+//        }, MessageUtils.getMessage(SUCCESS_GET));
 //    }
 //    public static <T> RestBean<T> success(T data) {
-//        return new RestBean<>(200, data, MessageUtils.getMessage("success.get"));
+//        return new RestBean<>(200, data, MessageUtils.getMessage(SUCCESS_GET));
 //    }
 //
 //    public static <T> RestBean<T> failure(int code, String message) {

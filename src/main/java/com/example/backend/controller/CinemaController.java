@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.CinemaSpecSpec;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Cinema;
@@ -112,7 +113,7 @@ public class CinemaController {
   }
   @GetMapping(ApiPaths.Common.Cinema.DETAIL)
   public RestBean<CinemaResponse> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     CinemaResponse result = cinemaMapper.cinemaDetail(id);
     // 获取影院规格
@@ -122,7 +123,7 @@ public class CinemaController {
     }
 
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @PostMapping(ApiPaths.App.Cinema.MOVIE_SHOW_TIME)
   public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
@@ -149,11 +150,11 @@ public class CinemaController {
       }
     }
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @GetMapping(ApiPaths.Common.Cinema.SCREENING)
   public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     QueryWrapper queryWrapper = new QueryWrapper();
     queryWrapper.eq("cinema_id", id);
@@ -200,14 +201,14 @@ public class CinemaController {
     }).toList();
 
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   // 获取影院上映中的电影
   @GetMapping(ApiPaths.Common.Cinema.MOVIE_SHOWING)
   public RestBean<Object> GetMovieShowing(@RequestParam("id") Integer id) {
     List<MovieShowingResponse> result = cinemaMapper.getMovieShowing(id);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @Transactional
   public void saveCinema(SaveCinemaQuery query) {
@@ -267,9 +268,9 @@ public class CinemaController {
 
       if (list.size() == 0) {
         saveCinema(query);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR));
       }
     } else {
       UpdateWrapper updateQueryWrapper = new UpdateWrapper();
@@ -278,17 +279,17 @@ public class CinemaController {
 
       if (Objects.equals(old.getName(), query.getName())) {
         saveCinema(query);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
         QueryWrapper wrapper = new QueryWrapper<>();
         wrapper.eq("name", query.getName());
         Cinema find = cinemaMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR));
         } else {
           saveCinema(query);
-          return RestBean.success(null, MessageUtils.getMessage("success.save"));
+          return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
         }
       }
     }
@@ -297,18 +298,18 @@ public class CinemaController {
   @CheckPermission(code = "cinema.remove")
   @DeleteMapping(ApiPaths.Admin.Cinema.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     cinemaMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @GetMapping(ApiPaths.Common.Cinema.SPEC)
   public RestBean<List<com.example.backend.response.Spec>> cinemaSpec (@RequestParam Integer cinemaId) {
-      if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+      if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
       List<com.example.backend.response.Spec> result = cinemaMapper.getCinemaSpec(cinemaId);
 
-      return RestBean.success(result, MessageUtils.getMessage("success.get"));
+      return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
     }
 }

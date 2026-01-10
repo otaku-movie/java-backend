@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 
 
 @RestController
@@ -72,7 +73,7 @@ public class AreasController {
     List<Areas> allAreas = areasMapper.selectList(null);
 
 
-    return RestBean.success(buildAreaResponseTree(allAreas), MessageUtils.getMessage("success.get"));
+    return RestBean.success(buildAreaResponseTree(allAreas), MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 
 

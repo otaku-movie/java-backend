@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.CreditCard;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -34,7 +35,7 @@ public class CreditCardController {
     public RestBean<List<CreditCardResponse>> getCreditCardList() {
         try {
             List<CreditCardResponse> creditCards = creditCardService.getUserCreditCards();
-            return RestBean.success(creditCards, messageUtils.getMessage("success.get"));
+            return RestBean.success(creditCards, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
         } catch (Exception e) {
             return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
         }
@@ -49,9 +50,9 @@ public class CreditCardController {
         try {
             CreditCard creditCard = creditCardService.getUserCreditCard(id);
             if (creditCard == null) {
-                return RestBean.error(ResponseCode.ERROR.getCode(), "信用卡不存在或无权限访问");
+                return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.NOT_PERMISSION));
             }
-            return RestBean.success(creditCard, messageUtils.getMessage("success.get"));
+            return RestBean.success(creditCard, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
         } catch (Exception e) {
             return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
         }
@@ -65,7 +66,7 @@ public class CreditCardController {
     public RestBean<CreditCardResponse> saveCreditCard(@RequestBody @Validated CreditCardSaveQuery query) {
         try {
             CreditCardResponse creditCard = creditCardService.saveCreditCard(query);
-            return RestBean.success(creditCard, messageUtils.getMessage("success.save"));
+            return RestBean.success(creditCard, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
         } catch (Exception e) {
             return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
         }
@@ -79,7 +80,7 @@ public class CreditCardController {
     public RestBean<Void> updateCreditCard(@RequestBody @Validated CreditCardUpdateQuery query) {
         try {
             creditCardService.updateCreditCard(query);
-            return RestBean.success(null, messageUtils.getMessage("success.save"));
+            return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
         } catch (Exception e) {
             return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
         }
@@ -93,7 +94,7 @@ public class CreditCardController {
     public RestBean<Void> deleteCreditCard(@RequestParam("id") Integer id) {
         try {
             creditCardService.deleteCreditCard(id);
-            return RestBean.success(null, messageUtils.getMessage("success.remove"));
+            return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
         } catch (Exception e) {
             return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
         }
@@ -107,7 +108,7 @@ public class CreditCardController {
     public RestBean<Void> setDefaultCard(@RequestBody SetDefaultCardQuery query) {
         try {
             creditCardService.setDefaultCard(query.getId());
-            return RestBean.success(null, messageUtils.getMessage("success.save"));
+            return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
         } catch (Exception e) {
             return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
         }

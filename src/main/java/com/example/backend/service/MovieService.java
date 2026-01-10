@@ -3,6 +3,7 @@ package com.example.backend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.entity.Character;
 import com.example.backend.enumerate.DubbingVersionEnum;
@@ -265,7 +266,7 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
     int count = Math.toIntExact(movieMapper.selectCount(queryWrapper));
 
     if (count > 0) {
-      return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+      return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Error.REPEAT));
     }
 
     // 保存电影信息
@@ -273,67 +274,6 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
     MovieResponse movieResponse = new MovieResponse();
     movieResponse.setId(movie.getId());
 
-    return RestBean.success(movieMapper.movieDetail(movie.getId()), MessageUtils.getMessage("success.save"));
+    return RestBean.success(movieMapper.movieDetail(movie.getId()), MessageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
-
-//  public RestBean<Object> save (SaveMovieQuery query) {
-//    Movie movie = new Movie();
-//    String name = query.getOriginalName() == null ? query.getName() : query.getOriginalName();
-//
-//    if (query.getId() != null) {
-//      movie.setId(query.getId());
-//    }
-//
-//    if (query.getStatus() == null) {
-//      movie.setStatus(1);
-//    } else {
-//      movie.setStatus(query.getStatus());
-//    }
-//    if (query.getTime() != null) {
-//      movie.setTime(query.getTime());
-//    }
-//
-//    if (query.getLevelId() != null) {
-//      movie.setLevelId(query.getLevelId());
-//    }
-//
-//    movie.setOriginalName(query.getOriginalName());
-//    movie.setCover(query.getCover());
-//    movie.setName(query.getName());
-//    movie.setDescription(query.getDescription());
-//    movie.setStartDate(query.getStartDate());
-//    movie.setEndDate(query.getEndDate());
-//    movie.setHomePage(query.getHomePage());
-//
-//    // 添加的去重查询条件
-//    QueryWrapper<Movie> queryWrapper = new QueryWrapper<>();
-//    queryWrapper.eq("name", name);
-//    // 编辑的去重查询条件
-//    // 自定义验证方法
-//    ValidationFunction<Movie> validationFunction = (old, newData) -> old.getName().equals(newData.getName());
-//
-//    boolean result = genericService.validate(
-//      movie, query.getId(), validationFunction, queryWrapper, movieMapper
-//    );
-//
-//    MovieResponse movieResponse = new MovieResponse();
-//
-//    if (query.getId() == null) {
-//      if (result) {
-//        saveMovie(movie, query);
-//        movieResponse.setId(movie.getId());
-//        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
-//      } else {
-//        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
-//      }
-//    } else {
-//      if (result) {
-//        movie.setId(query.getId());
-//        saveMovie(movie, query);
-//        return RestBean.success(movie, MessageUtils.getMessage("success.save"));
-//      } else {
-//        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
-//      }
-//    }
-//  }
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CharacterMapper;
@@ -43,12 +44,12 @@ public class CharacterController {
 
   @GetMapping(ApiPaths.Common.Character.DETAIL)
   public RestBean<CharacterList> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<CharacterList> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     CharacterList result = characterMapper.characterDetail(id);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 }

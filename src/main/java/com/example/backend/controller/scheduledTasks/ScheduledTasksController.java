@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.config.Config;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.MovieReleaseState;
 import com.example.backend.enumerate.OrderState;
@@ -126,7 +127,7 @@ public class ScheduledTasksController {
     if (result.size() > 0) {
       movieService.updateBatchById(result, result.size());
     }
-    return RestBean.success(null, MessageUtils.getMessage("success.success"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
   }
 
   // 更新电影放映状态 每分钟
@@ -166,7 +167,7 @@ public class ScheduledTasksController {
       movieShowTimeImpl.updateBatchById(result, result.size());
     }
 
-    return RestBean.success(null, MessageUtils.getMessage("success.success"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
   }
   // 更新选座状态 超时释放座位
   @Scheduled(cron = "0 * * * * ?")  // 每分钟执行

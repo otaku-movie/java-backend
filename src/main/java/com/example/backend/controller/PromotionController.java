@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.query.promotion.PromotionListQuery;
@@ -35,11 +36,11 @@ public class PromotionController {
     if (cinemaId == null) {
       return RestBean.error(
         ResponseCode.PARAMETER_ERROR.getCode(),
-        MessageUtils.getMessage("error.parameterError")
+        MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR)
       );
     }
     PromotionDetailResponse response = promotionService.getPromotionDetail(cinemaId);
-    return RestBean.<PromotionDetailResponse>success(response, MessageUtils.getMessage("success.get"));
+    return RestBean.<PromotionDetailResponse>success(response, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 
   @SaCheckLogin
@@ -58,7 +59,7 @@ public class PromotionController {
   @PostMapping(ApiPaths.Admin.Promotion.SAVE)
   public RestBean<String> save(@Valid @RequestBody PromotionSaveQuery query) {
     promotionService.savePromotion(query);
-    return RestBean.<String>success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.<String>success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
 
   @SaCheckLogin
@@ -66,9 +67,9 @@ public class PromotionController {
   @DeleteMapping(ApiPaths.Admin.Promotion.REMOVE)
   public RestBean<String> remove(@RequestParam Integer id) {
     if (id == null) {
-      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage("error.parameterError"));
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     }
     promotionService.deletePromotion(id);
-    return RestBean.<String>success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.<String>success(null, MessageUtils.getMessage(MessageKeys.Admin.REMOVE_SUCCESS));
   }
 }

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.MovieTag;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -68,23 +69,23 @@ public class MovieTagController {
 
   @GetMapping(ApiPaths.Common.MovieTag.DETAIL)
   public RestBean<MovieTag> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<MovieTag> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     MovieTag result = movieTagMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTag.remove")
   @DeleteMapping(ApiPaths.Admin.Tag.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     movieTagMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTag.save")
@@ -96,14 +97,14 @@ public class MovieTagController {
     QueryWrapper<MovieTag> wrapper = new QueryWrapper<>();
     wrapper.eq("name", query.getName());
 
-    String repeatMessage = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.movieTagName"));
+    String repeatMessage = MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR, MessageUtils.getMessage(MessageKeys.Admin.Repeat.MOVIE_TAG_NAME));
 
     if (query.getId() == null) {
       // 新增操作
       List<MovieTag> list = movieTagMapper.selectList(wrapper);
       if (list.isEmpty()) {
         movieTagMapper.insert(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
@@ -117,7 +118,7 @@ public class MovieTagController {
       } else {
         data.setId(query.getId());
         movieTagMapper.updateById(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       }
     }
   }

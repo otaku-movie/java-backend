@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.MovieOrder;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.OrderState;
@@ -54,13 +55,15 @@ public class MovieOrderController {
   @Autowired
   PaymentService paymentService;
 
+  @Autowired
+  private MessageUtils messageUtils;
 
   @SaCheckLogin
   @PostMapping(ApiPaths.Common.Order.CREATE)
   public RestBean<MovieOrder> createOrder(@RequestBody @Validated MovieOrderSaveQuery query) throws Exception {
     MovieOrder order = movieOrderService.createOrder(query);
 
-    return RestBean.success(order, MessageUtils.getMessage("success.save"));
+    return RestBean.success(order, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
 //  @SaCheckLogin
   @GetMapping(ApiPaths.Common.Order.DETAIL)
@@ -68,13 +71,13 @@ public class MovieOrderController {
     OrderListResponse order = movieOrderMapper.orderDetail(id);
     
     if (order == null) {
-      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.order.notFound"));
+      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.USER_NOT_FOUND));
     }
 
     List<MovieOrderSeat> seats = movieOrderMapper.getMovieOrderSeatListByOrderIds(List.of(id));
     order.setSeat(seats != null ? seats : Collections.emptyList());
 
-    return RestBean.success(order, MessageUtils.getMessage("success.get"));
+    return RestBean.success(order, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @PostMapping(ApiPaths.Admin.Order.LIST)
   public RestBean<List<OrderListResponse>> orderList(@RequestBody MovieOrderListQuery query) {
@@ -108,7 +111,7 @@ public class MovieOrderController {
   public RestBean<Null> removeOrder(@RequestParam("id") Integer id) {
     movieOrderMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @PostMapping(ApiPaths.Common.Order.PAY)
@@ -118,9 +121,9 @@ public class MovieOrderController {
     if (movieOrder.getOrderState() == OrderState.order_created.getCode()) {
       movieOrderService.pay(query.getOrderId(), query.getPayId());
 
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
     } else {
-      return  RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.order.payError"));
+      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.App.Order.PAY_ERROR));
     }
   }
 
@@ -129,7 +132,7 @@ public class MovieOrderController {
   public RestBean<Null> cancelOrder(@RequestBody @Validated CancelOrderQuery query) {
     try {
       movieOrderService.updateCancelOrTimeoutOrder(query.getOrderId(), "cancel");
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
     } catch (Exception e) {
       return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
     }
@@ -139,7 +142,7 @@ public class MovieOrderController {
   public RestBean<Null> timeoutOrder(@RequestBody @Validated CancelOrderQuery query) {
     try {
       movieOrderService.updateCancelOrTimeoutOrder(query.getOrderId(), "timeout");
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
     } catch (Exception e) {
       return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
     }

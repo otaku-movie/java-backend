@@ -2,6 +2,7 @@ package com.example.backend.annotation;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.UserRole;
 import com.example.backend.mapper.RoleMapper;
@@ -68,7 +69,7 @@ public class Interceptor implements HandlerInterceptor {
           } else {
             System.out.println("no");
             response.setStatus(403);
-            throw new AccessDeniedException(MessageUtils.getMessage("error.notPermission"));
+            throw new AccessDeniedException(MessageUtils.getMessage(MessageKeys.Error.NOT_PERMISSION));
           }
         }
       }

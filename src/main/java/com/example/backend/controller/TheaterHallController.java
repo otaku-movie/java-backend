@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CinemaMapper;
@@ -58,11 +59,11 @@ public class TheaterHallController {
   }
   @GetMapping(ApiPaths.Common.TheaterHall.DETAIL)
   public RestBean<TheaterHall> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     TheaterHall result = theaterHallMapper.selectById(id);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @GetMapping(ApiPaths.Common.TheaterHall.SEAT_DETAIL)
   public RestBean<Object> seatList(@RequestParam Integer theaterHallId) {
@@ -71,7 +72,7 @@ public class TheaterHallController {
 
     Object list = seatService.seatList(theaterHallId);
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 
   @SaCheckLogin
@@ -82,7 +83,7 @@ public class TheaterHallController {
 
     seatService.saveSeat(query);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
   @Transactional
   public  void buildSeat (Integer id, TheaterHallSaveQuery query) {
@@ -112,7 +113,7 @@ public class TheaterHallController {
   @Transactional
   @PostMapping(ApiPaths.Admin.TheaterHall.SAVE)
   public RestBean<String> save(@RequestBody @Validated() TheaterHallSaveQuery query) {
-    String message = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.theaterHallName"));
+    String repeatMessage = MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR, MessageUtils.getMessage(MessageKeys.Admin.Repeat.THEATER_HALL_NAME));
     TheaterHall modal = new TheaterHall();
 
     modal.setName(query.getName());
@@ -135,7 +136,7 @@ public class TheaterHallController {
         theaterHallMapper.insert(modal);
         buildSeat(modal.getId(), query);
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), message);
+        return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
     } else {
       // 判断编辑是否重复，去掉当前的，如果path已存在就算重复
@@ -152,13 +153,10 @@ public class TheaterHallController {
         updateQueryWrapper.eq("id", query.getId());
         theaterHallMapper.update(modal, updateQueryWrapper);
       } else {
-        return RestBean.error(
-          ResponseCode.REPEAT.getCode(),
-          MessageUtils.getMessage("error.repeat", message)
-        );
+        return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
     }
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.remove")
@@ -168,6 +166,6 @@ public class TheaterHallController {
 
     queryWrapper.eq("id", id);
     theaterHallMapper.delete(queryWrapper);
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
 }

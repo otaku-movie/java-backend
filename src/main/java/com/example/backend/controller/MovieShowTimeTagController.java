@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.MovieShowTimeTag;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -68,23 +69,23 @@ public class MovieShowTimeTagController {
 
   @GetMapping(ApiPaths.Common.ShowTimeTag.DETAIL)
   public RestBean<MovieShowTimeTag> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<MovieShowTimeTag> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     MovieShowTimeTag result = showTimeTagMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "showTimeTag.remove")
   @DeleteMapping(ApiPaths.Admin.ShowTimeTag.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     showTimeTagMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "showTimeTag.save")
@@ -96,14 +97,14 @@ public class MovieShowTimeTagController {
     QueryWrapper<MovieShowTimeTag> wrapper = new QueryWrapper<>();
     wrapper.eq("name", query.getName());
 
-    String repeatMessage = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.showTimeTagName"));
+    String repeatMessage = MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR, MessageUtils.getMessage(MessageKeys.Admin.Repeat.SHOW_TIME_TAG_NAME));
 
     if (query.getId() == null) {
       // 新增操作
       List<MovieShowTimeTag> list = showTimeTagMapper.selectList(wrapper);
       if (list.isEmpty()) {
         showTimeTagMapper.insert(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
@@ -117,7 +118,7 @@ public class MovieShowTimeTagController {
       } else {
         data.setId(query.getId());
         showTimeTagMapper.updateById(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       }
     }
   }

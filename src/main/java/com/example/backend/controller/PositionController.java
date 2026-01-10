@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Position;
 import com.example.backend.enumerate.ResponseCode;
@@ -72,23 +73,23 @@ public class PositionController {
 
   @GetMapping(ApiPaths.Common.Position.DETAIL)
   public RestBean<Position> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<Position> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Position result = positionMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "position.remove")
   @DeleteMapping(ApiPaths.Admin.Position.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     positionMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "position.save")
@@ -100,14 +101,14 @@ public class PositionController {
     QueryWrapper<Position> wrapper = new QueryWrapper<>();
     wrapper.eq("name", query.getName());
 
-    String repeatMessage = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.positionName"));
+    String repeatMessage = MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR, MessageUtils.getMessage(MessageKeys.Admin.Repeat.POSITION_NAME));
 
     if (query.getId() == null) {
       // 新增操作
       List<Position> list = positionMapper.selectList(wrapper);
       if (list.isEmpty()) {
         positionMapper.insert(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
@@ -121,7 +122,7 @@ public class PositionController {
       } else {
         data.setId(query.getId());
         positionMapper.updateById(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       }
     }
   }

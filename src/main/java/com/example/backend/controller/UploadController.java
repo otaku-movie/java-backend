@@ -4,6 +4,7 @@ package com.example.backend.controller;
 import com.amazonaws.services.s3.internal.eventstreaming.Message;
 import com.example.backend.config.MinioConfiguration;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.utils.MessageUtils;
@@ -98,10 +99,10 @@ public class UploadController {
       map.setPath(path);
       map.setUrl(url);
 
-      return RestBean.success(map, MessageUtils.getMessage("success.uploadSuccess"));
+      return RestBean.success(map, MessageUtils.getMessage(MessageKeys.Upload.SUCCESS));
     } catch (IOException e) {
       e.printStackTrace();
-      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.uploadError"));
+      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Upload.ERROR));
     }
   }
 
@@ -126,6 +127,6 @@ public class UploadController {
 
     s3Client.deleteObject(deleteObjectRequest);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
 }

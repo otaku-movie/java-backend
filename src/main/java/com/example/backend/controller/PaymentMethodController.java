@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.Brand;
 import com.example.backend.entity.PaymentMethod;
 import com.example.backend.entity.RestBean;
@@ -35,6 +36,6 @@ public class PaymentMethodController {
 
     List<PaymentMethod> list = paymentMethodMapper.selectList(queryWrapper);
 
-    return RestBean.success(list, messageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 }

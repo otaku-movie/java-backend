@@ -3,6 +3,7 @@ package com.example.backend.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.Character;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.StaffCharacter;
@@ -92,17 +93,17 @@ public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper,
     if (query.getId() == null) {
       if (result) {
         saveCharacter(data, query);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Error.REPEAT));
       }
     } else {
       if (result) {
         data.setId(query.getId());
         saveCharacter(data, query);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Error.REPEAT));
       }
     }
   }

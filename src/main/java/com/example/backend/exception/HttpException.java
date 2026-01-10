@@ -3,6 +3,7 @@ package com.example.backend.exception;
 import cn.dev33.satoken.exception.NotLoginException;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.utils.MessageUtils;
@@ -31,7 +32,7 @@ public class HttpException {
 //    HttpStatus status = HttpStatus.FORBIDDEN;
 //    String message = MessageUtils.getMessage("error.notPermission");
 //    return RestBean.error(ResponseCode.NOT_PERMISSION.getCode(), message);
-    RestBean<Null> result = RestBean.error(HttpStatus.FORBIDDEN.value(), MessageUtils.getMessage("error.notPermission"));
+    RestBean<Null> result = RestBean.error(HttpStatus.FORBIDDEN.value(), MessageUtils.getMessage(MessageKeys.Error.NOT_PERMISSION));
     return new ResponseEntity<>(result, HttpStatus.FORBIDDEN);
   }
 
@@ -58,29 +59,29 @@ public class HttpException {
        case NotLoginException.NOT_TOKEN:
          message = "未能读取到有效 token";
          response.setStatus(HttpStatus.UNAUTHORIZED.value());
-         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage("error.loginExpired"));
+         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage(MessageKeys.Error.LOGIN_EXPIRED));
          break;
        case NotLoginException.INVALID_TOKEN:
          message = "token 无效";
          response.setStatus(HttpStatus.UNAUTHORIZED.value());
-         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage("error.loginExpired"));
+         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage(MessageKeys.Error.LOGIN_EXPIRED));
          break;
        case NotLoginException.TOKEN_TIMEOUT:
          message = "token 已过期";
          response.setStatus(HttpStatus.UNAUTHORIZED.value());
-         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage("error.loginExpired"));
+         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage(MessageKeys.Error.LOGIN_EXPIRED));
          break;
        case NotLoginException.NO_PREFIX:
          message = "未按照指定前缀提交 token";
          break;
        default:
          response.setStatus(HttpStatus.UNAUTHORIZED.value());
-         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage("error.loginExpired"));
+         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MessageUtils.getMessage(MessageKeys.Error.LOGIN_EXPIRED));
          message = "当前会话未登录";
          break;
      }
 
-    RestBean<Null> result = RestBean.error(HttpStatus.UNAUTHORIZED.value(), MessageUtils.getMessage("error.loginExpired"));
+    RestBean<Null> result = RestBean.error(HttpStatus.UNAUTHORIZED.value(), MessageUtils.getMessage(MessageKeys.Error.LOGIN_EXPIRED));
     return new ResponseEntity<>(result, HttpStatus.UNAUTHORIZED);
   }
 

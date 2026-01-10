@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.Cinema;
 import com.example.backend.entity.Dict;
 import com.example.backend.entity.DictItem;
@@ -84,7 +85,7 @@ public class DictController {
 
     List list = dictItemMapper.selectList(wrapper);
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   // 根据 name 获取字典
   @GetMapping(ApiPaths.Common.Dict.SPECIFY)
@@ -100,7 +101,7 @@ public class DictController {
       })
     );
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "dict.item.save")
@@ -119,7 +120,7 @@ public class DictController {
       dictItemMapper.insert(dictItem);
     });
 
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "dict.save")
@@ -132,14 +133,14 @@ public class DictController {
 
     if (query.getId() == null) {
       dictMapper.insert(dict);
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
     } else {
       dict.setId(query.getId());
       UpdateWrapper updateQueryWrapper = new UpdateWrapper();
       updateQueryWrapper.eq("id", query.getId());
       dictMapper.update(dict, updateQueryWrapper);
 
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
     }
   }
   @SaCheckLogin
@@ -147,13 +148,13 @@ public class DictController {
   @Transactional
   @DeleteMapping(ApiPaths.Admin.Dict.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("dict_id", id);
 
     dictItemMapper.delete(wrapper);
     dictMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
 }

@@ -1,5 +1,6 @@
 package com.example.backend.exception;
 import cn.dev33.satoken.exception.NotLoginException;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.utils.MessageUtils;
@@ -28,6 +29,6 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(value = ReflectionException.class)
   public RestBean exception(ReflectionException e) {
     System.out.println(e);
-    return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.systemError"));
+    return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.SYSTEM));
   }
 }

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.MovieReply;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.CommentEnumType;
@@ -84,7 +85,7 @@ public class MovieReplyController {
 
   @GetMapping(ApiPaths.Common.Reply.DETAIL)
   public RestBean<Object> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<MovieReply> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
@@ -96,17 +97,17 @@ public class MovieReplyController {
     result.setLikeCount(data.getLikeCount());
     result.setDislikeCount(data.getDislikeCount());
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "reply.remove")
   @DeleteMapping(ApiPaths.Common.Reply.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     movieReplyMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
 
   @SaCheckLogin
@@ -124,13 +125,13 @@ public class MovieReplyController {
       data.setReplyUserId(query.getReplyUserId());
 
       movieReplyMapper.insert(data);
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
     } else {
       data.setCommentUserId(Utils.getUserId());
       // 创建
       if (query.getId() == null) {
         movieReplyMapper.insert(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       } else {
         // 编辑
         data.setId(query.getId());
@@ -139,7 +140,7 @@ public class MovieReplyController {
 
         movieReplyMapper.update(data, updateQueryWrapper);
 
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       }
     }
   }
@@ -151,7 +152,7 @@ public class MovieReplyController {
       query.getId(), true
     );
 
-    return RestBean.success(result, MessageUtils.getMessage("success.action"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Success.ACTION));
   }
   @SaCheckLogin
   @PostMapping(ApiPaths.Common.Reply.DISLIKE)
@@ -161,6 +162,6 @@ public class MovieReplyController {
       query.getId(), false
     );
 
-    return RestBean.success(result, MessageUtils.getMessage("success.action"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Success.ACTION));
   }
 }

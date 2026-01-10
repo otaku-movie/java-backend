@@ -2,6 +2,7 @@ package com.example.backend.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.PayState;
@@ -49,6 +50,6 @@ public class ChartController {
     // 统计日成交金额
     chartResponse.setDailyTransactionAmount(movieOrderMapper.DailyTransactionAmount(OrderState.order_succeed.getCode(), PayState.payment_successful.getCode()));
 
-    return RestBean.success(chartResponse, MessageUtils.getMessage("success.get"));
+    return RestBean.success(chartResponse, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 }

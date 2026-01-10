@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
@@ -106,13 +107,13 @@ public class RoleController {
   @GetMapping(ApiPaths.Admin.Role.PERMISSION_LIST)
   public RestBean<List<ButtonResponse>> permissionList(@RequestParam @Validated  Integer id)  {
     if (id == null) {
-      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage("error.parameterError"));
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     }
     QueryWrapper wrapper = new QueryWrapper<>();
 
     List list = roleMapper.permissionList(id);
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @GetMapping(ApiPaths.Admin.Role.PERMISSION)
   public RestBean<List<ButtonResponse>> permission(@RequestParam @Validated @NotNull(message = "{validator.error.get}") Integer id)  {
@@ -123,7 +124,7 @@ public class RoleController {
       .map(ButtonResponseProcessor::filterButtonResponse)
       .collect(Collectors.toList());
 
-    return RestBean.success(filteredList, MessageUtils.getMessage("success.get"));
+    return RestBean.success(filteredList, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "role.configPermission")
@@ -157,27 +158,27 @@ public class RoleController {
         .collect(Collectors.toList())  // Collect to List
     );
 
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
   @GetMapping(ApiPaths.Admin.Role.DETAIL)
   public RestBean<Role> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<Role> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Role result = roleMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "role.remove")
   @DeleteMapping(ApiPaths.Admin.Role.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     roleMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "role.save")
@@ -194,9 +195,9 @@ public class RoleController {
 
       if (list.size() == 0) {
         roleMapper.insert(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR));
       }
     } else {
       // 判断编辑是否重复，去掉当前的
@@ -212,12 +213,13 @@ public class RoleController {
         updateQueryWrapper.eq("id", query.getId());
         roleMapper.update(data, updateQueryWrapper);
 
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
-        return RestBean.error(
-          ResponseCode.REPEAT.getCode(),
-          MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.roleName"))
+        String repeatMessage = MessageUtils.getMessage(
+          MessageKeys.Admin.REPEAT_ERROR,
+          MessageUtils.getMessage(MessageKeys.Admin.Repeat.ROLE_NAME)
         );
+        return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
     }
   }

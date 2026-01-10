@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
@@ -85,23 +86,23 @@ public class AdminUserController {
     );
 
 
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
   @SaCheckLogin
   @GetMapping(ApiPaths.Admin.User.ROLE)
   public RestBean<List<Role>> role (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     List<Role> result = userMapper.userRole(id);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.User.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "user.remove")
   @Transactional
   @DeleteMapping(ApiPaths.Admin.User.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     Integer userId = StpUtil.getLoginIdAsInt();
 
@@ -115,7 +116,7 @@ public class AdminUserController {
       StpUtil.logout();
     }
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "user.save")
@@ -129,7 +130,7 @@ public class AdminUserController {
 
     if (query.getId() == null) {
       if (query.getPassword() == null) {
-        return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage("validator.saveUser.password.required"));
+        return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Validator.SaveUser.PASSWORD_REQUIRED));
       }
       user.setPassword(SaSecureUtil.md5(query.getPassword()));
     } else {
@@ -147,12 +148,12 @@ public class AdminUserController {
     if (code == null) {
       return RestBean.error(
         ResponseCode.ERROR.getCode(),
-        MessageUtils.getMessage("validator.saveUser.code.expired")
+        MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_EXPIRED)
       );
     } else if (code != null && code != query.getCode()) {
       return RestBean.error(
         ResponseCode.ERROR.getCode(),
-        MessageUtils.getMessage("validator.saveUser.code.error")
+        MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_ERROR)
       );
     }
 
@@ -165,9 +166,9 @@ public class AdminUserController {
 
       if (list.size() == 0) {
         userMapper.insert(user);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.User.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.emailRepeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.User.EMAIL_REPEAT));
       }
     } else {
       QueryWrapper wrapper = new QueryWrapper<>();
@@ -183,9 +184,9 @@ public class AdminUserController {
 
         user.setId(query.getId());
         userMapper.update(user, updateQueryWrapper);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.User.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.emailRepeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.User.EMAIL_REPEAT));
       }
     }
   }

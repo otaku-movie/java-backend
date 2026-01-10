@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
@@ -142,7 +143,7 @@ public class MovieShowTimeController {
   }
   @GetMapping(ApiPaths.Common.ShowTime.DETAIL)
   public RestBean<MovieShowTimeDetail> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     MovieShowTimeDetail result = movieShowTimeMapper.movieShowTimeDetail(id);
     result.setMovieShowTimeTags(
@@ -152,14 +153,14 @@ public class MovieShowTimeController {
       movieShowTimeMapper.getMovieShowTimeSubtitle(result.getSubtitleId())
     );
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "movieShowTime.remove")
   @Transactional
   @DeleteMapping(ApiPaths.Admin.ShowTime.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("movie_show_time_id", id);
@@ -167,7 +168,7 @@ public class MovieShowTimeController {
     movieShowTimeMapper.deleteById(id);
     selectSeatMapper.delete(wrapper);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "movieShowTime.save")
@@ -179,7 +180,7 @@ public class MovieShowTimeController {
     );
     Boolean result = movieShowTimeService.check(list, format, query);
 
-    return result ? RestBean.success(null, MessageUtils.getMessage("success.save")) : RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.timeConflict"));
+    return result ? RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS)) : RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.TIME_CONFLICT));
   }
   @SaCheckLogin
   @PostMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_SAVE)
@@ -232,7 +233,7 @@ public class MovieShowTimeController {
     selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), query.getTheaterHallId(), StpUtil.getLoginIdAsInt(), x, y);
     selectSeatService.saveBatch(data);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
 
   @SaCheckLogin
@@ -274,7 +275,7 @@ public class MovieShowTimeController {
 
     selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), query.getTheaterHallId(), userId, x, y);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.save"));
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
 
   @SaCheckLogin
@@ -309,7 +310,7 @@ public class MovieShowTimeController {
       }
     }
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @GetMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_LIST)
   public RestBean<Object> selectSeatList(
@@ -318,6 +319,6 @@ public class MovieShowTimeController {
   ) {
     Object result = selectSeatService.selectSeatList(theaterHallId, movieShowTimeId);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 }

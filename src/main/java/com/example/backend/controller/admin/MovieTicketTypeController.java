@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.MovieTicketType;
 import com.example.backend.entity.Menu;
 import com.example.backend.entity.RestBean;
@@ -63,33 +64,33 @@ public class MovieTicketTypeController {
 
     List list = movieTicketTypeMapper.selectList(wrapper);
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @GetMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_DETAIL)
   public RestBean<MovieTicketType> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     QueryWrapper<MovieTicketType> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     MovieTicketType result = movieTicketTypeMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTicketType.remove")
   @DeleteMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     movieTicketTypeMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTicketType.save")
   @PostMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MovieTicketTypeSaveQuery query)  {
-    String message = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.movieTicketTypeName"));
+    String repeatMessage = MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR, MessageUtils.getMessage(MessageKeys.Admin.Repeat.MOVIE_TICKET_TYPE_NAME));
     MovieTicketType modal = new MovieTicketType();
 
     modal.setName(query.getName());
@@ -104,9 +105,9 @@ public class MovieTicketTypeController {
 
       if (list.size() == 0) {
         movieTicketTypeMapper.insert(modal);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), message);
+        return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
     } else {
       // 判断编辑是否重复，去掉当前的，如果path已存在就算重复
@@ -123,12 +124,9 @@ public class MovieTicketTypeController {
         updateQueryWrapper.eq("id", query.getId());
         movieTicketTypeMapper.update(modal, updateQueryWrapper);
 
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
-        return RestBean.error(
-          ResponseCode.REPEAT.getCode(),
-          MessageUtils.getMessage("error.repeat", message)
-        );
+        return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
     }
   }
