@@ -23,4 +23,5 @@ public class MovieShowTimeQuery {
   Integer specId;
   List<Integer> subtitleId;
   List<Integer> showTimeTagId;
+  Integer movieVersionId;
 }

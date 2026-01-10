@@ -27,4 +27,6 @@ public class MovieShowTimeDetail {
   List<MovieShowTimeTag> movieShowTimeTags;
   Integer specId;
   String specName;
+  Integer movieVersionId;
+  Integer versionCode;  // 配音版本ID（字典值）
 }

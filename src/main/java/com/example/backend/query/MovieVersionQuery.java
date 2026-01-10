@@ -15,9 +15,9 @@ public class MovieVersionQuery {
     private Integer id;
     
     /**
-     * 配音版本ID
+     * 版本代码（字典：原版、中文配音、日语配音等）
      */
-    private Integer dubbingVersionId;
+    private Integer versionCode;
     
     /**
      * 开始日期

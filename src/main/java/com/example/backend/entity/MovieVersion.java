@@ -35,10 +35,10 @@ public class MovieVersion implements Serializable {
     private Integer movieId;
 
     /**
-     * 配音版本ID（字典：原版、中文配音、日语配音等）
+     * 版本代码（字典：原版、中文配音、日语配音等）
      */
-    @TableField("dubbing_version_id")
-    private Integer dubbingVersionId;
+    @TableField("version_code")
+    private Integer versionCode;
 
     /**
      * 上映开始日期（仅配音版需要）

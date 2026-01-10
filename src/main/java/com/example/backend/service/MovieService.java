@@ -116,7 +116,7 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
           // 更新现有版本
           movieVersion = movieVersionService.getById(versionQuery.getId());
           if (movieVersion != null) {
-            movieVersion.setDubbingVersionId(versionQuery.getDubbingVersionId());
+            movieVersion.setVersionCode(versionQuery.getVersionCode());
             movieVersion.setStartDate(versionQuery.getStartDate());
             movieVersion.setEndDate(versionQuery.getEndDate());
             movieVersion.setLanguageId(versionQuery.getLanguageId());
@@ -126,7 +126,7 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
           // 创建新版本
           movieVersion = new MovieVersion();
           movieVersion.setMovieId(movieId);
-          movieVersion.setDubbingVersionId(versionQuery.getDubbingVersionId());
+          movieVersion.setVersionCode(versionQuery.getVersionCode());
           movieVersion.setStartDate(versionQuery.getStartDate());
           movieVersion.setEndDate(versionQuery.getEndDate());
           movieVersion.setLanguageId(versionQuery.getLanguageId());
@@ -175,14 +175,14 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
       // 1. 创建或获取默认版本（原版）
       QueryWrapper<MovieVersion> versionWrapper = new QueryWrapper<>();
       versionWrapper.eq("movie_id", movieId);
-      versionWrapper.eq("dubbing_version_id", DubbingVersionEnum.ORIGINAL.getValue()); // 原版
+      versionWrapper.eq("version_code", DubbingVersionEnum.ORIGINAL.getValue()); // 原版
       MovieVersion movieVersion = movieVersionService.getOne(versionWrapper);
       
       if (movieVersion == null) {
         // 创建默认版本
         movieVersion = new MovieVersion();
         movieVersion.setMovieId(movieId);
-        movieVersion.setDubbingVersionId(DubbingVersionEnum.ORIGINAL.getValue()); // 原版
+        movieVersion.setVersionCode(DubbingVersionEnum.ORIGINAL.getValue()); // 原版
         movieVersionService.save(movieVersion);
       }
       

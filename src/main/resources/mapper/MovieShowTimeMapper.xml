@@ -21,6 +21,8 @@
         <result property="selectedSeatCount" column="selected_seat_count"></result>
         <result property="subtitleId" column="subtitle_id"  typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
         <result property="movieShowTimeTagsId" column="show_time_tag_id"  typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
+        <result property="movieVersionId" column="movie_version_id"></result>
+        <result property="versionCode" column="version_code"></result>
     </resultMap>
     <resultMap id="userSelectSeat" type="com.example.backend.response.UserSelectSeat">
         <result property="movieShowTimeId" column="movie_show_time_id"></result>
@@ -147,6 +149,7 @@
                 movie_show_time.open,
                 movie_show_time.subtitle_id,
                 movie_show_time.show_time_tag_id,
+                movie_show_time.movie_version_id,
                 movie.id AS movie_id,
                 movie.name AS movie_name,
                 movie.cover AS movie_cover,
@@ -176,7 +179,8 @@
                 ) AS selected_seat_count,
                 cs2.name as theater_hall_spec,
                 cs3.id as spec_id,
-                cs3.name as spec_name
+                cs3.name as spec_name,
+                movie_version.version_code
             FROM
                 movie_show_time
             LEFT JOIN movie ON movie.id = movie_show_time.movie_id AND movie.deleted = 0
@@ -184,6 +188,7 @@
             LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id AND theater_hall.deleted = 0
             LEFT JOIN cinema_spec cs2 ON theater_hall.cinema_spec_id = cs2.id AND cs2.deleted = 0
             LEFT JOIN cinema_spec cs3 ON movie_show_time.spec_id = cs3.id AND cs3.deleted = 0
+            LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
 
             <where>
                 movie_show_time.deleted = 0
@@ -259,18 +264,21 @@
             movie_show_time.subtitle_id,
             movie_show_time.show_time_tag_id,
             movie_show_time.spec_id,
+            movie_show_time.movie_version_id,
             movie.id as movie_id,
             movie.name as movie_name,
             cinema.id as cinema_id,
             cinema.name as cinema_name,
             theater_hall.id as theater_hall_id,
             theater_hall."name" as theater_hall_name,
-            cinema_spec."name" as spec_name
+            cinema_spec."name" as spec_name,
+            movie_version.version_code
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
                  LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
                  LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
+                 LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
         WHERE
             movie_show_time.id = #{id}
     </select>

@@ -57,7 +57,7 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
     movieShowTime.setSpecId(query.getSpecId());
     movieShowTime.setSubtitleId(query.getSubtitleId());
     movieShowTime.setShowTimeTagId(query.getShowTimeTagId());
-//    movieShowTime.set
+    movieShowTime.setMovieVersionId(query.getMovieVersionId());
 
     if (query.getShowTimeTagId() != null) {
 //      movieShowTime.setShowTimeTagId( query.getShowTimeTagId());

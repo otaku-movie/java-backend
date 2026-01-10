@@ -24,7 +24,7 @@ public class MovieVersionResponse implements Serializable {
     /**
      * 配音版本ID
      */
-    private Integer dubbingVersionId;
+    private Integer versionCode;
 
     /**
      * 开始日期
