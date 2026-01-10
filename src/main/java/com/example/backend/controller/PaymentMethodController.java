@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.Brand;
 import com.example.backend.entity.PaymentMethod;
 import com.example.backend.entity.RestBean;
@@ -28,7 +29,7 @@ public class PaymentMethodController {
   @Autowired
   private PaymentMethodMapper paymentMethodMapper;
 
-  @GetMapping("/api/paymentMethod/list")
+  @GetMapping(ApiPaths.Common.PaymentMethod.LIST)
   public RestBean<List<PaymentMethod>> list() {
     QueryWrapper queryWrapper = new QueryWrapper();
 

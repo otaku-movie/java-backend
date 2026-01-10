@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.query.promotion.PromotionListQuery;
@@ -29,7 +30,7 @@ public class PromotionController {
 
   @SaCheckLogin
   // @CheckPermission(code = "promotion.detail")
-  @GetMapping("/api/admin/promotion/detail")
+  @GetMapping(ApiPaths.Admin.Promotion.DETAIL)
   public RestBean<PromotionDetailResponse> detail(@RequestParam Integer cinemaId) {
     if (cinemaId == null) {
       return RestBean.error(
@@ -43,7 +44,7 @@ public class PromotionController {
 
   @SaCheckLogin
   // @CheckPermission(code = "promotion.list")
-  @PostMapping("/api/admin/promotion/list")
+  @PostMapping(ApiPaths.Admin.Promotion.LIST)
   public RestBean<java.util.List<PromotionListItemResponse>> list(@RequestBody(required = false) PromotionListQuery query) {
     if (query == null) {
       query = new PromotionListQuery();
@@ -54,7 +55,7 @@ public class PromotionController {
 
   @SaCheckLogin
   @CheckPermission(code = "promotion.save")
-  @PostMapping("/api/admin/promotion/save")
+  @PostMapping(ApiPaths.Admin.Promotion.SAVE)
   public RestBean<String> save(@Valid @RequestBody PromotionSaveQuery query) {
     promotionService.savePromotion(query);
     return RestBean.<String>success(null, MessageUtils.getMessage("success.save"));
@@ -62,7 +63,7 @@ public class PromotionController {
 
   @SaCheckLogin
   @CheckPermission(code = "promotion.remove")
-  @DeleteMapping("/api/admin/promotion/remove")
+  @DeleteMapping(ApiPaths.Admin.Promotion.REMOVE)
   public RestBean<String> remove(@RequestParam Integer id) {
     if (id == null) {
       return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage("error.parameterError"));

@@ -1,6 +1,7 @@
 package com.example.backend.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.PayState;
@@ -32,7 +33,7 @@ public class ChartController {
   @Autowired
   MovieOrderMapper movieOrderMapper;
 
-  @GetMapping("/api/admin/chart")
+  @GetMapping(ApiPaths.Admin.Chart.DATA)
   public RestBean<ChartResponse> chart () {
     ChartResponse chartResponse = new ChartResponse();
     QueryWrapper userQueryWrapper = new QueryWrapper();

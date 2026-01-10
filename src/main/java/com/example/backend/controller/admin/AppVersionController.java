@@ -3,6 +3,7 @@ package com.example.backend.controller.admin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.AppVersion;
 import com.example.backend.entity.Areas;
 import com.example.backend.entity.RestBean;
@@ -36,7 +37,7 @@ public class AppVersionController {
   private AppVersionMapper appVersionMapper;
 
 
-  @PostMapping("/api/admin/app/versionList")
+  @PostMapping(ApiPaths.Admin.AppVersion.LIST)
   public RestBean<List<AppVersion>> list(@RequestBody AppVersionListQuery query) {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page page = new Page<>(query.getPage(), query.getPageSize());

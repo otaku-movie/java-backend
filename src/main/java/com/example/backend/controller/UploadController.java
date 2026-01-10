@@ -3,6 +3,7 @@ package com.example.backend.controller;
 
 import com.amazonaws.services.s3.internal.eventstreaming.Message;
 import com.example.backend.config.MinioConfiguration;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.utils.MessageUtils;
@@ -56,7 +57,7 @@ public class UploadController {
     new Random().nextBytes(b);
     return ByteBuffer.wrap(b);
   }
-  @PostMapping(value = "/api/upload", consumes = "multipart/form-data")
+  @PostMapping(value = ApiPaths.Upload.UPLOAD, consumes = "multipart/form-data")
   public RestBean<UploadResponse> upload(MultipartFile file) throws IOException {
     System.out.println(minioConfiguration);
 
@@ -105,7 +106,7 @@ public class UploadController {
   }
 
 
-  @DeleteMapping("/api/deleteFile")
+  @DeleteMapping(ApiPaths.Upload.DELETE)
   public RestBean<Null> delete(@Validated @RequestParam @NotEmpty(message = "path 不能为空") String path ) {
     S3Client s3Client = S3Client.builder()
       .region(Region.US_EAST_1)  // 指定区域

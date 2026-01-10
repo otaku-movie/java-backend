@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.Level;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -51,7 +52,7 @@ public class LevelController {
   @Autowired
   private LevelMapper levelMapper;
 
-  @PostMapping("/api/movie/level/list")
+  @PostMapping(ApiPaths.Common.Level.LIST)
   public RestBean<List<Object>> list(@RequestBody LevelListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 //    wrapper.orderByDesc("update_time");
@@ -68,7 +69,7 @@ public class LevelController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/movie/level/detail")
+  @GetMapping(ApiPaths.Common.Level.DETAIL)
   public RestBean<Level> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -78,7 +79,7 @@ public class LevelController {
   }
   @SaCheckLogin
   @CheckPermission(code = "level.save")
-  @PostMapping("/api/admin/movie/level/save")
+  @PostMapping(ApiPaths.Admin.Movie.LEVEL_SAVE)
   public RestBean<String> save(@RequestBody @Validated() SaveLevelQuery query) {
     Level level = new Level();
 
@@ -121,7 +122,7 @@ public class LevelController {
   }
   @SaCheckLogin
   @CheckPermission(code = "level.remove")
-  @DeleteMapping("/api/admin/movie/level/remove")
+  @DeleteMapping(ApiPaths.Admin.Movie.LEVEL_REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
@@ -94,7 +95,7 @@ public class MovieShowTimeController {
   @Autowired
   private SeatService seatService;
 
-  @PostMapping("/api/movie_show_time/list")
+  @PostMapping(ApiPaths.Common.ShowTime.LIST)
   public RestBean<List<MovieShowTimeList>> list(MovieShowTimeListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<MovieShowTime> page = new Page<>(query.getPage(), query.getPageSize());
@@ -139,7 +140,7 @@ public class MovieShowTimeController {
 
     return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/movie_show_time/detail")
+  @GetMapping(ApiPaths.Common.ShowTime.DETAIL)
   public RestBean<MovieShowTimeDetail> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -151,12 +152,12 @@ public class MovieShowTimeController {
       movieShowTimeMapper.getMovieShowTimeSubtitle(result.getSubtitleId())
     );
 
-    return RestBean.success(result, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   @SaCheckLogin
   @CheckPermission(code = "movieShowTime.remove")
   @Transactional
-  @DeleteMapping("/api/admin/movie_show_time/remove")
+  @DeleteMapping(ApiPaths.Admin.ShowTime.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -170,7 +171,7 @@ public class MovieShowTimeController {
   }
   @SaCheckLogin
   @CheckPermission(code = "movieShowTime.save")
-  @PostMapping("/api/admin/movie_show_time/save")
+  @PostMapping(ApiPaths.Admin.ShowTime.SAVE)
   public RestBean<Object> save(@RequestBody @Validated MovieShowTimeQuery query) throws ParseException {
     String format = "yyyy-MM-dd HH:mm:ss";
     List<MovieShowTime> list = movieShowTimeService.getSortedMovieShowTimes(
@@ -181,7 +182,7 @@ public class MovieShowTimeController {
     return result ? RestBean.success(null, MessageUtils.getMessage("success.save")) : RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.timeConflict"));
   }
   @SaCheckLogin
-  @PostMapping("/api/movie_show_time/select_seat/save")
+  @PostMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_SAVE)
   public RestBean<Object> saveSelectSeat(@RequestBody @Validated SaveSelectSeatQuery query) {
     // 判断当前座位是否可选
     QueryWrapper queryWrapper = new QueryWrapper();
@@ -235,7 +236,7 @@ public class MovieShowTimeController {
   }
 
   @SaCheckLogin
-  @PostMapping("/api/movie_show_time/select_seat/cancel")
+  @PostMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_CANCEL)
   public RestBean<Object> cancelSelectSeat(@RequestBody @Validated CancelSelectSeatQuery query) {
     Integer userId = StpUtil.getLoginIdAsInt();
     
@@ -277,7 +278,7 @@ public class MovieShowTimeController {
   }
 
   @SaCheckLogin
-  @GetMapping("/api/movie_show_time/user_select_seat")
+  @GetMapping(ApiPaths.Common.ShowTime.USER_SELECT_SEAT)
   public RestBean<Object> selectSeatList(
     @RequestParam("movieShowTimeId") Integer movieShowTimeId
   ) {
@@ -310,7 +311,7 @@ public class MovieShowTimeController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/movie_show_time/select_seat/list")
+  @GetMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_LIST)
   public RestBean<Object> selectSeatList(
     @RequestParam("movieShowTimeId") Integer movieShowTimeId,
     @RequestParam("theaterHallId") Integer theaterHallId

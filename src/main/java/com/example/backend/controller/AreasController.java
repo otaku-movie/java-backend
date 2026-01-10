@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.example.backend.constants.ApiPaths;
 
 
 @RestController
@@ -66,7 +67,7 @@ public class AreasController {
     return roots;
   }
 
-  @GetMapping("/api/areas/tree")
+  @GetMapping(ApiPaths.Common.Areas.TREE)
   public RestBean<List<AreaResponse>> list(@RequestParam(value = "id", required = false) Integer id) {
     List<Areas> allAreas = areasMapper.selectList(null);
 

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.Cinema;
 import com.example.backend.entity.Dict;
 import com.example.backend.entity.DictItem;
@@ -59,7 +60,7 @@ public class DictController {
   @Autowired
   private DictItemMapper dictItemMapper;
 
-  @PostMapping("/api/dict/list")
+  @PostMapping(ApiPaths.Common.Dict.LIST)
   public RestBean<List<Object>> list(@RequestBody DictListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Dict> page = new Page<>(query.getPage(), query.getPageSize());
@@ -76,7 +77,7 @@ public class DictController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/dict/detail")
+  @GetMapping(ApiPaths.Common.Dict.DETAIL)
   public RestBean<List<Object>> dictItemlist(@RequestParam Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("dict_id", id);
@@ -86,7 +87,7 @@ public class DictController {
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
   // 根据 name 获取字典
-  @GetMapping("/api/dict/specify")
+  @GetMapping(ApiPaths.Common.Dict.SPECIFY)
   public RestBean<Map<String, List<DictItem>>> specify()  {
     QueryWrapper wrapper = new QueryWrapper<>();
     List<Dict> list = dictMapper.selectList(wrapper);
@@ -104,7 +105,7 @@ public class DictController {
   @SaCheckLogin
   @CheckPermission(code = "dict.item.save")
   @Transactional
-  @PostMapping("/api/admin/dict/item/save")
+  @PostMapping(ApiPaths.Admin.Dict.ITEM_SAVE)
   public RestBean<Null> list(@RequestBody DictItemEditQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("dict_id", query.getDictId());
@@ -122,7 +123,7 @@ public class DictController {
   }
   @SaCheckLogin
   @CheckPermission(code = "dict.save")
-  @PostMapping("/api/admin/dict/save")
+  @PostMapping(ApiPaths.Admin.Dict.SAVE)
   public RestBean<Null> dictSave (@RequestBody @Validated SaveDictQuery query) {
     Dict dict = new Dict();
 
@@ -144,7 +145,7 @@ public class DictController {
   @SaCheckLogin
   @CheckPermission(code = "dict.remove")
   @Transactional
-  @DeleteMapping("/api/admin/dict/remove")
+  @DeleteMapping(ApiPaths.Admin.Dict.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper wrapper = new QueryWrapper<>();

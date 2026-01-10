@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.Brand;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -47,7 +48,7 @@ public class BrandController {
   @Autowired
   private BrandMapper brandMapper;
 
-  @PostMapping("/api/brand/list")
+  @PostMapping(ApiPaths.Common.Brand.LIST)
   public RestBean<List<Brand>> list(@RequestBody BrandListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Brand> page = new Page<>(query.getPage(), query.getPageSize());
@@ -65,7 +66,7 @@ public class BrandController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/brand/detail")
+  @GetMapping(ApiPaths.Common.Brand.DETAIL)
   public RestBean<Brand> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Brand> queryWrapper = new QueryWrapper<>();
@@ -77,7 +78,7 @@ public class BrandController {
   }
   @SaCheckLogin
   @CheckPermission(code = "brand.remove")
-  @DeleteMapping("/api/admin/brand/remove")
+  @DeleteMapping(ApiPaths.Admin.Brand.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -87,7 +88,7 @@ public class BrandController {
   }
   @SaCheckLogin
   @CheckPermission(code = "brand.save")
-  @PostMapping("/api/admin/brand/save")
+  @PostMapping(ApiPaths.Admin.Brand.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated BrandSaveQuery query) {
     Brand data = new Brand();
     data.setName(query.getName());

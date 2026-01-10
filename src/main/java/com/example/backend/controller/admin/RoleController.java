@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
@@ -91,7 +92,7 @@ public class RoleController {
   @Autowired
   private RoleButtonService roleButtonService;
 
-  @PostMapping("/api/admin/permission/role/list")
+  @PostMapping(ApiPaths.Admin.Role.LIST)
   public RestBean<List<Role>> list(@RequestBody RoleListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Role> page = new Page<>(query.getPage(), query.getPageSize());
@@ -102,7 +103,7 @@ public class RoleController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/admin/permission/role/permissionList")
+  @GetMapping(ApiPaths.Admin.Role.PERMISSION_LIST)
   public RestBean<List<ButtonResponse>> permissionList(@RequestParam @Validated  Integer id)  {
     if (id == null) {
       return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage("error.parameterError"));
@@ -113,7 +114,7 @@ public class RoleController {
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/admin/permission/role/permission")
+  @GetMapping(ApiPaths.Admin.Role.PERMISSION)
   public RestBean<List<ButtonResponse>> permission(@RequestParam @Validated @NotNull(message = "{validator.error.get}") Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
@@ -127,7 +128,7 @@ public class RoleController {
   @SaCheckLogin
   @CheckPermission(code = "role.configPermission")
   @Transactional
-  @PostMapping("/api/admin/permission/role/config")
+  @PostMapping(ApiPaths.Admin.Role.CONFIG)
   public RestBean<Null> config(@RequestBody @Validated RoleConfigQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("role_id", query.getRoleId());
@@ -158,7 +159,7 @@ public class RoleController {
 
     return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
-  @GetMapping("/api/admin/permission/role/detail")
+  @GetMapping(ApiPaths.Admin.Role.DETAIL)
   public RestBean<Role> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Role> queryWrapper = new QueryWrapper<>();
@@ -170,7 +171,7 @@ public class RoleController {
   }
   @SaCheckLogin
   @CheckPermission(code = "role.remove")
-  @DeleteMapping("/api/admin/permission/role/remove")
+  @DeleteMapping(ApiPaths.Admin.Role.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -180,7 +181,7 @@ public class RoleController {
   }
   @SaCheckLogin
   @CheckPermission(code = "role.save")
-  @PostMapping("/api/admin/permission/role/save")
+  @PostMapping(ApiPaths.Admin.Role.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated RoleSaveQuery query)  {
     Role data = new Role();
 

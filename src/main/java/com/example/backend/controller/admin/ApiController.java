@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.Api;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -51,7 +53,7 @@ public class ApiController {
   @Autowired
   private ApiMapper apiMapper;
 
-  @PostMapping("/api/admin/permission/api/list")
+  @PostMapping(ApiPaths.Admin.Api.LIST)
   public RestBean<List<Object>> list(@RequestBody ApiListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Api> page = new Page<>(query.getPage(), query.getPageSize());
@@ -62,29 +64,29 @@ public class ApiController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/admin/permission/api/detail")
+  @GetMapping(ApiPaths.Admin.Api.DETAIL)
   public RestBean<Api> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Error.PARAMETER));
     QueryWrapper<Api> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("id", id);
 
     Api result = apiMapper.selectOne(queryWrapper);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "api.remove")
-  @DeleteMapping("/api/admin/permission/api/remove")
+  @DeleteMapping(ApiPaths.Admin.Api.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Error.PARAMETER));
 
     apiMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.REMOVE_SUCCESS));
   }
   @SaCheckLogin
   @CheckPermission(code = "api.save")
-  @PostMapping("/api/admin/permission/api/save")
+  @PostMapping(ApiPaths.Admin.Api.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated ApiSaveQuery query)  {
     Api data = new Api();
 
@@ -102,9 +104,9 @@ public class ApiController {
 
       if (list.size() == 0) {
         apiMapper.insert(data);
-        return RestBean.success(null, MessageUtils.getMessage("success.save"));
+        return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
-        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+        return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Error.REPEAT));
       }
     } else {
       data.setId(query.getId());
@@ -120,13 +122,13 @@ public class ApiController {
         Api find = apiMapper.selectOne(wrapper);
 
         if (find != null) {
-          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.repeat"));
+          return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Error.REPEAT));
         } else {
           apiMapper.update(data, updateQueryWrapper);
         }
       }
 
-      return RestBean.success(null, MessageUtils.getMessage("success.save"));
+      return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
     }
   }
 

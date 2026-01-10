@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.MovieTag;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -47,7 +48,7 @@ public class MovieTagController {
   @Autowired
   private MovieTagMapper movieTagMapper;
 
-  @PostMapping("/api/movieTag/list")
+  @PostMapping(ApiPaths.Common.MovieTag.LIST)
   public RestBean<List<MovieTag>> list(@RequestBody MovieTagListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<MovieTag> page = new Page<>(query.getPage(), query.getPageSize());
@@ -65,7 +66,7 @@ public class MovieTagController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/movieTag/detail")
+  @GetMapping(ApiPaths.Common.MovieTag.DETAIL)
   public RestBean<MovieTag> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<MovieTag> queryWrapper = new QueryWrapper<>();
@@ -77,7 +78,7 @@ public class MovieTagController {
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTag.remove")
-  @DeleteMapping("/api/admin/movieTag/remove")
+  @DeleteMapping(ApiPaths.Admin.Tag.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -87,7 +88,7 @@ public class MovieTagController {
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTag.save")
-  @PostMapping("/api/admin/movieTag/save")
+  @PostMapping(ApiPaths.Admin.Tag.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MovieTagSaveQuery query) {
     MovieTag data = new MovieTag();
     data.setName(query.getName());

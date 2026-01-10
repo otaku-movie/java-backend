@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Menu;
 import com.example.backend.enumerate.ResponseCode;
@@ -53,7 +54,7 @@ public class MenuController {
   @Autowired
   private MenuMapper menuMapper;
 
-  @PostMapping("/api/admin/permission/menu/list")
+  @PostMapping(ApiPaths.Admin.Menu.LIST)
   public RestBean<List<Menu>> list(@RequestBody MenuListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
@@ -63,7 +64,7 @@ public class MenuController {
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/admin/permission/menu/detail")
+  @GetMapping(ApiPaths.Admin.Menu.DETAIL)
   public RestBean<Menu> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Menu> queryWrapper = new QueryWrapper<>();
@@ -75,7 +76,7 @@ public class MenuController {
   }
   @SaCheckLogin
   @CheckPermission(code = "menu.remove")
-  @DeleteMapping("/api/admin/permission/menu/remove")
+  @DeleteMapping(ApiPaths.Admin.Menu.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -85,7 +86,7 @@ public class MenuController {
   }
   @SaCheckLogin
   @CheckPermission(code = "menu.save")
-  @PostMapping("/api/admin/permission/menu/save")
+  @PostMapping(ApiPaths.Admin.Menu.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MenuSaveQuery query)  {
     Menu data = new Menu();
 

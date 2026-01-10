@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.Staff;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -52,7 +53,7 @@ public class StaffController {
   @Autowired
   private StaffMapper staffMapper;
 
-  @PostMapping("/api/staff/list")
+  @PostMapping(ApiPaths.Common.Staff.LIST)
   public RestBean<List<Staff>> list(@RequestBody StaffListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Staff> page = new Page<>(query.getPage(), query.getPageSize());
@@ -70,7 +71,7 @@ public class StaffController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/staff/detail")
+  @GetMapping(ApiPaths.Common.Staff.DETAIL)
   public RestBean<Staff> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Staff> queryWrapper = new QueryWrapper<>();
@@ -82,7 +83,7 @@ public class StaffController {
   }
   @SaCheckLogin
   @CheckPermission(code = "staff.remove")
-  @DeleteMapping("/api/admin/staff/remove")
+  @DeleteMapping(ApiPaths.Admin.Staff.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -92,7 +93,7 @@ public class StaffController {
   }
   @SaCheckLogin
   @CheckPermission(code = "staff.save")
-  @PostMapping("/api/admin/staff/save")
+  @PostMapping(ApiPaths.Admin.Staff.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated StaffSaveQuery query)  {
     Staff data = new Staff();
 

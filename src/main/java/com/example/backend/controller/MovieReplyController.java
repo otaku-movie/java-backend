@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.MovieReply;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.CommentEnumType;
@@ -61,7 +62,7 @@ public class MovieReplyController {
   @Resource
   RedisTemplate redisTemplate;
 
-  @PostMapping("/api/movie/reply/list")
+  @PostMapping(ApiPaths.Common.Reply.LIST)
   public RestBean<List<MovieReplyResponse>> list(@RequestBody MovieReplyListQuery query)  {
     Page<MovieReply> page = new Page<>(query.getPage(), query.getPageSize());
 
@@ -81,7 +82,7 @@ public class MovieReplyController {
     return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/movie/reply/detail")
+  @GetMapping(ApiPaths.Common.Reply.DETAIL)
   public RestBean<Object> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<MovieReply> queryWrapper = new QueryWrapper<>();
@@ -99,7 +100,7 @@ public class MovieReplyController {
   }
   @SaCheckLogin
   @CheckPermission(code = "reply.remove")
-  @DeleteMapping("/api/movie/reply/remove")
+  @DeleteMapping(ApiPaths.Common.Reply.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -109,7 +110,7 @@ public class MovieReplyController {
   }
 
   @SaCheckLogin
-  @PostMapping("/api/movie/reply/save")
+  @PostMapping(ApiPaths.Common.Reply.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MovieReplySaveQuery query) {
     MovieReply data = new MovieReply();
 
@@ -143,7 +144,7 @@ public class MovieReplyController {
     }
   }
   @SaCheckLogin
-  @PostMapping("/api/movie/reply/like")
+  @PostMapping(ApiPaths.Common.Reply.LIKE)
   public RestBean<Boolean> like(@RequestBody MovieCommentActionQuery query) {
     Boolean result = movieCommentService.toggleAction(
       CommentEnumType.reply.getCode(),
@@ -153,7 +154,7 @@ public class MovieReplyController {
     return RestBean.success(result, MessageUtils.getMessage("success.action"));
   }
   @SaCheckLogin
-  @PostMapping("/api/movie/reply/dislike")
+  @PostMapping(ApiPaths.Common.Reply.DISLIKE)
   public RestBean<Boolean> dislike(@RequestBody MovieCommentActionQuery query) {
     Boolean result = movieCommentService.toggleAction(
       CommentEnumType.reply.getCode(),

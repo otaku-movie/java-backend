@@ -2,6 +2,8 @@ package com.example.backend.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
@@ -59,7 +61,7 @@ public class MovieController {
   @Autowired
   private SpecMapper specMapper;
 
-  @PostMapping("/api/movie/list")
+  @PostMapping(ApiPaths.Common.Movie.LIST)
   public RestBean<List<MovieResponse>> list(@RequestBody MovieListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.orderByAsc("update_time");
@@ -83,17 +85,17 @@ public class MovieController {
 
     return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/movie/spec")
+  @GetMapping(ApiPaths.Common.Movie.SPEC)
   public RestBean<List<CinemaSpec>> spec()  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
     List<CinemaSpec> list = specMapper.selectList(wrapper);
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Common.Movie.GET_SUCCESS));
   }
-  @GetMapping("/api/movie/detail")
+  @GetMapping(ApiPaths.Common.Movie.DETAIL)
   public RestBean<MovieResponse> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.PARAMETER));
 
     MovieResponse result = movieMapper.movieDetail(id);
     MovieResponse data = movieMapper.getMovieRate(id);
@@ -115,7 +117,7 @@ public class MovieController {
     result.setTheaterCount(movieMapper.getAllTheaterCount(result.getId()));
 
 
-    return RestBean.success(result, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Common.Movie.GET_SUCCESS));
   }
   public void insertSpec (Integer movieId, List<Integer> specData) {
     QueryWrapper deleteWrapper = new QueryWrapper<>();
@@ -131,25 +133,25 @@ public class MovieController {
   @SaCheckLogin
   @CheckPermission(code = "movie.save")
   @Transactional
-  @PostMapping("/api/admin/movie/save")
+  @PostMapping(ApiPaths.Admin.Movie.SAVE)
   public RestBean<Object> save(@RequestBody  @Validated() SaveMovieQuery query)  {
     return movieService.save(query);
   }
-  @GetMapping("/api/movie/staff")
+  @GetMapping(ApiPaths.Common.Movie.STAFF)
   public RestBean<List<MovieStaffResponse>> staff(@RequestParam Integer id)  {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.PARAMETER));
 
     List<MovieStaffResponse> result = movieMapper.movieStaffList(id);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Common.Movie.GET_SUCCESS));
   }
-  @GetMapping("/api/movie/character")
+  @GetMapping(ApiPaths.Common.Movie.CHARACTER)
   public RestBean<List<MovieStaffResponse>> character(@RequestParam Integer id)  {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.PARAMETER));
 
     List<MovieStaffResponse> result = movieMapper.movieCharacterList(id);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Common.Movie.GET_SUCCESS));
   }
   
   /**
@@ -157,24 +159,24 @@ public class MovieController {
    * @param movieId 电影ID
    * @return 电影版本列表
    */
-  @GetMapping("/api/movie/version/list")
+  @GetMapping(ApiPaths.Common.Movie.VERSION_LIST)
   public RestBean<List<MovieVersionResponse>> versionList(@RequestParam Integer movieId) {
-    if(movieId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(movieId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.PARAMETER));
     
     List<MovieVersionResponse> result = movieVersionService.getMovieVersions(movieId);
     
-    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Common.Movie.GET_SUCCESS));
   }
   
   @SaCheckLogin
   @CheckPermission(code = "movie.remove")
   @Transactional
-  @DeleteMapping("/api/admin/movie/remove")
+  @DeleteMapping(ApiPaths.Admin.Movie.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.PARAMETER));
 
     movieMapper.deleteById(id);
 
-    return RestBean.success(null, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
 }

@@ -7,6 +7,7 @@ import cn.hutool.extra.qrcode.QrConfig;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.MovieOrder;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.OrderState;
@@ -55,14 +56,14 @@ public class MovieOrderController {
 
 
   @SaCheckLogin
-  @PostMapping("/api/movieOrder/create")
+  @PostMapping(ApiPaths.Common.Order.CREATE)
   public RestBean<MovieOrder> createOrder(@RequestBody @Validated MovieOrderSaveQuery query) throws Exception {
     MovieOrder order = movieOrderService.createOrder(query);
 
     return RestBean.success(order, MessageUtils.getMessage("success.save"));
   }
 //  @SaCheckLogin
-  @GetMapping("/api/movieOrder/detail")
+  @GetMapping(ApiPaths.Common.Order.DETAIL)
   public RestBean<OrderListResponse> OrderDetail( @RequestParam("id") Integer id) {
     OrderListResponse order = movieOrderMapper.orderDetail(id);
     
@@ -75,7 +76,7 @@ public class MovieOrderController {
 
     return RestBean.success(order, MessageUtils.getMessage("success.get"));
   }
-  @PostMapping("/api/admin/movieOrder/list")
+  @PostMapping(ApiPaths.Admin.Order.LIST)
   public RestBean<List<OrderListResponse>> orderList(@RequestBody MovieOrderListQuery query) {
     // 初始化分页对象
     Page<OrderListResponse> page = new Page<>(query.getPage(), query.getPageSize());
@@ -100,24 +101,17 @@ public class MovieOrderController {
     // 返回分页结果
     return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
-//  @SaCheckLogin
-//  @CheckPermission(code ="movieOrder.updateOrderState")
-//  @PostMapping("/api/admin/movieOrder/updateOrderState")
-//  public RestBean<Null> updateOrderState(@RequestBody UpdateOrderStateQuery query) {
-//    movieOrderService.updateOrderState(query);
-//
-//    return RestBean.success(null, MessageUtils.getMessage("success.save"));
-//  }
+
   @SaCheckLogin
   @CheckPermission(code ="movieOrder.remove")
-  @DeleteMapping("/api/admin/movieOrder/remove")
+  @DeleteMapping(ApiPaths.Admin.Order.REMOVE)
   public RestBean<Null> removeOrder(@RequestParam("id") Integer id) {
     movieOrderMapper.deleteById(id);
 
     return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
   @SaCheckLogin
-  @PostMapping("/api/movieOrder/pay")
+  @PostMapping(ApiPaths.Common.Order.PAY)
   public RestBean<Null> pay(@RequestBody MovieOrderPayQuery query) {
     MovieOrder movieOrder =  movieOrderMapper.selectById(query.getOrderId());
 
@@ -130,40 +124,8 @@ public class MovieOrderController {
     }
   }
 
-  /**
-   * 信用卡支付接口
-   */
   @SaCheckLogin
-  @PostMapping("/movieOrder/pay")
-  public RestBean<Null> payCreditCard(@RequestBody @Validated CreditCardPayQuery query) {
-    try {
-      MovieOrder movieOrder = movieOrderMapper.selectById(query.getOrderId());
-      
-      if (movieOrder == null) {
-        return RestBean.error(ResponseCode.ERROR.getCode(), "订单不存在");
-      }
-
-      if (movieOrder.getOrderState() != OrderState.order_created.getCode()) {
-        return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage("error.order.payError"));
-      }
-
-      // 处理信用卡支付
-      boolean paymentResult = paymentService.processCreditCardPayment(query);
-      
-      if (paymentResult) {
-        // 支付成功，更新订单状态
-        movieOrderService.pay(query.getOrderId(), null);
-        return RestBean.success(null, "支付成功");
-      } else {
-        return RestBean.error(ResponseCode.ERROR.getCode(), "支付失败");
-      }
-    } catch (Exception e) {
-      return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
-    }
-  }
-
-  @SaCheckLogin
-  @PostMapping("/api/movieOrder/cancel")
+  @PostMapping(ApiPaths.Common.Order.CANCEL)
   public RestBean<Null> cancelOrder(@RequestBody @Validated CancelOrderQuery query) {
     try {
       movieOrderService.updateCancelOrTimeoutOrder(query.getOrderId(), "cancel");
@@ -173,7 +135,7 @@ public class MovieOrderController {
     }
   }
   @SaCheckLogin
-  @PostMapping("/api/movieOrder/timeout")
+  @PostMapping(ApiPaths.Common.Order.TIMEOUT)
   public RestBean<Null> timeoutOrder(@RequestBody @Validated CancelOrderQuery query) {
     try {
       movieOrderService.updateCancelOrTimeoutOrder(query.getOrderId(), "timeout");
@@ -184,13 +146,13 @@ public class MovieOrderController {
   }
 
   @SaCheckLogin
-  @PostMapping("/api/movieOrder/myTickets")
+  @PostMapping(ApiPaths.Common.Order.MY_TICKETS)
   public RestBean<List<MyTicketsResponse>> getMyTickets(@RequestBody @Validated MyTicketsQuery query) {
     IPage<MyTicketsResponse> result = movieOrderService.getMyTicketsPage(query);
     
     return RestBean.success(result.getRecords(), query.getPage(), result.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/movieOrder/generatorQRcode")
+  @GetMapping(ApiPaths.Common.Order.GENERATOR_QR_CODE)
   public ResponseEntity<ByteArrayResource> generatorQRcode() {
     QrConfig config = new QrConfig(300, 300);
     QrCodeUtil.generate("https://www.google.com/", config);

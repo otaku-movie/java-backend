@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.User;
 import com.example.backend.enumerate.RedisType;
@@ -78,7 +80,7 @@ public class UserController {
   @Resource
   RedisTemplate redisTemplate;
 
-  @PostMapping("/api/user/login")
+  @PostMapping(ApiPaths.Common.User.LOGIN)
   public RestBean<LoginResponse> login(@RequestBody @Validated UserLoginQuery query) {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("email", query.getEmail());
@@ -98,12 +100,12 @@ public class UserController {
       loginResponse.setCover(result.getCover());
       loginResponse.setToken(StpUtil.getTokenValue());
 
-      return RestBean.success( loginResponse, messageUtils.getMessage("success.login"));
+      return RestBean.success( loginResponse, messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS));
     } else  {
-      return RestBean.error(ResponseCode.ERROR.getCode(), messageUtils.getMessage("error.userNotFound"));
+      return RestBean.error(ResponseCode.ERROR.getCode(), messageUtils.getMessage(MessageKeys.Common.User.NOT_FOUND));
     }
   }
-  @PostMapping("/api/user/updateUserInfo")
+  @PostMapping(ApiPaths.Common.User.UPDATE_INFO)
   public RestBean<Null> updateUserInfo(@RequestBody @Validated UpdateUserInfoQuery query){
     User modal = new User();
 
@@ -113,10 +115,10 @@ public class UserController {
 
     userMapper.updateById(modal);
 
-    return  RestBean.success(null, messageUtils.getMessage("success.save"));
+    return  RestBean.success(null, messageUtils.getMessage(MessageKeys.Success.SAVE));
   }
 
-  @PostMapping("/api/user/register")
+  @PostMapping(ApiPaths.Common.User.REGISTER)
   public RestBean<LoginResponse> save(@RequestBody @Validated UserSaveQuery query) {
     User user = new User();
 
@@ -134,12 +136,12 @@ public class UserController {
     if (code == null) {
       return RestBean.error(
         ResponseCode.ERROR.getCode(),
-        MessageUtils.getMessage("validator.saveUser.code.expired")
+        MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_EXPIRED)
       );
     } else if (code != null && code != query.getCode()) {
       return RestBean.error(
         ResponseCode.ERROR.getCode(),
-        MessageUtils.getMessage("validator.saveUser.code.error")
+        MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_ERROR)
       );
     }
     // 验证邮箱是否已经注册过
@@ -167,15 +169,15 @@ public class UserController {
         loginResponse.setCover(result.getCover());
         loginResponse.setToken(StpUtil.getTokenValue());
 
-        return RestBean.success(loginResponse, messageUtils.getMessage("success.login"));
+        return RestBean.success(loginResponse, messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS));
       }
     } else {
-      return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage("error.emailRepeat"));
+      return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Error.EMAIL_REPEAT));
     }
     return null;
   }
   @SaCheckLogin
-  @GetMapping("/api/user/detail")
+  @GetMapping(ApiPaths.Common.User.DETAIL)
   public RestBean<Object> detail () {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     int userId = StpUtil.getLoginIdAsInt();
@@ -185,10 +187,10 @@ public class UserController {
     UserDetail userDetail = new UserDetail();
     BeanUtils.copyProperties(result, userDetail);  // 直接复制属性
     userDetail.setOrderCount(userMapper.countDistinctMovieOrders(userId));
-    return RestBean.success(userDetail, messageUtils.getMessage("success.get"));
+    return RestBean.success(userDetail, messageUtils.getMessage(MessageKeys.Success.GET));
   }
   @SaCheckLogin
-  @PostMapping("/api/user/orderList")
+  @PostMapping(ApiPaths.Common.User.ORDER_LIST)
   public RestBean<List<OrderListResponse>> orderList(@RequestBody PaginationQuery query) {
     Page<OrderListResponse> page = new Page<>(query.getPage(), query.getPageSize());
     int userId = StpUtil.getLoginIdAsInt();
@@ -197,9 +199,9 @@ public class UserController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @PostMapping("/api/user/logout")
+  @PostMapping(ApiPaths.Common.User.LOGOUT)
   public RestBean<Null> logout() {
     StpUtil.logout(StpUtil.getLoginId());
-    return RestBean.success(null, MessageUtils.getMessage("success.logout"));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Common.User.LOGOUT_SUCCESS));
   }
 }

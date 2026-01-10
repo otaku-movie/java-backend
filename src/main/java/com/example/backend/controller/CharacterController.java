@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CharacterMapper;
@@ -25,7 +26,7 @@ public class CharacterController {
   @Autowired
   private StaffCharacterService staffCharacterService;
 
-  @PostMapping("/api/character/list")
+  @PostMapping(ApiPaths.Common.Character.LIST)
   public RestBean<List<CharacterList>> list(@RequestBody CharacterListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<CharacterList> page = new Page<>(query.getPage(), query.getPageSize());
@@ -40,7 +41,7 @@ public class CharacterController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/character/detail")
+  @GetMapping(ApiPaths.Common.Character.DETAIL)
   public RestBean<CharacterList> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<CharacterList> queryWrapper = new QueryWrapper<>();

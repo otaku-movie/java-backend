@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.MovieShowTimeTag;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -47,7 +48,7 @@ public class MovieShowTimeTagController {
   @Autowired
   private MovieShowTimeTagMapper showTimeTagMapper;
 
-  @PostMapping("/api/showTimeTag/list")
+  @PostMapping(ApiPaths.Common.ShowTimeTag.LIST)
   public RestBean<List<MovieShowTimeTag>> list(@RequestBody MovieShowTimeTagListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<MovieShowTimeTag> page = new Page<>(query.getPage(), query.getPageSize());
@@ -65,7 +66,7 @@ public class MovieShowTimeTagController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/showTimeTag/detail")
+  @GetMapping(ApiPaths.Common.ShowTimeTag.DETAIL)
   public RestBean<MovieShowTimeTag> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<MovieShowTimeTag> queryWrapper = new QueryWrapper<>();
@@ -77,7 +78,7 @@ public class MovieShowTimeTagController {
   }
   @SaCheckLogin
   @CheckPermission(code = "showTimeTag.remove")
-  @DeleteMapping("/api/admin/showTimeTag/remove")
+  @DeleteMapping(ApiPaths.Admin.ShowTimeTag.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -87,7 +88,7 @@ public class MovieShowTimeTagController {
   }
   @SaCheckLogin
   @CheckPermission(code = "showTimeTag.save")
-  @PostMapping("/api/admin/showTimeTag/save")
+  @PostMapping(ApiPaths.Admin.ShowTimeTag.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MovieShowTimeTagSaveQuery query) {
     MovieShowTimeTag data = new MovieShowTimeTag();
     data.setName(query.getName());

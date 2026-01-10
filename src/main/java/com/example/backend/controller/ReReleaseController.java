@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.CommentEnumType;
 import com.example.backend.enumerate.ResponseCode;
@@ -58,7 +59,7 @@ public class ReReleaseController {
   @Resource
   RedisTemplate redisTemplate;
 
-  @PostMapping("/api/movie/reRelease/list")
+  @PostMapping(ApiPaths.Common.ReRelease.LIST)
   public RestBean<List<ReReleaseListResponse>> list(@RequestBody @Validated MovieListQuery query)  {
     Page<ReRelease> page = new Page<>(query.getPage(), query.getPageSize());
 
@@ -66,13 +67,13 @@ public class ReReleaseController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/movie/reRelease/detail")
+  @GetMapping(ApiPaths.Common.ReRelease.DETAIL)
   public RestBean<CommentDetail> detail (@RequestParam("id") Integer id) {
 
     return null;
   }
   @SaCheckLogin
-  @DeleteMapping("/api/movie/reRelease/remove")
+  @DeleteMapping(ApiPaths.Common.ReRelease.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
 
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
@@ -83,7 +84,7 @@ public class ReReleaseController {
   }
 
   @SaCheckLogin
-  @PostMapping("/api/admin/movie/reRelease/save")
+  @PostMapping(ApiPaths.Admin.Movie.RE_RELEASE_SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated ReReleaseSaveQuery query) {
     if (query.getId() == null) {
       ReRelease modal = new ReRelease();

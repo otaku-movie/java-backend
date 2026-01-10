@@ -3,6 +3,8 @@ package com.example.backend.controller.app;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.constants.ApiPaths;
+import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.HelloMovie;
 import com.example.backend.entity.Movie;
 import com.example.backend.entity.MovieShowTime;
@@ -41,7 +43,7 @@ public class AppMovieController {
   @Autowired
   private MovieMapper movieMapper;
 
-  @GetMapping("/api/app/movie/nowShowing")
+  @GetMapping(ApiPaths.App.Movie.NOW_SHOWING)
   public RestBean<List<NowMovieShowingResponse>> list(
     @ModelAttribute AppMovieListQuery query
   )  {
@@ -74,16 +76,16 @@ public class AppMovieController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/app/movie/staff")
+  @GetMapping(ApiPaths.App.Movie.STAFF)
   public RestBean<List<AppMovieStaffResponse>> getMovieStaff(
     @ModelAttribute getMovieStaffQuery query
   )  {
     List<AppMovieStaffResponse> list = movieMapper.appMovieStaff(query.getMovieId());
 
-    return RestBean.success(list, MessageUtils.getMessage("success.get"));
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
   }
 
-  @GetMapping("/api/app/movie/comingSoon")
+  @GetMapping(ApiPaths.App.Movie.COMING_SOON)
   public RestBean<List<MovieComingSoonResponse>> getComingSoon (@ModelAttribute AppMovieListQuery query) {
     Page<MovieMapper> page = new Page<>(query.getPage(), query.getPageSize());
 
@@ -92,7 +94,7 @@ public class AppMovieController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 //  获取电影的上映场次
-  @PostMapping("/api/app/movie/showTime")
+  @PostMapping(ApiPaths.App.Movie.SHOW_TIME)
   public RestBean<Object> showTime (@RequestBody getMovieShowTimeQuery query) {
     Page<MovieShowTimeMapper> page = new Page<>(query.getPage(), query.getPageSize());
 
@@ -171,7 +173,7 @@ public class AppMovieController {
 
       return  t1Format.compareTo(t2Format);
     }).toList();
-    return RestBean.success(sorted, MessageUtils.getMessage("success.get"));
+    return RestBean.success(sorted, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
   }
 
 }

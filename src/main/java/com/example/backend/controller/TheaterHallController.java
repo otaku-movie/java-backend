@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.CinemaMapper;
@@ -47,7 +48,7 @@ public class TheaterHallController {
   private SelectSeatMapper selectSeatMapper;
 
 
-  @PostMapping("/api/theater/hall/list")
+  @PostMapping(ApiPaths.Common.TheaterHall.LIST)
   public RestBean<List<TheaterHallList>> list(@RequestBody TheaterHallQuery query)  {
     Page<TheaterHall> page = new Page<>(query.getPage(), query.getPageSize());
 
@@ -55,15 +56,15 @@ public class TheaterHallController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/theater/hall/detail")
+  @GetMapping(ApiPaths.Common.TheaterHall.DETAIL)
   public RestBean<TheaterHall> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
     TheaterHall result = theaterHallMapper.selectById(id);
 
-    return RestBean.success(result, MessageUtils.getMessage("success.remove"));
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/theater/hall/seat/detail")
+  @GetMapping(ApiPaths.Common.TheaterHall.SEAT_DETAIL)
   public RestBean<Object> seatList(@RequestParam Integer theaterHallId) {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("theater_hall_id", theaterHallId);
@@ -76,7 +77,7 @@ public class TheaterHallController {
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.saveSeatConfig")
   @Transactional
-  @PostMapping("/api/theater/hall/seat/save")
+  @PostMapping(ApiPaths.Common.TheaterHall.SEAT_SAVE)
   public RestBean<String> saveSeat(@RequestBody SaveSeatQuery query) {
 
     seatService.saveSeat(query);
@@ -109,7 +110,7 @@ public class TheaterHallController {
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.save")
   @Transactional
-  @PostMapping("/api/admin/theater/hall/save")
+  @PostMapping(ApiPaths.Admin.TheaterHall.SAVE)
   public RestBean<String> save(@RequestBody @Validated() TheaterHallSaveQuery query) {
     String message = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.theaterHallName"));
     TheaterHall modal = new TheaterHall();
@@ -161,7 +162,7 @@ public class TheaterHallController {
   }
   @SaCheckLogin
   @CheckPermission(code = "theaterHall.remove")
-  @DeleteMapping("/api/admin/theater/hall/remove")
+  @DeleteMapping(ApiPaths.Admin.TheaterHall.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     QueryWrapper queryWrapper = new QueryWrapper<>();
 

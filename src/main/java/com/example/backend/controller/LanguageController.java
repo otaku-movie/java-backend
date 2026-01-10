@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.Language;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -49,7 +50,7 @@ public class LanguageController {
   @Autowired
   private LanguageMapper languageMapper;
 
-  @PostMapping("/api/language/list")
+  @PostMapping(ApiPaths.Common.Language.LIST)
   public RestBean<List<Language>> list(@RequestBody LanguageListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Language> page = new Page<>(query.getPage(), query.getPageSize());
@@ -67,7 +68,7 @@ public class LanguageController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/language/detail")
+  @GetMapping(ApiPaths.Common.Language.DETAIL)
   public RestBean<Language> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Language> queryWrapper = new QueryWrapper<>();
@@ -79,7 +80,7 @@ public class LanguageController {
   }
   @SaCheckLogin
   @CheckPermission(code = "language.remove")
-  @DeleteMapping("/api/admin/language/remove")
+  @DeleteMapping(ApiPaths.Admin.Language.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -89,7 +90,7 @@ public class LanguageController {
   }
   @SaCheckLogin
   @CheckPermission(code = "language.save")
-  @PostMapping("/api/admin/language/save")
+  @PostMapping(ApiPaths.Admin.Language.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated LanguageSaveQuery query) {
     Language data = new Language();
     data.setName(query.getName());

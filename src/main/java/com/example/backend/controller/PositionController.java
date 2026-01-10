@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Position;
 import com.example.backend.enumerate.ResponseCode;
@@ -51,7 +52,7 @@ public class PositionController {
   @Autowired
   private PositionMapper positionMapper;
 
-  @PostMapping("/api/position/list")
+  @PostMapping(ApiPaths.Common.Position.LIST)
   public RestBean<List<Position>> list(@RequestBody PositionListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<Position> page = new Page<>(query.getPage(), query.getPageSize());
@@ -69,7 +70,7 @@ public class PositionController {
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
 
-  @GetMapping("/api/position/detail")
+  @GetMapping(ApiPaths.Common.Position.DETAIL)
   public RestBean<Position> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Position> queryWrapper = new QueryWrapper<>();
@@ -81,7 +82,7 @@ public class PositionController {
   }
   @SaCheckLogin
   @CheckPermission(code = "position.remove")
-  @DeleteMapping("/api/admin/position/remove")
+  @DeleteMapping(ApiPaths.Admin.Position.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -91,7 +92,7 @@ public class PositionController {
   }
   @SaCheckLogin
   @CheckPermission(code = "position.save")
-  @PostMapping("/api/admin/position/save")
+  @PostMapping(ApiPaths.Admin.Position.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated PositionSaveQuery query) {
     Position data = new Position();
     data.setName(query.getName());

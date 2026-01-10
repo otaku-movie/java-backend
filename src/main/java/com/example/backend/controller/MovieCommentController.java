@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.MovieComment;
 import com.example.backend.entity.MovieRate;
 import com.example.backend.entity.MovieReply;
@@ -82,7 +83,7 @@ public class MovieCommentController {
   @Resource
   RedisTemplate redisTemplate;
 
-  @PostMapping("/api/movie/comment/list")
+  @PostMapping(ApiPaths.Common.Comment.LIST)
   public RestBean<List<CommentDetail>> list(@RequestBody @Validated MovieCommentListQuery query)  {
     Page<MovieComment> page = new Page<>(query.getPage(), query.getPageSize());
     Page<MovieReply> replyPage = new Page<>(1, 3);
@@ -108,7 +109,7 @@ public class MovieCommentController {
 
     return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/movie/comment/detail")
+  @GetMapping(ApiPaths.Common.Comment.DETAIL)
   public RestBean<CommentDetail> detail (@RequestParam("id") Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -124,7 +125,7 @@ public class MovieCommentController {
   }
   @SaCheckLogin
   @CheckPermission(code = "comment.remove")
-  @DeleteMapping("/api/movie/comment/remove")
+  @DeleteMapping(ApiPaths.Common.Comment.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -135,7 +136,7 @@ public class MovieCommentController {
 
   @SaCheckLogin
   @Transactional
-  @PostMapping("/api/movie/comment/save")
+  @PostMapping(ApiPaths.Common.Comment.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MovieCommentSaveQuery query) {
     MovieComment data = new MovieComment();
     MovieRate movieRate = new MovieRate();
@@ -173,7 +174,7 @@ public class MovieCommentController {
     }
   }
   @SaCheckLogin
-  @PostMapping("/api/movie/comment/like")
+  @PostMapping(ApiPaths.Common.Comment.LIKE)
   public RestBean<Boolean> like(@RequestBody MovieCommentActionQuery query) {
     Boolean result = movieCommentService.toggleAction(
       CommentEnumType.comment.getCode(),
@@ -183,7 +184,7 @@ public class MovieCommentController {
     return RestBean.success(result, MessageUtils.getMessage("success.action"));
   }
   @SaCheckLogin
-  @PostMapping("/api/movie/comment/dislike")
+  @PostMapping(ApiPaths.Common.Comment.DISLIKE)
   public RestBean<Boolean> dislike(@RequestBody MovieCommentActionQuery query) {
     Boolean result = movieCommentService.toggleAction(
       CommentEnumType.comment.getCode(),
@@ -192,7 +193,7 @@ public class MovieCommentController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.action"));
   }
-  @PostMapping("/api/movie/comment/syncLikeAndDislikeToDatabase")
+  @PostMapping(ApiPaths.Common.Comment.SYNC_LIKE_DISLIKE)
   public RestBean<Null> syncLikeAndDislikeToDatabase() {
     movieCommentService.syncCommentLikeAndDislike();
 

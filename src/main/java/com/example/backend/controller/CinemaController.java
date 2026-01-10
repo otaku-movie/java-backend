@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.CinemaSpecSpec;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Cinema;
@@ -90,7 +91,7 @@ public class CinemaController {
   @Autowired
   private CinemaSpecSpecService cinemaSpecSpecService;
 
-  @PostMapping("/api/cinema/list")
+  @PostMapping(ApiPaths.Common.Cinema.LIST)
   public RestBean<List<CinemaResponse>> list(@RequestBody CinemaListQuery query)  {
     Page<CinemaResponse> page = new Page<>(query.getPage(), query.getPageSize());
 
@@ -109,7 +110,7 @@ public class CinemaController {
 
     return RestBean.success(result, query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/cinema/detail")
+  @GetMapping(ApiPaths.Common.Cinema.DETAIL)
   public RestBean<CinemaResponse> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -123,7 +124,7 @@ public class CinemaController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
-  @PostMapping("/api/app/cinema/movie/showTime")
+  @PostMapping(ApiPaths.App.Cinema.MOVIE_SHOW_TIME)
   public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
     GetCinemaMovieShowTimeListResponse list = cinemaMapper.getCinemaMovieShowTimeList(query, ShowTimeState.no_started.getCode());
 
@@ -150,7 +151,7 @@ public class CinemaController {
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/cinema/screening")
+  @GetMapping(ApiPaths.Common.Cinema.SCREENING)
   public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -202,7 +203,7 @@ public class CinemaController {
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
   // 获取影院上映中的电影
-  @GetMapping("/api/cinema/movieShowing")
+  @GetMapping(ApiPaths.Common.Cinema.MOVIE_SHOWING)
   public RestBean<Object> GetMovieShowing(@RequestParam("id") Integer id) {
     List<MovieShowingResponse> result = cinemaMapper.getMovieShowing(id);
 
@@ -257,7 +258,7 @@ public class CinemaController {
   @SaCheckLogin
   @CheckPermission(code = "cinema.save")
   @Transactional
-  @PostMapping("/api/admin/cinema/save")
+  @PostMapping(ApiPaths.Admin.Cinema.SAVE)
   public RestBean<String> save(@RequestBody @Validated() SaveCinemaQuery query) {
     if (query.getId() == null) {
       QueryWrapper wrapper = new QueryWrapper<>();
@@ -294,7 +295,7 @@ public class CinemaController {
   }
   @SaCheckLogin
   @CheckPermission(code = "cinema.remove")
-  @DeleteMapping("/api/admin/cinema/remove")
+  @DeleteMapping(ApiPaths.Admin.Cinema.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -302,7 +303,7 @@ public class CinemaController {
 
     return RestBean.success(null, MessageUtils.getMessage("success.remove"));
   }
-  @GetMapping("/api/cinema/spec")
+  @GetMapping(ApiPaths.Common.Cinema.SPEC)
   public RestBean<List<com.example.backend.response.Spec>> cinemaSpec (@RequestParam Integer cinemaId) {
       if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 

@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.CreditCard;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/creditCard")
 public class CreditCardController {
 
     @Autowired
@@ -30,7 +30,7 @@ public class CreditCardController {
      * 获取用户信用卡列表
      */
     @SaCheckLogin
-    @GetMapping("/list")
+    @GetMapping(ApiPaths.Common.CreditCard.LIST)
     public RestBean<List<CreditCardResponse>> getCreditCardList() {
         try {
             List<CreditCardResponse> creditCards = creditCardService.getUserCreditCards();
@@ -44,7 +44,7 @@ public class CreditCardController {
      * 根据ID获取信用卡详情
      */
     @SaCheckLogin
-    @GetMapping("/detail")
+    @GetMapping(ApiPaths.Common.CreditCard.DETAIL)
     public RestBean<CreditCard> getCreditCardDetail(@RequestParam("id") Integer id) {
         try {
             CreditCard creditCard = creditCardService.getUserCreditCard(id);
@@ -61,7 +61,7 @@ public class CreditCardController {
      * 保存信用卡
      */
     @SaCheckLogin
-    @PostMapping("/save")
+    @PostMapping(ApiPaths.Common.CreditCard.SAVE)
     public RestBean<CreditCardResponse> saveCreditCard(@RequestBody @Validated CreditCardSaveQuery query) {
         try {
             CreditCardResponse creditCard = creditCardService.saveCreditCard(query);
@@ -75,7 +75,7 @@ public class CreditCardController {
      * 更新信用卡信息
      */
     @SaCheckLogin
-    @PostMapping("/update")
+    @PostMapping(ApiPaths.Common.CreditCard.UPDATE)
     public RestBean<Void> updateCreditCard(@RequestBody @Validated CreditCardUpdateQuery query) {
         try {
             creditCardService.updateCreditCard(query);
@@ -89,7 +89,7 @@ public class CreditCardController {
      * 删除信用卡
      */
     @SaCheckLogin
-    @DeleteMapping("/delete")
+    @DeleteMapping(ApiPaths.Common.CreditCard.DELETE)
     public RestBean<Void> deleteCreditCard(@RequestParam("id") Integer id) {
         try {
             creditCardService.deleteCreditCard(id);
@@ -103,7 +103,7 @@ public class CreditCardController {
      * 设置默认信用卡
      */
     @SaCheckLogin
-    @PostMapping("/setDefault")
+    @PostMapping(ApiPaths.Common.CreditCard.SET_DEFAULT)
     public RestBean<Void> setDefaultCard(@RequestBody SetDefaultCardQuery query) {
         try {
             creditCardService.setDefaultCard(query.getId());

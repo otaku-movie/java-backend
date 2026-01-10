@@ -3,6 +3,7 @@ package com.example.backend.controller.scheduledTasks;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.config.Config;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.MovieReleaseState;
 import com.example.backend.enumerate.OrderState;
@@ -66,7 +67,7 @@ public class ScheduledTasksController {
 
 
   // 更新电影上映日期状态 每天
-  @PostMapping("/api/scheduled/updateMovieState")
+  @PostMapping(ApiPaths.Scheduled.UPDATE_MOVIE_STATE)
   @Transactional
   @Scheduled(cron = "0 0 0 * * ?")  // 每天的 00:00 执行
   public RestBean<Object> updateMovieState() {
@@ -129,7 +130,7 @@ public class ScheduledTasksController {
   }
 
   // 更新电影放映状态 每分钟
-  @PostMapping("/api/scheduled/updateMovieScreeningState")
+  @PostMapping(ApiPaths.Scheduled.UPDATE_MOVIE_SCREENING_STATE)
   @Transactional
   @Scheduled(cron = "0 * * * * ?")  // 每分钟执行
   public RestBean<Object> updateMovieScreeningState() {
@@ -180,7 +181,7 @@ public class ScheduledTasksController {
   // 更新订单状态 每分钟 超时设置为已超时
   @Transactional
   @Scheduled(cron = "0 * * * * ?")  // 每分钟执行
-  @PostMapping("/api/scheduled/updateMovieOrderState")
+  @PostMapping(ApiPaths.Scheduled.UPDATE_MOVIE_ORDER_STATE)
   public void updateMovieOrderState() {
     // 实现更新订单状态的逻辑
     System.out.println("Updating movie order state...");

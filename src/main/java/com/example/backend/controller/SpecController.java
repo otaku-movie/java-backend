@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.CinemaSpec;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
@@ -51,7 +52,7 @@ public class SpecController {
   @Autowired
   private SpecMapper specMapper;
 
-  @PostMapping("/api/cinema/spec/list")
+  @PostMapping(ApiPaths.Common.Spec.LIST)
   public RestBean<List<Object>> list(@RequestBody SpecListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.orderByDesc("update_time");
@@ -68,7 +69,7 @@ public class SpecController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
-  @GetMapping("/api/cinema/spec/detail")
+  @GetMapping(ApiPaths.Common.Spec.DETAIL)
   public RestBean<CinemaSpec> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -78,7 +79,7 @@ public class SpecController {
   }
   @SaCheckLogin
   @CheckPermission(code = "spec.save")
-  @PostMapping("/api/admin/cinema/spec/save")
+  @PostMapping(ApiPaths.Admin.Cinema.SPEC_SAVE)
   public RestBean<String> save(@RequestBody @Validated() SaveSpecQuery query) {
     CinemaSpec spec = new CinemaSpec();
 
@@ -121,7 +122,7 @@ public class SpecController {
   }
   @SaCheckLogin
   @CheckPermission(code = "spec.remove")
-  @DeleteMapping("/api/admin/cinema/spec/remove")
+  @DeleteMapping(ApiPaths.Admin.Cinema.SPEC_REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 

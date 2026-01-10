@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.Button;
 import com.example.backend.entity.Menu;
 import com.example.backend.entity.RestBean;
@@ -56,7 +57,7 @@ public class ButtonController {
   @Autowired
   private ButtonMapper buttonMapper;
 
-  @PostMapping("/api/admin/permission/button/list")
+  @PostMapping(ApiPaths.Admin.Button.LIST)
   public RestBean<List<ButtonResponse>> list(@RequestBody ButtonListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
@@ -66,7 +67,7 @@ public class ButtonController {
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/admin/permission/button/detail")
+  @GetMapping(ApiPaths.Admin.Button.DETAIL)
   public RestBean<Button> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<Button> queryWrapper = new QueryWrapper<>();
@@ -78,7 +79,7 @@ public class ButtonController {
   }
   @SaCheckLogin
   @CheckPermission(code = "button.remove")
-  @DeleteMapping("/api/admin/permission/button/remove")
+  @DeleteMapping(ApiPaths.Admin.Button.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -88,7 +89,7 @@ public class ButtonController {
   }
   @SaCheckLogin
   @CheckPermission(code = "button.save")
-  @PostMapping("/api/admin/permission/button/save")
+  @PostMapping(ApiPaths.Admin.Button.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated ButtonSaveQuery query)  {
     Button data = new Button();
 

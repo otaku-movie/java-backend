@@ -26,6 +26,7 @@ import cloud.tianai.captcha.validator.impl.SimpleImageCaptchaValidator;
 import cn.hutool.core.lang.hash.Hash;
 import cn.hutool.extra.mail.MailAccount;
 import cn.hutool.extra.mail.MailUtil;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.RedisType;
 import com.example.backend.utils.MessageUtils;
@@ -70,7 +71,7 @@ public class Verify {
   @Resource
   RedisTemplate redisTemplate;
 
-  @PostMapping("/api/verify/sendCode")
+  @PostMapping(ApiPaths.Verify.SEND_CODE)
   public RestBean<HashMap> sendMail(@RequestBody @Validated SendEmailQuery query) {
     // 使用Hutool发送邮件
     SecureRandom secureRandom = new SecureRandom();
@@ -93,7 +94,7 @@ public class Verify {
 
     return RestBean.success(map, MessageUtils.getMessage("success.send"));
   }
-  @PostMapping("/api/verify/captcha")
+  @PostMapping(ApiPaths.Verify.CAPTCHA)
   public CaptchaResponse<ImageCaptchaVO>  verify () {
     ImageCaptchaApplication application = createImageCaptchaApplication();
     // 生成验证码数据， 可以将该数据直接返回给前端 ， 可配合 tianai-captcha-web-sdk 使用
@@ -110,7 +111,7 @@ public class Verify {
 
     return res;
   }
-  @PostMapping("/api/verify/checkCaptcha")
+  @PostMapping(ApiPaths.Verify.CHECK_CAPTCHA)
   public ApiResponse<?> checkCaptcha(@RequestBody CaptchaData data,
                                      HttpServletRequest request) {
     ApiResponse<?> response = imageCaptchaApplication.matching(data.getId(), data.getData());

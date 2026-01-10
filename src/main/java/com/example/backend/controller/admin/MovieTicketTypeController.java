@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.MovieTicketType;
 import com.example.backend.entity.Menu;
 import com.example.backend.entity.RestBean;
@@ -53,7 +54,7 @@ public class MovieTicketTypeController {
   @Autowired
   private MovieTicketTypeMapper movieTicketTypeMapper;
 
-  @PostMapping("/api/cinema/ticketType/list")
+  @PostMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_LIST)
   public RestBean<List<MovieTicketType>> list(@RequestBody MovieTicketTypeListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     wrapper.eq("cinema_id", query.getCinemaId());
@@ -64,7 +65,7 @@ public class MovieTicketTypeController {
 
     return RestBean.success(list, MessageUtils.getMessage("success.get"));
   }
-  @GetMapping("/api/cinema/ticketType/detail")
+  @GetMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_DETAIL)
   public RestBean<MovieTicketType> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
     QueryWrapper<MovieTicketType> queryWrapper = new QueryWrapper<>();
@@ -76,7 +77,7 @@ public class MovieTicketTypeController {
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTicketType.remove")
-  @DeleteMapping("/api/admin/cinema/ticketType/remove")
+  @DeleteMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -86,7 +87,7 @@ public class MovieTicketTypeController {
   }
   @SaCheckLogin
   @CheckPermission(code = "movieTicketType.save")
-  @PostMapping("/api/admin/cinema/ticketType/save")
+  @PostMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MovieTicketTypeSaveQuery query)  {
     String message = MessageUtils.getMessage("error.repeat", MessageUtils.getMessage("repeat.movieTicketTypeName"));
     MovieTicketType modal = new MovieTicketType();

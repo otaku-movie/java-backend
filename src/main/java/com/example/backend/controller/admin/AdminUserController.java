@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
+import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
@@ -58,7 +59,7 @@ public class AdminUserController {
   @Resource
   RedisTemplate redisTemplate;
 
-  @PostMapping("/api/admin/user/list")
+  @PostMapping(ApiPaths.Admin.User.LIST)
   public RestBean<List<UserListResponse>> list(@RequestBody @Validated  UserListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
     Page<UserListResponse> page = new Page<>(query.getPage(), query.getPageSize());
@@ -70,7 +71,7 @@ public class AdminUserController {
   @SaCheckLogin
   @CheckPermission(code = "user.configRole")
   @Transactional
-  @PostMapping("/api/admin/user/configRole")
+  @PostMapping(ApiPaths.Admin.User.CONFIG_ROLE)
   public RestBean<List<Role>> role (@RequestBody @Validated  UserRoleConfigQuery query) {
     userRoleMapper.deleteRole(query.getId());
     userRoleService.saveBatch(
@@ -87,7 +88,7 @@ public class AdminUserController {
     return RestBean.success(null, MessageUtils.getMessage("success.save"));
   }
   @SaCheckLogin
-  @GetMapping("/api/admin/user/role")
+  @GetMapping(ApiPaths.Admin.User.ROLE)
   public RestBean<List<Role>> role (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -98,7 +99,7 @@ public class AdminUserController {
   @SaCheckLogin
   @CheckPermission(code = "user.remove")
   @Transactional
-  @DeleteMapping("/api/admin/user/remove")
+  @DeleteMapping(ApiPaths.Admin.User.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
 
@@ -118,7 +119,7 @@ public class AdminUserController {
   }
   @SaCheckLogin
   @CheckPermission(code = "user.save")
-  @PostMapping("/api/admin/user/save")
+  @PostMapping(ApiPaths.Admin.User.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated UserSaveQuery query)  {
     User user = new User();
 
