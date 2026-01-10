@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.entity.*;
 import com.example.backend.entity.Character;
+import com.example.backend.enumerate.DubbingVersionEnum;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.SaveMovieQuery;
@@ -43,6 +44,15 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
 
   @Autowired
   private  MovieCharacterService movieCharacterService;
+
+  @Autowired
+  private MovieVersionService movieVersionService;
+  
+  @Autowired
+  private MovieVersionCharacterMapper movieVersionCharacterMapper;
+  
+  @Autowired
+  private MovieVersionCharacterStaffMapper movieVersionCharacterStaffMapper;
 
   @Autowired
   private HelloMovieService helloMovieService;
@@ -96,21 +106,102 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
           .collect(Collectors.toList())
       );
     }
-    if (query.getCharacterList() != null) {
-      movieCharacterMapper.deleteCharacter(movieId);
-
-      movieCharacterService.saveBatch(
-        query.getCharacterList().stream()
-          .map(item -> {
-            MovieCharacter data = new MovieCharacter();
-            data.setMovieId(movieId);
-            data.setCharacterId(item.getCharacterId());
-
-            return data;
-          })
-          .collect(Collectors.toList())
-      );
+    
+    // 保存电影版本信息（新结构）
+    if (query.getVersions() != null && !query.getVersions().isEmpty()) {
+      query.getVersions().forEach(versionQuery -> {
+        MovieVersion movieVersion;
+        
+        if (versionQuery.getId() != null) {
+          // 更新现有版本
+          movieVersion = movieVersionService.getById(versionQuery.getId());
+          if (movieVersion != null) {
+            movieVersion.setDubbingVersionId(versionQuery.getDubbingVersionId());
+            movieVersion.setStartDate(versionQuery.getStartDate());
+            movieVersion.setEndDate(versionQuery.getEndDate());
+            movieVersion.setLanguageId(versionQuery.getLanguageId());
+            movieVersionService.updateById(movieVersion);
+          }
+        } else {
+          // 创建新版本
+          movieVersion = new MovieVersion();
+          movieVersion.setMovieId(movieId);
+          movieVersion.setDubbingVersionId(versionQuery.getDubbingVersionId());
+          movieVersion.setStartDate(versionQuery.getStartDate());
+          movieVersion.setEndDate(versionQuery.getEndDate());
+          movieVersion.setLanguageId(versionQuery.getLanguageId());
+          movieVersionService.save(movieVersion);
+        }
+        
+        Integer versionId = movieVersion.getId();
+        
+        // 删除该版本的旧角色关联
+        QueryWrapper<MovieVersionCharacter> deleteCharWrapper = new QueryWrapper<>();
+        deleteCharWrapper.eq("movie_version_id", versionId);
+        movieVersionCharacterMapper.delete(deleteCharWrapper);
+        
+        // 删除该版本的旧演员关联
+        QueryWrapper<MovieVersionCharacterStaff> deleteStaffWrapper = new QueryWrapper<>();
+        deleteStaffWrapper.eq("movie_version_id", versionId);
+        movieVersionCharacterStaffMapper.delete(deleteStaffWrapper);
+        
+        // 保存角色和演员关联
+        if (versionQuery.getCharacters() != null) {
+          versionQuery.getCharacters().forEach(character -> {
+            // 保存版本-角色关联
+            MovieVersionCharacter mvc = new MovieVersionCharacter();
+            mvc.setMovieVersionId(versionId);
+            mvc.setCharacterId(character.getId());
+            movieVersionCharacterMapper.insert(mvc);
+            
+            // 保存角色-演员关联
+            if (character.getStaffIds() != null) {
+              character.getStaffIds().forEach(staffId -> {
+                MovieVersionCharacterStaff mvcs = new MovieVersionCharacterStaff();
+                mvcs.setMovieVersionId(versionId);
+                mvcs.setCharacterId(character.getId());
+                mvcs.setStaffId(staffId);
+                movieVersionCharacterStaffMapper.insert(mvcs);
+              });
+            }
+          });
+        }
+      });
     }
+    
+    // 向后兼容：保存旧的 characterList 到默认版本（如果 versions 为空）
+    if ((query.getVersions() == null || query.getVersions().isEmpty()) 
+        && query.getCharacterList() != null && !query.getCharacterList().isEmpty()) {
+      // 1. 创建或获取默认版本（原版）
+      QueryWrapper<MovieVersion> versionWrapper = new QueryWrapper<>();
+      versionWrapper.eq("movie_id", movieId);
+      versionWrapper.eq("dubbing_version_id", DubbingVersionEnum.ORIGINAL.getValue()); // 原版
+      MovieVersion movieVersion = movieVersionService.getOne(versionWrapper);
+      
+      if (movieVersion == null) {
+        // 创建默认版本
+        movieVersion = new MovieVersion();
+        movieVersion.setMovieId(movieId);
+        movieVersion.setDubbingVersionId(DubbingVersionEnum.ORIGINAL.getValue()); // 原版
+        movieVersionService.save(movieVersion);
+      }
+      
+      Integer versionId = movieVersion.getId();
+      
+      // 2. 删除该版本的旧角色关联
+      QueryWrapper<MovieVersionCharacter> deleteWrapper = new QueryWrapper<>();
+      deleteWrapper.eq("movie_version_id", versionId);
+      movieVersionCharacterMapper.delete(deleteWrapper);
+      
+      // 3. 批量插入新的角色关联
+      query.getCharacterList().forEach(item -> {
+        MovieVersionCharacter mvc = new MovieVersionCharacter();
+        mvc.setMovieVersionId(versionId);
+        mvc.setCharacterId(item.getCharacterId());
+        movieVersionCharacterMapper.insert(mvc);
+      });
+    }
+    
     // 保存标签
     if (query.getTags() != null) {
       movieTagTagsMapper.deleteMovieTags(movieId);

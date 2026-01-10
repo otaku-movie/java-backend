@@ -31,4 +31,5 @@ public class SaveMovieQuery {
   private List<MovieCharacterQuery> characterList;
   private List<Integer> tags;
   private List<HelloMovie> helloMovie;
+  private List<MovieVersionQuery> versions;
 }

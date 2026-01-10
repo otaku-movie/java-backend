@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.MovieVersionMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="MovieVersionResponseMap" type="com.example.backend.response.movie.MovieVersionResponse">
+        <id property="id" column="id"/>
+        <result property="movieId" column="movie_id"/>
+        <result property="dubbingVersionId" column="dubbing_version_id"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+        <result property="languageId" column="language_id"/>
+        <collection property="characters" 
+                    ofType="com.example.backend.response.CharacterResponse"
+                    select="com.example.backend.mapper.MovieVersionCharacterStaffMapper.getVersionCharacters"
+                    column="id">
+        </collection>
+    </resultMap>
+    
+    <!-- 获取电影的所有版本信息 -->
+    <select id="getMovieVersions" resultMap="MovieVersionResponseMap">
+        SELECT
+            id,
+            movie_id,
+            dubbing_version_id,
+            start_date,
+            end_date,
+            language_id
+        FROM
+            movie_version
+        WHERE
+            movie_id = #{movieId}
+            AND deleted::integer = 0
+        ORDER BY
+            dubbing_version_id ASC
+    </select>
+    
+</mapper>

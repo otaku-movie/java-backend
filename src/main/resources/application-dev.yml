@@ -1,9 +1,10 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/test_movie
+    # 添加字符编码参数，解决中日英编码问题
+    url: jdbc:postgresql://localhost:5432/test_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public
     username: postgres
-    password: postgres
+    password: postgre
 #  datasource:
 #    driver-class-name: org.postgresql.Driver
 #    url: jdbc:postgresql://43.154.172.94:5432/test_movie
@@ -26,3 +27,18 @@ spring:
       max-http-form-post-size: -1
     port: 8080
     address: 0.0.0.0
+logging:
+  level:
+    root: INFO
+    com.example.backend: DEBUG
+    org.springframework: INFO
+    org.springframework.web: DEBUG
+    org.springframework.boot: INFO
+    org.springframework.context: INFO
+    org.hibernate: DEBUG
+    com.zaxxer.hikari: DEBUG
+    org.mybatis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  exception-conversion-word: "%wEx"

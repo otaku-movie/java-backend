@@ -12,7 +12,9 @@ import com.example.backend.response.movie.HelloMovie;
 import com.example.backend.response.movie.MovieResponse;
 import com.example.backend.response.MovieStaffResponse;
 import com.example.backend.response.movie.Tags;
+import com.example.backend.response.movie.MovieVersionResponse;
 import com.example.backend.service.MovieService;
+import com.example.backend.service.MovieVersionService;
 import com.example.backend.utils.MessageUtils;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,8 @@ public class MovieController {
 
   @Autowired
   private  MovieService movieService;
+  @Autowired
+  private MovieVersionService movieVersionService;
   // 电影场次
   @Autowired
   private  MovieShowTimeMapper movieShowTimeMapper;
@@ -147,6 +151,21 @@ public class MovieController {
 
     return RestBean.success(result, MessageUtils.getMessage("success.get"));
   }
+  
+  /**
+   * 获取电影版本列表（包含角色和演员信息）
+   * @param movieId 电影ID
+   * @return 电影版本列表
+   */
+  @GetMapping("/api/movie/version/list")
+  public RestBean<List<MovieVersionResponse>> versionList(@RequestParam Integer movieId) {
+    if(movieId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage("error.parameterError"));
+    
+    List<MovieVersionResponse> result = movieVersionService.getMovieVersions(movieId);
+    
+    return RestBean.success(result, MessageUtils.getMessage("success.get"));
+  }
+  
   @SaCheckLogin
   @CheckPermission(code = "movie.remove")
   @Transactional
