@@ -199,4 +199,49 @@ validator:
         required: "終了時刻は空にできません"
       price:
         required: "時間帯の価格は空にできません"
+dict:
+  releaseStatus:
+    name: "上映状態"
+    item:
+      "1": "未上映"
+      "2": "上映中"
+      "3": "上映終了"
+  payState:
+    name: "支払い状態"
+    item:
+      "1": "支払い待ち"
+      "2": "支払い中"
+      "3": "支払い成功"
+      "4": "支払い失敗"
+      "5": "支払いキャンセル"
+  cinemaPlayState:
+    name: "放映状態"
+    item:
+      "1": "未開始"
+      "2": "放映中"
+      "3": "放映終了"
+  orderState:
+    name: "注文状態"
+    item:
+      "1": "注文作成済み"
+      "2": "注文完了"
+      "3": "注文失敗"
+      "4": "注文キャンセル"
+      "5": "注文タイムアウト"
+  seatState:
+    name: "座席状態"
+    item:
+      "1": "選択可能"
+      "2": "ロック済み"
+      "3": "売却済み"
+  helloMovie:
+    name: "Hello Movie"
+    item:
+      "1": "字幕ガイド"
+      "2": "音声ガイド"
+  dubbingVersion:
+    name: "バージョン"
+    item:
+      "1": "オリジナル版"
+      "2": "吹き替え版"
 

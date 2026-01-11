@@ -199,4 +199,49 @@ validator:
         required: "End time cannot be empty"
       price:
         required: "Time range price cannot be empty"
+dict:
+  releaseStatus:
+    name: "Release Status"
+    item:
+      "1": "Not Released"
+      "2": "Now Showing"
+      "3": "Released Ended"
+  payState:
+    name: "Payment Status"
+    item:
+      "1": "Pending Payment"
+      "2": "Paying"
+      "3": "Payment Success"
+      "4": "Payment Failed"
+      "5": "Payment Cancelled"
+  cinemaPlayState:
+    name: "Cinema Play Status"
+    item:
+      "1": "Not Started"
+      "2": "Now Playing"
+      "3": "Play Ended"
+  orderState:
+    name: "Order Status"
+    item:
+      "1": "Order Created"
+      "2": "Order Completed"
+      "3": "Order Failed"
+      "4": "Order Cancelled"
+      "5": "Order Timeout"
+  seatState:
+    name: "Seat Status"
+    item:
+      "1": "Available"
+      "2": "Locked"
+      "3": "Sold"
+  helloMovie:
+    name: "Hello Movie"
+    item:
+      "1": "Subtitle Guide"
+      "2": "Audio Guide"
+  dubbingVersion:
+    name: "Dubbing Version"
+    item:
+      "1": "Original"
+      "2": "Dubbed"
 

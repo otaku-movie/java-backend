@@ -18,6 +18,7 @@ import com.example.backend.mapper.DictItemMapper;
 import com.example.backend.mapper.DictMapper;
 import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.dict.DictListQuery;
+import com.example.backend.utils.DictUtils;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
@@ -74,30 +75,49 @@ public class DictController {
       wrapper.eq("code", query.getCode());
     }
 
-    IPage list = dictMapper.selectPage(page, wrapper);
+    IPage<Dict> pageResult = dictMapper.selectPage(page, wrapper);
+    List<Dict> records = pageResult.getRecords();
+    
+    // 翻译字典 name
+    DictUtils.translateDictList(records);
 
-    return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
+    return RestBean.success((List<Object>)(List<?>)records, query.getPage(), pageResult.getTotal(), query.getPageSize());
   }
   @GetMapping(ApiPaths.Common.Dict.DETAIL)
   public RestBean<List<Object>> dictItemlist(@RequestParam Integer id)  {
-    QueryWrapper wrapper = new QueryWrapper<>();
+    // 先查询字典信息以获取 dictCode
+    Dict dict = dictMapper.selectById(id);
+    if (dict == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    
+    QueryWrapper<DictItem> wrapper = new QueryWrapper<>();
     wrapper.eq("dict_id", id);
 
-    List list = dictItemMapper.selectList(wrapper);
+    List<DictItem> list = dictItemMapper.selectList(wrapper);
+    
+    // 翻译字典项 name
+    DictUtils.translateDictItemList(list, dict.getCode());
 
-    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+    return RestBean.success((List<Object>)(List<?>)list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   // 根据 name 获取字典
   @GetMapping(ApiPaths.Common.Dict.SPECIFY)
   public RestBean<Map<String, List<DictItem>>> specify()  {
-    QueryWrapper wrapper = new QueryWrapper<>();
+    QueryWrapper<Dict> wrapper = new QueryWrapper<>();
     List<Dict> list = dictMapper.selectList(wrapper);
+    
+    // 翻译字典 name
+    DictUtils.translateDictList(list);
 
     Map<String, List<DictItem>> result = list.stream().collect(
       Collectors.toMap(Dict::getCode, dict -> {
         QueryWrapper<DictItem> dictItemQueryWrapper = new QueryWrapper<>();
         dictItemQueryWrapper.eq("dict_id", dict.getId()); // 设置查询条件
-        return dictItemMapper.selectList(dictItemQueryWrapper);
+        List<DictItem> items = dictItemMapper.selectList(dictItemQueryWrapper);
+        // 翻译字典项 name
+        DictUtils.translateDictItemList(items, dict.getCode());
+        return items;
       })
     );
 
