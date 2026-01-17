@@ -7,7 +7,17 @@
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <charset>UTF-8</charset>
             <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){blue} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n</pattern>
+                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n</pattern>
+            </layout>
+        </encoder>
+    </appender>
+    
+    <!-- 简化的控制台输出配置（用于性能日志，只显示日志级别和消息内容） -->
+    <appender name="CONSOLE_SIMPLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <charset>UTF-8</charset>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>%clr(%-5level){highlight} - %msg%n</pattern>
             </layout>
         </encoder>
     </appender>
@@ -34,7 +44,17 @@
         <logger name="org.springframework.web" level="DEBUG"/>
         <logger name="org.hibernate" level="DEBUG"/>
         <logger name="com.zaxxer.hikari" level="DEBUG"/>
-        <logger name="org.mybatis" level="DEBUG"/>
+        <!-- 关闭 MyBatis 的 SQL 输出（我们使用自定义的 SqlPerformanceInterceptor 来记录 SQL） -->
+        <logger name="org.mybatis" level="WARN"/>
+        <logger name="org.apache.ibatis" level="WARN"/>
+        <logger name="com.baomidou.mybatisplus" level="WARN"/>
+        <!-- 性能日志使用简化格式（只显示消息内容，不显示时间戳、线程等） -->
+        <logger name="com.example.backend.config.WebConfig" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE_SIMPLE"/>
+        </logger>
+        <logger name="com.example.backend.config.SqlPerformanceInterceptor" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE_SIMPLE"/>
+        </logger>
     </springProfile>
     
     <!-- 测试环境配置 -->
