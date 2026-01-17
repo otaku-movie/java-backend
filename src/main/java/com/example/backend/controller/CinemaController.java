@@ -31,6 +31,7 @@ import com.example.backend.response.cinema.CinemaScreeningResponse;
 import com.example.backend.response.cinema.MovieShowingResponse;
 import com.example.backend.service.CinemaSpecSpecService;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.Utils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -44,6 +45,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Data
 class Spec {
@@ -127,7 +129,33 @@ public class CinemaController {
   }
   @PostMapping(ApiPaths.App.Cinema.MOVIE_SHOW_TIME)
   public RestBean<Object> showTime (@RequestBody GetCinemaMovieShowTimeListQuery query) {
+    // 如果使用30小时制，将时间转换为24小时制
+    if (query.getUse30HourFormat() != null && query.getUse30HourFormat()) {
+      if (query.getStartTimeFrom() != null && !query.getStartTimeFrom().isEmpty()) {
+        query.setStartTimeFrom(Utils.convert30HourTo24Hour(query.getStartTimeFrom()));
+      }
+      if (query.getStartTimeTo() != null && !query.getStartTimeTo().isEmpty()) {
+        query.setStartTimeTo(Utils.convert30HourTo24Hour(query.getStartTimeTo()));
+      }
+    }
+
+    // 将时间参数统一提取为 HH:mm 格式，便于 SQL 中进行时间部分比较
+    if (query.getStartTimeFrom() != null && !query.getStartTimeFrom().isEmpty()) {
+      String timeFrom = Utils.extractTimePart(query.getStartTimeFrom());
+      if (timeFrom != null) {
+        query.setStartTimeFrom(timeFrom);
+      }
+    }
+    if (query.getStartTimeTo() != null && !query.getStartTimeTo().isEmpty()) {
+      String timeTo = Utils.extractTimePart(query.getStartTimeTo());
+      if (timeTo != null) {
+        query.setStartTimeTo(timeTo);
+      }
+    }
+
     GetCinemaMovieShowTimeListResponse list = cinemaMapper.getCinemaMovieShowTimeList(query, ShowTimeState.no_started.getCode());
+
+    // 时间范围筛选已在 SQL 中进行，不再需要在 Java 层筛选
 
     // 获取所有场次的字幕和特殊场次标签详细信息
     if (list != null && list.getData() != null) {
@@ -145,7 +173,35 @@ public class CinemaController {
               var showTimeTags = movieShowTimeMapper.getMovieShowTimeTags(theaterHallShowTime.getShowTimeTagId());
               theaterHallShowTime.setShowTimeTags(showTimeTags);
             }
+            
+            // 如果使用30小时制，将时间从24小时制转换为30小时制
+            if (query.getUse30HourFormat() != null && query.getUse30HourFormat()) {
+              String startTime = theaterHallShowTime.getStartTime();
+              String endTime = theaterHallShowTime.getEndTime();
+              // CinemaMapper 返回的时间格式是 HH:mm，需要拼接日期
+              // 使用 dateGroup 的日期来构建完整时间
+              if (startTime != null && dateGroup.getDate() != null) {
+                String fullStartTime = dateGroup.getDate() + " " + startTime;
+                String convertedTime = Utils.convert24HourTo30Hour(fullStartTime);
+                theaterHallShowTime.setStartTime(Utils.extractTimePart(convertedTime)); // 只取时间部分
+              }
+              if (endTime != null && dateGroup.getDate() != null) {
+                String fullEndTime = dateGroup.getDate() + " " + endTime;
+                String convertedTime = Utils.convert24HourTo30Hour(fullEndTime);
+                theaterHallShowTime.setEndTime(Utils.extractTimePart(convertedTime)); // 只取时间部分
+              }
+            }
           }
+          
+          // 按照开始时间排序
+          dateGroup.getData().sort((t1, t2) -> {
+            String startTime1 = t1.getStartTime();
+            String startTime2 = t2.getStartTime();
+            if (startTime1 == null && startTime2 == null) return 0;
+            if (startTime1 == null) return 1;
+            if (startTime2 == null) return -1;
+            return startTime1.compareTo(startTime2);
+          });
         }
       }
     }

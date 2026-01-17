@@ -98,19 +98,62 @@ public class AppMovieController {
   public RestBean<Object> showTime (@RequestBody getMovieShowTimeQuery query) {
     Page<MovieShowTimeMapper> page = new Page<>(query.getPage(), query.getPageSize());
 
+    // 如果使用30小时制，将时间转换为24小时制
+    if (query.getUse30HourFormat() != null && query.getUse30HourFormat()) {
+      if (query.getStartTimeFrom() != null && !query.getStartTimeFrom().isEmpty()) {
+        query.setStartTimeFrom(Utils.convert30HourTo24Hour(query.getStartTimeFrom()));
+      }
+      if (query.getStartTimeTo() != null && !query.getStartTimeTo().isEmpty()) {
+        query.setStartTimeTo(Utils.convert30HourTo24Hour(query.getStartTimeTo()));
+      }
+    }
+
+    // 将时间参数统一提取为 HH:mm 格式，便于 SQL 中进行时间部分比较
+    if (query.getStartTimeFrom() != null && !query.getStartTimeFrom().isEmpty()) {
+      String timeFrom = Utils.extractTimePart(query.getStartTimeFrom());
+      if (timeFrom != null) {
+        query.setStartTimeFrom(timeFrom);
+      }
+    }
+    if (query.getStartTimeTo() != null && !query.getStartTimeTo().isEmpty()) {
+      String timeTo = Utils.extractTimePart(query.getStartTimeTo());
+      if (timeTo != null) {
+        query.setStartTimeTo(timeTo);
+      }
+    }
+
     List<AppBeforeMovieShowTimeResponse> list = movieMapper.getMovieShowTime(query, ShowTimeState.no_started.getCode(), page);
+
+    // 如果使用30小时制，先将时间转换为30小时制，然后再分组
+    if (query.getUse30HourFormat() != null && query.getUse30HourFormat()) {
+      for (AppBeforeMovieShowTimeResponse item : list) {
+        String startTime = item.getStartTime();
+        String endTime = item.getEndTime();
+        if (startTime != null) {
+          // 如果包含秒，先截取到分钟
+          String timeToConvert = startTime.length() >= 16 ? startTime.substring(0, 16) : startTime;
+          item.setStartTime(Utils.convert24HourTo30Hour(timeToConvert));
+        }
+        if (endTime != null) {
+          // 如果包含秒，先截取到分钟
+          String timeToConvert = endTime.length() >= 16 ? endTime.substring(0, 16) : endTime;
+          item.setEndTime(Utils.convert24HourTo30Hour(timeToConvert));
+        }
+      }
+    }
+
+    // 时间范围筛选已在 SQL 中进行，不再需要在 Java 层筛选
 
     Map<String, List<AppBeforeMovieShowTimeResponse>> map = list.stream().collect(
       Collectors.groupingBy(item -> {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-          // 将 start_time 字符串解析为 Date 对象
-          Date parsedDate = format.parse(item.getStartTime());
-          // 返回 Date 对象作为分组的键
-          return format.format(parsedDate);  // 如果需要返回字符串，可以使用 format.format(parsedDate)
-        } catch (ParseException e) {
-          throw new RuntimeException(e);
+        // 从 start_time 中提取日期部分（yyyy-MM-dd）
+        String timeStr = item.getStartTime();
+        if (timeStr != null && timeStr.length() >= 10) {
+          // 提取日期部分（前10个字符：yyyy-MM-dd）
+          return timeStr.substring(0, 10);
         }
+        // 如果格式不正确，返回空字符串
+        return "";
       })
     );
 
@@ -126,12 +169,13 @@ public class AppMovieController {
         // 获取每个影院的第一条数据
         AppBeforeMovieShowTimeResponse first = cinema.get(cinemaId).get(0);
 
-        // 创建场次信息列表
+        // 创建场次信息列表，并按照开始时间排序
         List<ShowTimeInfo> showTimes = cinema.get(cinemaId).stream().map(item -> {
           ShowTimeInfo showTime = new ShowTimeInfo();
           showTime.setId(item.getId());
           showTime.setTheaterHallId(item.getTheaterHallId());
           showTime.setTheaterHallName(item.getTheaterHallName());
+          // 时间已经在分组前转换为30小时制了，直接使用
           showTime.setStartTime(item.getStartTime());
           showTime.setEndTime(item.getEndTime());
           showTime.setSpecName(item.getSpecName());
@@ -140,8 +184,20 @@ public class AppMovieController {
           // 计算可用座位数
           Integer availableSeats = item.getTotalSeats() - item.getSelectedSeats();
           showTime.setAvailableSeats(availableSeats);
+          showTime.setMovieVersionId(item.getMovieVersionId());
+          showTime.setVersionCode(item.getVersionCode());
           return showTime;
-        }).collect(Collectors.toList());
+        })
+        .sorted((t1, t2) -> {
+          // 按照开始时间排序
+          String startTime1 = t1.getStartTime();
+          String startTime2 = t2.getStartTime();
+          if (startTime1 == null && startTime2 == null) return 0;
+          if (startTime1 == null) return 1;
+          if (startTime2 == null) return -1;
+          return startTime1.compareTo(startTime2);
+        })
+        .collect(Collectors.toList());
 
         // 创建一个新的 AppMovieShowTimeResponse 对象
         AppMovieShowTimeResponse model = new AppMovieShowTimeResponse();

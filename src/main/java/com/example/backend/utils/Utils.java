@@ -109,5 +109,160 @@ public class Utils {
         return LocalDate.parse(date, formatter);
 
     }
+
+    /**
+     * 将30小时制时间转换为24小时制时间
+     * 30小时制：24:00-29:59 表示第二天的 00:00-05:59
+     * 
+     * @param timeStr 时间字符串，格式：yyyy-MM-dd HH:mm（30小时制时，小时可以是24-29）
+     * @return 转换后的24小时制时间字符串，格式：yyyy-MM-dd HH:mm
+     */
+    public static String convert30HourTo24Hour(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) {
+            return timeStr;
+        }
+        
+        try {
+            // 解析时间字符串：yyyy-MM-dd HH:mm
+            String[] parts = timeStr.split(" ");
+            if (parts.length != 2) {
+                return timeStr; // 格式不正确，直接返回
+            }
+            
+            String datePart = parts[0]; // yyyy-MM-dd
+            String timePart = parts[1]; // HH:mm
+            
+            String[] timeParts = timePart.split(":");
+            if (timeParts.length != 2) {
+                return timeStr; // 格式不正确，直接返回
+            }
+            
+            int hour = Integer.parseInt(timeParts[0]);
+            String minute = timeParts[1];
+            
+            // 如果小时小于24，直接返回原时间
+            if (hour < 24) {
+                return timeStr;
+            }
+            
+            // 如果小时 >= 24，转换为第二天的对应时间
+            LocalDate date = LocalDate.parse(datePart, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            LocalDate nextDay = date.plusDays(1);
+            int convertedHour = hour - 24;
+            
+            // 格式化为 yyyy-MM-dd HH:mm
+            return String.format("%s %02d:%s", 
+                nextDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")), 
+                convertedHour, 
+                minute);
+        } catch (Exception e) {
+            // 解析失败，返回原字符串
+            return timeStr;
+        }
+    }
+
+    /**
+     * 将24小时制时间转换为30小时制时间
+     * 30小时制：24:00-29:59 表示第二天的 00:00-05:59
+     * 
+     * @param timeStr 时间字符串，格式：yyyy-MM-dd HH:mm（24小时制）
+     * @return 转换后的30小时制时间字符串，格式：yyyy-MM-dd HH:mm（如果是第二天 00:00-05:59，则显示为前一天的 24:00-29:59）
+     */
+    public static String convert24HourTo30Hour(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) {
+            return timeStr;
+        }
+        
+        try {
+            // 解析时间字符串：yyyy-MM-dd HH:mm
+            String[] parts = timeStr.split(" ");
+            if (parts.length != 2) {
+                return timeStr; // 格式不正确，直接返回
+            }
+            
+            String datePart = parts[0]; // yyyy-MM-dd
+            String timePart = parts[1]; // HH:mm
+            
+            String[] timeParts = timePart.split(":");
+            if (timeParts.length != 2) {
+                return timeStr; // 格式不正确，直接返回
+            }
+            
+            int hour = Integer.parseInt(timeParts[0]);
+            String minute = timeParts[1];
+            
+            // 如果小时 >= 6，直接返回原时间
+            if (hour >= 6) {
+                return timeStr;
+            }
+            
+            // 如果小时 0-5，转换为前一天的 24-29
+            LocalDate date = LocalDate.parse(datePart, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            LocalDate previousDay = date.minusDays(1);
+            int convertedHour = hour + 24;
+            
+            // 格式化为 yyyy-MM-dd HH:mm
+            return String.format("%s %02d:%s", 
+                previousDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")), 
+                convertedHour, 
+                minute);
+        } catch (Exception e) {
+            // 解析失败，返回原字符串
+            return timeStr;
+        }
+    }
+
+    /**
+     * 从时间字符串中提取时间部分（HH:mm）
+     * 支持格式：yyyy-MM-dd HH:mm:ss、yyyy-MM-dd HH:mm、HH:mm:ss、HH:mm
+     * 
+     * @param timeStr 时间字符串
+     * @return 时间部分（HH:mm 格式），如果无法提取则返回 null
+     */
+    public static String extractTimePart(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) {
+            return null;
+        }
+        
+        // 格式：yyyy-MM-dd HH:mm:ss 或 yyyy-MM-dd HH:mm
+        if (timeStr.length() >= 16) {
+            return timeStr.substring(11, 16); // 提取 HH:mm
+        }
+        // 格式：HH:mm:ss 或 HH:mm
+        else if (timeStr.length() >= 5) {
+            return timeStr.substring(0, 5); // 提取 HH:mm
+        }
+        
+        return null;
+    }
+
+    /**
+     * 检查时间是否在指定范围内（只比较时间部分，不考虑日期）
+     * 
+     * @param timeStr 要检查的时间字符串
+     * @param timeFrom 起始时间（HH:mm 格式或完整时间字符串）
+     * @param timeTo 结束时间（HH:mm 格式或完整时间字符串）
+     * @return 如果时间在范围内返回 true，否则返回 false
+     */
+    public static boolean isTimeInRange(String timeStr, String timeFrom, String timeTo) {
+        if (timeStr == null) {
+            return false;
+        }
+        
+        String itemTime = extractTimePart(timeStr);
+        if (itemTime == null) {
+            return false;
+        }
+        
+        // 提取起始时间和结束时间的时间部分
+        String fromTime = timeFrom != null ? extractTimePart(timeFrom) : null;
+        String toTime = timeTo != null ? extractTimePart(timeTo) : null;
+        
+        // 比较时间部分
+        boolean matchesFrom = fromTime == null || itemTime.compareTo(fromTime) >= 0;
+        boolean matchesTo = toTime == null || itemTime.compareTo(toTime) <= 0;
+        
+        return matchesFrom && matchesTo;
+    }
 }
 
