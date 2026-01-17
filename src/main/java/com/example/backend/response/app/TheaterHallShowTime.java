@@ -18,4 +18,6 @@ public class TheaterHallShowTime {
   List<Integer> showTimeTagId;
   List<Language> subtitle;
   List<MovieShowTimeTag> showTimeTags;
+  Integer movieVersionId;
+  Integer versionCode;
 }

@@ -19,4 +19,6 @@ public class AppBeforeMovieShowTimeResponse {
   Integer totalSeats;  // 新增：总座位数
   Integer selectedSeats;  // 新增：已选座位数
   Double distance;  // 距离（米），仅在附近查询时返回
+  Integer movieVersionId;
+  Integer versionCode;
 }
