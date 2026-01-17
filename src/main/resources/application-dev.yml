@@ -37,7 +37,10 @@ logging:
     org.springframework.context: INFO
     org.hibernate: DEBUG
     com.zaxxer.hikari: DEBUG
-    org.mybatis: DEBUG
+    # 关闭 MyBatis 的 SQL 输出（我们使用自定义的 SqlPerformanceInterceptor 来记录 SQL）
+    org.mybatis: WARN
+    org.apache.ibatis: WARN
+    com.baomidou.mybatisplus: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

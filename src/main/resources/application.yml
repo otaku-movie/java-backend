@@ -31,8 +31,8 @@ mybatis:
   database:
     type: postgresql
 mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  # 关闭 MyBatis Plus 的 SQL 输出（我们使用自定义的 SqlPerformanceInterceptor 来记录 SQL）
+  # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   mapper-locations: classpath:/mapper/*Mapper.xml
   global-config:
     db-config:
