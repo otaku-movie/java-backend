@@ -21,6 +21,32 @@ spring:
     port: 5672
     username: guest
     password: guest
+
+# SpringDoc OpenAPI 配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  group-configs:
+    - group: '通用接口'
+      paths-to-match: '/api/**'
+      paths-to-exclude:
+        - '/api/admin/**'
+        - '/api/app/**'
+    - group: '管理员接口'
+      paths-to-match: '/api/admin/**'
+    - group: 'App 接口'
+      paths-to-match: '/api/app/**'
+    - group: '所有接口'
+      paths-to-match: '/api/**'
+
 mybatis:
   table:
     # create    系统启动后，会将所有的表删除掉，然后根据model中配置的结构重新建表，该操作会破坏原有数据。
@@ -48,32 +74,15 @@ server:
 sa-token:
   # token 名称（同时也是 cookie 名称）
   token-name: token
-  # token 有效期（单位：秒） 默认30天，-1 代表永久有效
+  # token 有效期（单位：秒），默认30天，-1 代表永久有效
   timeout: 2592000
-  # 是否允许同一账号多地同时登录 （为 true 时允许一起登录, 为 false 时新登录挤掉旧登录）
+  # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
+  active-timeout: -1
+  # 是否允许同一账号并发登录（为 true 时允许一起登录, 为 false 时新登录挤掉旧登录）
   is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个 token（为 true 时所有登录共用一个 token, 为 false 时每次登录新建一个 token）
+  is-share: true
   # token 风格（默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik）
-  token-style: simple-uuid
+  token-style: uuid
   # 是否输出操作日志
   is-log: true
-logging:
-  level:
-    com.zaxxer.hikari.HikariConfig: DEBUG
-    com.zaxxer.hikari.HikariPool: DEBUG
-minio:
-  accessKey: RQXIcweef6ZzjFWFsDrj
-  secretKey: pfASmYyXgqQnR81CHTLyIIaHTt1SoxUcTgYaeR2p
-  endpoint: http://43.154.172.94:9000/
-  previewURL: https://drive.bangumi.xyz/
-  bucket: test-movie
-# 滑块验证码配置， 详细请看 cloud.tianai.captcha.autoconfiguration.ImageCaptchaProperties 类
-captcha:
-  # 如果项目中使用到了redis，滑块验证码会自动把验证码数据存到redis中， 这里配置redis的key的前缀,默认是captcha:slider
-  prefix: captcha
-  # 验证码过期时间，默认是2分钟,单位毫秒， 可以根据自身业务进行调整
-  expire:
-    # 默认缓存时间 2分钟
-    # 默认缓存时间 2分钟
-    default: 10000
-  # 使用加载系统自带的资源， 默认是 false
-  init-default-resource: false

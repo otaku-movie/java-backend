@@ -1,0 +1,12 @@
+# OpenAPI 文档生成目录
+
+此目录用于存放生成的 OpenAPI JSON 文档。
+
+生成方法：
+```bash
+# 方式1: 使用 Maven 插件（需要先启动项目）
+./mvnw springdoc-openapi:generate
+
+# 方式2: 手动下载
+curl -o openapi.json http://localhost:8080/v3/api-docs/所有接口
+```
