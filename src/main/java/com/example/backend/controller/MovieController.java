@@ -31,8 +31,6 @@ import java.util.List;
 @RestController
 public class MovieController {
   @Autowired
-  private MessageUtils messageUtils;
-  @Autowired
   private MovieMapper movieMapper;
 
   @Autowired

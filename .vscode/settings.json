@@ -15,5 +15,6 @@
     "**/.factorypath": true
   },
   "java.debug.settings.enableRunDebugCodeLens": true,
-  "java.debug.settings.hotCodeReplace": "auto"
+  "java.debug.settings.hotCodeReplace": "auto",
+  "java.debug.settings.onBuildFailureProceed": true
 }

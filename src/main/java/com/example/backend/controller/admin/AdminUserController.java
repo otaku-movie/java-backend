@@ -47,8 +47,6 @@ class UserLoginQuery {
 @RestController
 public class AdminUserController {
   @Autowired
-  private MessageUtils messageUtils;
-  @Autowired
   private UserMapper userMapper;
 
   @Autowired
@@ -86,12 +84,12 @@ public class AdminUserController {
     );
 
 
-    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
   @SaCheckLogin
   @GetMapping(ApiPaths.Admin.User.ROLE)
   public RestBean<List<Role>> role (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     List<Role> result = userMapper.userRole(id);
 
@@ -102,7 +100,7 @@ public class AdminUserController {
   @Transactional
   @DeleteMapping(ApiPaths.Admin.User.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     Integer userId = StpUtil.getLoginIdAsInt();
 
@@ -166,7 +164,7 @@ public class AdminUserController {
 
       if (list.size() == 0) {
         userMapper.insert(user);
-        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.User.SAVE_SUCCESS));
+        return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.User.SAVE_SUCCESS));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.User.EMAIL_REPEAT));
       }
@@ -184,7 +182,7 @@ public class AdminUserController {
 
         user.setId(query.getId());
         userMapper.update(user, updateQueryWrapper);
-        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.User.SAVE_SUCCESS));
+        return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.User.SAVE_SUCCESS));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.User.EMAIL_REPEAT));
       }
