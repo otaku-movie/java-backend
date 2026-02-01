@@ -43,6 +43,24 @@
             </where>
     </delete>
     
+    <!-- 通过座位ID删除选座信息 -->
+    <delete id="deleteSeatBySeatId">
+        DELETE
+            FROM
+                select_seat
+            <where>
+                select_seat.movie_show_time_id = #{movieShowTimeId} AND
+                select_seat.theater_hall_id = #{theaterHallId} AND
+                select_seat.user_id = #{userId}
+                <if test="seatIds != null and seatIds.size() > 0">
+                    AND select_seat.seat_id IN
+                    <foreach collection="seatIds" item="seatId" open="(" separator="," close=")">
+                        #{seatId}
+                    </foreach>
+                </if>
+            </where>
+    </delete>
+    
     <!-- 统计指定坐标的座位数量（并发控制） -->
     <select id="countSeatsByCoordinates" resultType="java.lang.Integer">
         SELECT COUNT(*)

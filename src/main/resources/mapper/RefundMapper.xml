@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.RefundMapper">
+
+    <select id="getLatestRefundState" resultType="java.lang.Integer">
+        SELECT refund_state
+        FROM refund
+        WHERE order_number = #{orderNumber}
+          AND deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="getLatestApplyStatus" resultType="java.lang.Integer">
+        SELECT apply_status
+        FROM refund
+        WHERE order_number = #{orderNumber}
+          AND deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+</mapper>

@@ -19,6 +19,7 @@ import com.example.backend.service.MovieService;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.service.impl.MovieShowTimeImpl;
 import com.example.backend.utils.MessageUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -39,6 +40,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @EnableScheduling
+@Slf4j
 @RestController
 public class ScheduledTasksController {
 
@@ -72,8 +74,7 @@ public class ScheduledTasksController {
   @Transactional
   @Scheduled(cron = "0 0 0 * * ?")  // 每天的 00:00 执行
   public RestBean<Object> updateMovieState() {
-    // 实现更新电影上映日期状态的逻辑
-    System.out.println("Updating movie state...");
+    log.info("Updating movie state...");
     QueryWrapper queryWrapper = new QueryWrapper();
     //    过滤掉已结束的
     queryWrapper.ne("status", MovieReleaseState.ended.getType());
@@ -116,8 +117,7 @@ public class ScheduledTasksController {
             }
           }
         } catch (Exception e) {
-          // 处理日期解析异常
-          System.err.println("日期解析错误: " + e.getMessage());
+          log.warn("日期解析错误: {}", e.getMessage());
         }
 
         return item;
@@ -135,8 +135,7 @@ public class ScheduledTasksController {
   @Transactional
   @Scheduled(cron = "0 * * * * ?")  // 每分钟执行
   public RestBean<Object> updateMovieScreeningState() {
-    // 实现更新电影放映状态的逻辑
-    System.out.println("Updating movie screening state...");
+    log.info("Updating movie screening state...");
     QueryWrapper queryWrapper = new QueryWrapper();
 //    过滤掉已结束的
     queryWrapper.ne("status", ShowTimeState.ended.getCode());
@@ -172,8 +171,7 @@ public class ScheduledTasksController {
   // 更新选座状态 超时释放座位
   @Scheduled(cron = "0 * * * * ?")  // 每分钟执行
   public void updateMovieSeatSelectionState() {
-    // 实现更新选座状态的逻辑
-    System.out.println("Updating movie seat selection state...");
+    log.info("Updating movie seat selection state...");
 //    QueryWrapper queryWrapper = new QueryWrapper();
 
 //    selectSeatMapper.selectList(queryWrapper);
@@ -184,8 +182,7 @@ public class ScheduledTasksController {
   @Scheduled(cron = "0 * * * * ?")  // 每分钟执行
   @PostMapping(ApiPaths.Scheduled.UPDATE_MOVIE_ORDER_STATE)
   public void updateMovieOrderState() {
-    // 实现更新订单状态的逻辑
-    System.out.println("Updating movie order state...");
+    log.info("Updating movie order state...");
     QueryWrapper queryWrapper = new QueryWrapper();
     queryWrapper.eq("order_state", OrderState.order_created.getCode());
 

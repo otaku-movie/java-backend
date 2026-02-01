@@ -2,12 +2,10 @@ package com.example.backend.enumerate;
 
 import com.baomidou.mybatisplus.annotation.IEnum;
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.Getter;
 
 /**
  * 配音版本枚举
  */
-@Getter
 public enum DubbingVersionEnum implements IEnum<Integer> {
     /**
      * 原版
@@ -30,6 +28,10 @@ public enum DubbingVersionEnum implements IEnum<Integer> {
 
     @Override
     public Integer getValue() {
+        return this.code;
+    }
+
+    public Integer getCode() {
         return this.code;
     }
 

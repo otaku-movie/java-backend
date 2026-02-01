@@ -128,10 +128,9 @@ public class OrderTest {
     @Test
     @DisplayName("测试订单详情接口")
     public void testOrderDetail() throws Exception {
-        Integer orderId = 1; // 使用已存在的订单ID
-
+        String orderNumber = "MT26A8K3X7P9Q"; // 使用已存在的订单号
         MvcResult result = mockMvc.perform(get(BASE_URL + "/movieOrder/detail")
-                        .param("id", orderId.toString()))
+                        .param("orderNumber", orderNumber))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))

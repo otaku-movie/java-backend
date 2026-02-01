@@ -1,9 +1,6 @@
 package com.example.backend.response;
 
-import com.example.backend.query.SeatAreaQuery;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 class SeatAreaResponse {
@@ -29,6 +26,10 @@ public class SeatListResponse {
   // 轮椅座
   Boolean wheelChair;
   String seatPositionGroup;
+  // 区域价格（从 seat_area.price 展平，便于其他模块直接使用）
+  Integer areaPrice;
+  // 区域ID（从 seat.seat_area_id 获取，便于直接查询区域信息）
+  Integer seatAreaId;
   SeatAreaResponse area;
   Integer selectSeatState;
 }

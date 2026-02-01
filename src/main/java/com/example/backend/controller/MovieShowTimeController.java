@@ -17,7 +17,6 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.response.UserSelectSeat;
-import com.example.backend.response.UserSelectSeatList;
 import com.example.backend.response.showTime.MovieShowTimeDetail;
 
 import java.math.BigDecimal;
@@ -40,13 +39,15 @@ import java.util.*;
 
 
 @Data
-class SeatPosition {
+class SeatPosition implements com.example.backend.service.SelectSeatService.SeatPositionInterface {
   @NotNull(message = "${validator.saveSelectSeat.x.required}")
   Integer x;
   @NotNull(message = "${validator.saveSelectSeat.y.required}")
   Integer y;
   @NotNull
   Integer seatId;
+  @NotNull
+  String seatName;
 }
 
 @Data
@@ -72,20 +73,10 @@ class CancelSelectSeatQuery {
 @RestController
 public class MovieShowTimeController {
   @Autowired
-  private MessageUtils messageUtils;
-  @Autowired
-  private TheaterHallMapper theaterHallMapper;
-  @Autowired
-  private SeatMapper seatMapper;
-
-  @Autowired
   CinemaMapper cinemaMapper;
 
   @Autowired
   private SelectSeatMapper selectSeatMapper;
-
-  @Autowired
-  private SelectSeatService selectSeatService;
 
   @Autowired
   private MovieShowTimeMapper movieShowTimeMapper;
@@ -93,17 +84,13 @@ public class MovieShowTimeController {
   @Autowired
   private MovieShowTimeService movieShowTimeService;
 
-  @Autowired
-  private SeatService seatService;
-
   @PostMapping(ApiPaths.Common.ShowTime.LIST)
   public RestBean<List<MovieShowTimeList>> list(MovieShowTimeListQuery query)  {
-    QueryWrapper wrapper = new QueryWrapper<>();
     Page<MovieShowTime> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieShowTimeList> list = movieShowTimeMapper.movieShowTimeList(query, OrderState.order_succeed.getCode(), page);
-    Map<Integer, Language> languageMap = new HashMap();
-    Set<Integer> languageSet = new HashSet();
+    Map<Integer, Language> languageMap = new HashMap<>();
+    Set<Integer> languageSet = new HashSet<>();
 
     List<MovieShowTimeList> result = list.getRecords().stream().map(item -> {
       // 获取字幕的语言存到set里面，从而减少查询次数
@@ -143,7 +130,7 @@ public class MovieShowTimeController {
   }
   @GetMapping(ApiPaths.Common.ShowTime.DETAIL)
   public RestBean<MovieShowTimeDetail> detail (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     MovieShowTimeDetail result = movieShowTimeMapper.movieShowTimeDetail(id);
     result.setMovieShowTimeTags(
@@ -160,9 +147,9 @@ public class MovieShowTimeController {
   @Transactional
   @DeleteMapping(ApiPaths.Admin.ShowTime.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
-    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
-    QueryWrapper wrapper = new QueryWrapper<>();
+    QueryWrapper<SelectSeat> wrapper = new QueryWrapper<>();
     wrapper.eq("movie_show_time_id", id);
 
     movieShowTimeMapper.deleteById(id);
@@ -180,145 +167,6 @@ public class MovieShowTimeController {
     );
     Boolean result = movieShowTimeService.check(list, format, query);
 
-    return result ? RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS)) : RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.TIME_CONFLICT));
-  }
-  @SaCheckLogin
-  @PostMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_SAVE)
-  public RestBean<Object> saveSelectSeat(@RequestBody @Validated SaveSelectSeatQuery query) {
-    // 判断当前座位是否可选
-    QueryWrapper queryWrapper = new QueryWrapper();
-    List<Integer> queryX = query.getSeatPosition().stream().map(item -> item.getX()).toList();
-    List<Integer> queryY = query.getSeatPosition().stream().map(item -> item.getY()).toList();
-
-    queryWrapper.in("x", queryX);
-    queryWrapper.in("y", queryY);
-    queryWrapper.eq("theater_hall_id", query.getTheaterHallId());
-    queryWrapper.eq("movie_show_time_id", query.getMovieShowTimeId());
-
-    List<SelectSeat> list = selectSeatMapper.selectList(queryWrapper);
-
-    for (SeatPosition item : query.getSeatPosition()) {
-      for (SelectSeat children : list) {
-        // 判断选择的座位是否已经存在
-        if (
-          query.getTheaterHallId() == children.getTheaterHallId() &&
-          item.getX() == children.getX() &&
-          item.getY() == children.getY()
-        ) {
-          // 如果存在的话，判断是否是同一个人选的
-          if (StpUtil.getLoginIdAsInt() != children.getUserId()) {
-            // 不是同一个人，报错座位冲突
-            return RestBean.error(ResponseCode.ERROR.getCode(), "座位冲突，冲突的座位为：" + item.getX() + "," + item.getY());
-          }
-        }
-      }
-    }
-
-    // 保存选座信息
-    List<SelectSeat> data = query.getSeatPosition().stream().map(item -> {
-      SelectSeat modal = new SelectSeat();
-      modal.setMovieShowTimeId(query.getMovieShowTimeId());
-      modal.setTheaterHallId(query.getTheaterHallId());
-      modal.setX(item.getX());
-      modal.setY(item.getY());
-      modal.setUserId(StpUtil.getLoginIdAsInt());
-      modal.setSelectSeatState(SeatState.selected.getCode());
-      modal.setSeatId(item.getSeatId());
-
-      return modal;
-    }).toList();
-    List<Integer> x = query.getSeatPosition().stream().map(item -> item.getX()).toList();
-    List<Integer> y = query.getSeatPosition().stream().map(item -> item.getY()).toList();
-
-    selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), query.getTheaterHallId(), StpUtil.getLoginIdAsInt(), x, y);
-    selectSeatService.saveBatch(data);
-
-    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
-  }
-
-  @SaCheckLogin
-  @PostMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_CANCEL)
-  public RestBean<Object> cancelSelectSeat(@RequestBody @Validated CancelSelectSeatQuery query) {
-    Integer userId = StpUtil.getLoginIdAsInt();
-    
-    // 验证用户是否有权限取消这些座位
-    QueryWrapper<SelectSeat> queryWrapper = new QueryWrapper<>();
-    List<Integer> queryX = query.getSeatPosition().stream().map(item -> item.getX()).toList();
-    List<Integer> queryY = query.getSeatPosition().stream().map(item -> item.getY()).toList();
-
-    queryWrapper.in("x", queryX);
-    queryWrapper.in("y", queryY);
-    queryWrapper.eq("theater_hall_id", query.getTheaterHallId());
-    queryWrapper.eq("movie_show_time_id", query.getMovieShowTimeId());
-    queryWrapper.eq("user_id", userId);
-    queryWrapper.eq("select_seat_state", SeatState.selected.getCode());
-    queryWrapper.eq("deleted", 0);
-
-    List<SelectSeat> existingSeats = selectSeatMapper.selectList(queryWrapper);
-    
-    // 检查是否所有要取消的座位都存在且属于当前用户
-    for (SeatPosition item : query.getSeatPosition()) {
-      boolean seatExists = existingSeats.stream().anyMatch(seat -> 
-        seat.getX().equals(item.getX()) && 
-        seat.getY().equals(item.getY()) && 
-        seat.getSeatId().equals(item.getSeatId())
-      );
-      
-      if (!seatExists) {
-        return RestBean.error(ResponseCode.ERROR.getCode(), "座位不存在或不属于当前用户：" + item.getX() + "," + item.getY());
-      }
-    }
-
-    // 删除选座信息
-    List<Integer> x = query.getSeatPosition().stream().map(item -> item.getX()).toList();
-    List<Integer> y = query.getSeatPosition().stream().map(item -> item.getY()).toList();
-
-    selectSeatMapper.deleteSeat(query.getMovieShowTimeId(), query.getTheaterHallId(), userId, x, y);
-
-    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
-  }
-
-  @SaCheckLogin
-  @GetMapping(ApiPaths.Common.ShowTime.USER_SELECT_SEAT)
-  public RestBean<Object> selectSeatList(
-    @RequestParam("movieShowTimeId") Integer movieShowTimeId
-  ) {
-
-    // 获取用户选择的座位信息（不包含spec）
-    UserSelectSeat result = movieShowTimeMapper.userSelectSeatWithoutSpec(
-      StpUtil.getLoginIdAsInt(),
-      movieShowTimeId,
-      SeatState.selected.getCode()
-    );
-
-    if (result != null && result.getCinemaId() != null) {
-      // 单独获取影院规格信息
-      List<com.example.backend.response.Spec> specs = cinemaMapper.getCinemaSpec(result.getCinemaId());
-      
-      // 组装spec信息到结果中
-      if (!specs.isEmpty()) {
-        // 设置第一个规格的名称（根据业务逻辑可能需要调整）
-        result.setSpecName(specs.get(0).getName());
-        
-        // 为每个座位设置plusPrice
-        if (result.getSeat() != null) {
-          BigDecimal plusPrice = new BigDecimal(specs.get(0).getPlusPrice() != null ? specs.get(0).getPlusPrice() : "0");
-          for (com.example.backend.response.UserSelectSeatList seat : result.getSeat()) {
-            seat.setPlusPrice(plusPrice);
-          }
-        }
-      }
-    }
-
-    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
-  }
-  @GetMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_LIST)
-  public RestBean<Object> selectSeatList(
-    @RequestParam("movieShowTimeId") Integer movieShowTimeId,
-    @RequestParam("theaterHallId") Integer theaterHallId
-  ) {
-    Object result = selectSeatService.selectSeatList(theaterHallId, movieShowTimeId);
-
-    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+    return result ? RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS)) : RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.TIME_CONFLICT));
   }
 }

@@ -1,0 +1,119 @@
+version: '3.8'
+
+# 生产环境 Docker Compose 配置
+# 使用方式: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:17-alpine
+    container_name: movie-postgres-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-test_movie}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=zh_CN.UTF-8"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - movie-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: movie-redis-prod
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - movie-network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ 消息队列
+  # 使用 3.13.1 版本以兼容延迟消息插件
+  rabbitmq:
+    image: rabbitmq:3.13.1-management-alpine
+    container_name: movie-rabbitmq-prod
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"   # AMQP 端口
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672" # 管理界面端口
+    volumes:
+      - rabbitmq_prod_data:/var/lib/rabbitmq
+    networks:
+      - movie-network
+    # 使用 TTL + DLX 方案实现延迟消息，无需安装插件
+    # RabbitMQ 4.x 不再支持 delayed_message_exchange 插件
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # 后端应用
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: movie-backend-prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-test_movie}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER:-guest}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - JAVA_OPTS=-Xms1024m -Xmx2048m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - movie-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/swagger-ui/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+volumes:
+  postgres_prod_data:
+    driver: local
+  redis_prod_data:
+    driver: local
+  rabbitmq_prod_data:
+    driver: local
+
+networks:
+  movie-network:
+    driver: bridge

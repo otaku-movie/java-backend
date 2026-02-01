@@ -11,6 +11,7 @@ import com.example.backend.response.RolePermissionButton;
 import com.example.backend.utils.MessageUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
+@Slf4j
 @Component
 public class Interceptor implements HandlerInterceptor {
   @Autowired
@@ -64,10 +66,9 @@ public class Interceptor implements HandlerInterceptor {
           });
 
           if (map.get(code) != null) {
-            System.out.println("yes");
             return true;
           } else {
-            System.out.println("no");
+            log.debug("权限校验失败 code={}", code);
             response.setStatus(403);
             throw new AccessDeniedException(MessageUtils.getMessage(MessageKeys.Error.NOT_PERMISSION));
           }

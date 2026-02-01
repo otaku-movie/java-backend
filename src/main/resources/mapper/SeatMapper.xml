@@ -18,6 +18,10 @@
         <result property="disabled" column="disabled"/>
         <result property="wheelChair" column="wheel_chair"/>
         <result property="seatPositionGroup" column="seat_position_group"/>
+        <!-- 展平的区域价格字段，便于其他模块直接使用 -->
+        <result property="areaPrice" column="seat_area_price"/>
+        <!-- 区域ID，便于直接查询区域信息 -->
+        <result property="seatAreaId" column="seat_area_id"/>
         <association property="area" javaType="com.example.backend.response.SeatAreaResponse">
             <id property="id" column="seat_area_id"/>
             <result property="name" column="seat_area_name"/>
@@ -45,7 +49,7 @@
         FROM seat
             LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
         WHERE
-            seat.theater_hall_id=${id} AND
+            seat.theater_hall_id=${theaterHallId} AND
             seat.deleted = 0
         ORDER BY seat.x_axis ASC, seat.y_axis ASC
     </select>

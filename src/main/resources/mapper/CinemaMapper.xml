@@ -194,7 +194,7 @@
             movie_show_time
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall."id"
-        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
+        LEFT JOIN cinema_spec ON cinema_spec.id = movie_show_time.spec_ids[1] AND cinema_spec.deleted = 0
         LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
         WHERE
             movie_show_time.deleted = 0

@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:17-alpine
+    container_name: movie-postgres
+    environment:
+      POSTGRES_DB: test_movie
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgre
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=zh_CN.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/main/resources/sql:/docker-entrypoint-initdb.d
+    networks:
+      - movie-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: movie-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - movie-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # RabbitMQ 消息队列
+  # 使用 3.13.1 版本以兼容延迟消息插件
+  rabbitmq:
+    image: rabbitmq:3.13.1-management-alpine
+    container_name: movie-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"   # AMQP 端口
+      - "15672:15672" # 管理界面端口
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - movie-network
+    # 使用 TTL + DLX 方案实现延迟消息，无需安装插件
+    # RabbitMQ 4.x 不再支持 delayed_message_exchange 插件
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端应用
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # 注意：如需清理缓存，使用命令: docker-compose build --no-cache backend
+      # 或者: docker-compose up --build --force-recreate backend
+    container_name: movie-backend
+    # 添加 extra_hosts 以访问宿主机（Windows/Mac 使用 host.docker.internal）
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # 使用 host.docker.internal 访问宿主机 localhost 的数据库（PostgreSQL 17）
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/test_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgre
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+      - JAVA_DEBUG=${JAVA_DEBUG:-true}  # 是否启用远程调试，默认 true（方便调试）
+    ports:
+      - "8080:8080"
+      - "5005:5005"  # Java 远程调试端口
+    depends_on:
+      # 移除 postgres 依赖，因为使用宿主机数据库
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - movie-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/swagger-ui/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  movie-network:
+    driver: bridge

@@ -1,0 +1,94 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "docker: up",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": [
+        "up",
+        "-d",
+        "--build"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "docker: up with debug",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": [
+        "up",
+        "-d",
+        "--build"
+      ],
+      "env": {
+        "JAVA_DEBUG": "true"
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "docker: wait for backend",
+      "type": "shell",
+      "command": "timeout",
+      "args": [
+        "/t",
+        "30"
+      ],
+      "windows": {
+        "command": "timeout"
+      },
+      "linux": {
+        "command": "sleep"
+      },
+      "osx": {
+        "command": "sleep"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "compile",
+      "type": "shell",
+      "command": "${workspaceFolder}/mvnw",
+      "args": [
+        "clean",
+        "compile",
+        "-DskipTests"
+      ],
+      "windows": {
+        "command": "${workspaceFolder}\\mvnw.cmd"
+      },
+      "options": {
+        "shell": {
+          "executable": "cmd.exe",
+          "args": ["/c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": {
+        "owner": "java",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    }
+  ]
+}

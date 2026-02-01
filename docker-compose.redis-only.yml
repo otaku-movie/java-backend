@@ -1,0 +1,17 @@
+# 仅启动 Redis（本地开发时若未运行完整 docker-compose 可使用此文件）
+# 使用方式: docker-compose -f docker-compose.redis-only.yml up -d
+
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: movie-redis-local
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

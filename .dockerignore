@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings
+
+# Maven
+target/
+.mvn/
+mvnw
+mvnw.cmd
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+
+# 文档
+docs/
+*.md
+!README.md
+
+# 测试
+src/test/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 其他
+nano.save

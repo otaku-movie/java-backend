@@ -42,17 +42,17 @@ public class CreditCardController {
     }
 
     /**
-     * 根据ID获取信用卡详情
+     * 根据ID获取信用卡详情（仅返回遮罩卡号，符合 PCI DSS）
      */
     @SaCheckLogin
     @GetMapping(ApiPaths.Common.CreditCard.DETAIL)
-    public RestBean<CreditCard> getCreditCardDetail(@RequestParam("id") Integer id) {
+    public RestBean<CreditCardResponse> getCreditCardDetail(@RequestParam("id") Integer id) {
         try {
-            CreditCard creditCard = creditCardService.getUserCreditCard(id);
-            if (creditCard == null) {
+            CreditCardResponse response = creditCardService.getCreditCardResponse(id);
+            if (response == null) {
                 return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Error.NOT_PERMISSION));
             }
-            return RestBean.success(creditCard, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+            return RestBean.success(response, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
         } catch (Exception e) {
             return RestBean.error(ResponseCode.ERROR.getCode(), e.getMessage());
         }

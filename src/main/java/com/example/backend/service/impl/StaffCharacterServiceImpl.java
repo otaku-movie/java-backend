@@ -15,6 +15,7 @@ import com.example.backend.service.GenericService;
 import com.example.backend.service.StaffCharacterService;
 import com.example.backend.service.ValidationFunction;
 import com.example.backend.utils.MessageUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 * @description 针对表【button】的数据库操作Service实现
 * @createDate 2024-05-24 17:37:24
 */
+@Slf4j
 @Service
 public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper, StaffCharacter>
     implements StaffCharacterService {
@@ -47,7 +49,7 @@ public class StaffCharacterServiceImpl extends ServiceImpl<StaffCharacterMapper,
     if (query.getId() == null) {
       id = characterMapper.insert(data);
 
-      System.out.println(id);
+      log.debug("插入角色成功 id={}", id);
     } else  {
       UpdateWrapper updateQueryWrapper = new UpdateWrapper();
       updateQueryWrapper.eq("id", query.getId());

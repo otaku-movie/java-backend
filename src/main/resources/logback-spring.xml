@@ -7,7 +7,7 @@
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <charset>UTF-8</charset>
             <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n</pattern>
+                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level){ERROR=red blink, WARN=yellow, INFO=green, DEBUG=cyan, TRACE=magenta} %clr(%logger{36}){cyan} - %msg%n</pattern>
             </layout>
         </encoder>
     </appender>
@@ -17,7 +17,7 @@
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <charset>UTF-8</charset>
             <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%clr(%-5level){highlight} - %msg%n</pattern>
+                <pattern>%clr(%-5level){ERROR=red blink, WARN=yellow, INFO=green, DEBUG=cyan, TRACE=magenta} - %msg%n</pattern>
             </layout>
         </encoder>
     </appender>
@@ -44,7 +44,9 @@
         <logger name="org.springframework.web" level="DEBUG"/>
         <logger name="org.hibernate" level="DEBUG"/>
         <logger name="com.zaxxer.hikari" level="DEBUG"/>
-        <!-- 关闭 MyBatis 的 SQL 输出（我们使用自定义的 SqlPerformanceInterceptor 来记录 SQL） -->
+        <!-- p6spy SQL 日志输出（输出完整的 SQL，参数已填充） -->
+        <logger name="p6spy" level="INFO"/>
+        <!-- 关闭 MyBatis 默认的 SQL 输出（使用 p6spy 输出） -->
         <logger name="org.mybatis" level="WARN"/>
         <logger name="org.apache.ibatis" level="WARN"/>
         <logger name="com.baomidou.mybatisplus" level="WARN"/>

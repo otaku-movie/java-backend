@@ -32,9 +32,14 @@ import java.util.stream.Collectors;
 @Data
 class SeatDetailResponse {
   Integer maxSelectSeatCount;
+  Integer totalSeatCount;  // 影厅座位总数
   List<SeatResponse> seat;
   List<SeatAisle> aisle;
   List<SeatArea> area;
+  /** 当前用户在本场次是否有未支付的锁定订单 */
+  Boolean hasLockedOrder;
+  /** 未支付订单号，用于跳转支付页 */
+  String orderNumber;
 }
 
 @Service
@@ -169,8 +174,12 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
     TheaterHall theaterHall = theaterHallMapper.selectById(theaterHallId);
     Cinema cinema = cinemaMapper.selectById(theaterHall.getCinemaId());
 
+    // 查询影厅座位数
+    Integer totalSeatCount = theaterHallMapper.getSeatCount(theaterHallId);
+
     SeatDetailResponse seatDetailResponse = new SeatDetailResponse();
     seatDetailResponse.setMaxSelectSeatCount(cinema.getMaxSelectSeatCount());
+    seatDetailResponse.setTotalSeatCount(totalSeatCount != null ? totalSeatCount : 0);
     seatDetailResponse.setAisle(getSeatAisle(theaterHallId));
     seatDetailResponse.setSeat(result);
     seatDetailResponse.setArea(getSeatArea(theaterHallId));

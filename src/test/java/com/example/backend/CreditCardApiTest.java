@@ -29,17 +29,14 @@ public class CreditCardApiTest {
         assertTrue(CreditCardUtils.isValidExpiryDate("12/25"));
         assertFalse(CreditCardUtils.isValidExpiryDate("13/25")); // 无效月份
         assertFalse(CreditCardUtils.isValidExpiryDate("12/2025")); // 错误格式
-        
-        // 测试CVV验证
-        assertTrue(CreditCardUtils.isValidCvv("123", "Visa"));
-        assertFalse(CreditCardUtils.isValidCvv("12", "Visa")); // CVV太短
-        
+
         // 测试后四位获取
         assertEquals("4242", CreditCardUtils.getLastFourDigits("4242424242424242"));
         assertEquals("4444", CreditCardUtils.getLastFourDigits("5555 5555 5555 4444"));
         
-        // 测试卡号掩码
-        assertEquals("**** **** **** 4242", CreditCardUtils.maskCardNumber("4242424242424242"));
+        // 测试卡号掩码（PCI DSS：前6位+******+后4位）
+        assertEquals("424242 ****** 4242", CreditCardUtils.maskCardNumber("4242424242424242"));
+        assertEquals("424242 ****** 4242", CreditCardUtils.maskCardNumber("4242 4242 4242 4242"));
     }
 
     @Test
@@ -50,5 +47,11 @@ public class CreditCardApiTest {
         assertEquals("JCB", CreditCardUtils.detectCardType("3530111333300000"));
         assertEquals("UnionPay", CreditCardUtils.detectCardType("6200000000000005"));
         assertEquals("Unknown", CreditCardUtils.detectCardType("1234567890123456"));
+    }
+
+    @Test
+    public void testBuildMaskedDisplay() {
+        assertEquals("424242 ****** 4242", CreditCardUtils.buildMaskedDisplay("424242", "4242"));
+        assertEquals("**** **** **** 4444", CreditCardUtils.buildMaskedDisplay("", "4444"));
     }
 }

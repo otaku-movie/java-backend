@@ -15,8 +15,10 @@
         <result property="theaterHallId" column="theater_hall_id"></result>
         <result property="theaterHallName" column="theater_hall_name"></result>
         <result property="theaterHallSpec" column="theater_hall_spec"></result>
+        <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
         <result property="specId" column="spec_id"></result>
         <result property="specName" column="spec_name"></result>
+        <result property="dimensionType" column="dimension_type"></result>
         <result property="seatCount" column="seat_count"></result>
         <result property="selectedSeatCount" column="selected_seat_count"></result>
         <result property="subtitleId" column="subtitle_id"  typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
@@ -36,6 +38,8 @@
         <result property="cinemaName" column="cinema_name"></result>
         <result property="theaterHallId" column="theater_hall_id"></result>
         <result property="theaterHallName" column="theater_hall_name"></result>
+        <result property="dimensionType" column="dimension_type"></result>
+        <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
         <collection property="seat" ofType="com.example.backend.response.UserSelectSeatList">
             <result property="x" column="x"></result>
             <result property="y" column="y"></result>
@@ -45,6 +49,22 @@
             <result property="areaPrice" column="area_price"></result>
             <result property="movieTicketTypeId" column="movie_ticket_type_id"></result>
         </collection>
+    </resultMap>
+    <!-- 单行场次基础信息，无 seat 集合，避免 collection 映射异常；spec_id 在 spec_ids 为 NULL/空时安全 -->
+    <resultMap id="userSelectSeatBase" type="com.example.backend.response.UserSelectSeat">
+        <result property="movieShowTimeId" column="movie_show_time_id"></result>
+        <result property="movieId" column="movie_id"></result>
+        <result property="movieName" column="movie_name"></result>
+        <result property="moviePoster" column="movie_poster"></result>
+        <result property="date" column="date"></result>
+        <result property="startTime" column="start_time"></result>
+        <result property="endTime" column="end_time"></result>
+        <result property="cinemaId" column="cinema_id"></result>
+        <result property="cinemaName" column="cinema_name"></result>
+        <result property="theaterHallId" column="theater_hall_id"></result>
+        <result property="theaterHallName" column="theater_hall_name"></result>
+        <result property="dimensionType" column="dimension_type"></result>
+        <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
     </resultMap>
     <select id="userSelectSeat" resultMap="userSelectSeat">
         SELECT
@@ -78,37 +98,27 @@
             AND select_seat.select_seat_state = #{seatState} 
             AND select_seat.deleted = 0
     </select>
-    <select id="userSelectSeatWithoutSpec" resultMap="userSelectSeat">
+    <select id="userSelectSeatWithoutSpec" resultMap="userSelectSeatBase">
         SELECT
-            select_seat.movie_show_time_id,
-            select_seat.theater_hall_id,
-            select_seat.x,
-            select_seat.y,
-            select_seat.seat_id,
-            seat_area.price as area_price,
-            seat_area.name as area_name,
-            movie.id as movie_id,
-            movie.name as movie_name,
-            movie.cover as movie_poster,
-            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
-            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
-            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
-            select_seat.movie_ticket_type_id,
-            seat.seat_name as seat_name,
-            cinema.id as cinema_id,
-            cinema.name as cinema_name,
-            theater_hall.name as theater_hall_name
-        FROM select_seat
-        LEFT JOIN seat ON select_seat.seat_id = seat.id AND seat.deleted = 0
-        LEFT JOIN movie_show_time ON select_seat.movie_show_time_id = movie_show_time.id
-        LEFT JOIN movie ON movie_show_time.movie_id = movie.id
-        LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
-        LEFT JOIN theater_hall ON select_seat.theater_hall_id = theater_hall.id AND theater_hall.deleted = 0
-        LEFT JOIN cinema ON theater_hall.cinema_id = cinema.id
-        WHERE select_seat.user_id = #{userId} 
-            AND select_seat.movie_show_time_id = #{movieShowTimeId} 
-            AND select_seat.select_seat_state = #{seatState} 
-            AND select_seat.deleted = 0
+            movie_show_time.id                      AS movie_show_time_id,
+            theater_hall.id                         AS theater_hall_id,
+            movie.id                                AS movie_id,
+            movie.name                              AS movie_name,
+            movie.cover                             AS movie_poster,
+            TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD')        AS date,
+            TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI')      AS start_time,
+            TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI')        AS end_time,
+            cinema.id                               AS cinema_id,
+            cinema.name                             AS cinema_name,
+            theater_hall.name                       AS theater_hall_name,
+            movie_show_time.dimension_type         AS dimension_type,
+            movie_show_time.spec_ids                AS spec_ids
+        FROM movie_show_time
+                 LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+                 LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id AND theater_hall.deleted = 0
+                 LEFT JOIN cinema ON theater_hall.cinema_id = cinema.id
+        WHERE movie_show_time.id = #{movieShowTimeId}
+          AND movie_show_time.deleted = 0
     </select>
     <select id="getMovieShowTimeSubtitle" resultType="com.example.backend.entity.Language">
         SELECT id, name, code
@@ -178,8 +188,10 @@
                         movie_order.order_state = #{orderState}
                 ) AS selected_seat_count,
                 cs2.name as theater_hall_spec,
-                cs3.id as spec_id,
-                cs3.name as spec_name,
+                movie_show_time.spec_ids,
+                movie_show_time.spec_ids[1] as spec_id,
+                (SELECT string_agg(cs.name, '、') FROM cinema_spec cs WHERE cs.id = ANY(COALESCE(movie_show_time.spec_ids, ARRAY[]::integer[])) AND cs.deleted = 0) AS spec_name,
+                movie_show_time.dimension_type,
                 movie_version.version_code
             FROM
                 movie_show_time
@@ -187,7 +199,6 @@
             LEFT JOIN cinema ON cinema.id = movie_show_time.cinema_id AND cinema.deleted = 0
             LEFT JOIN theater_hall ON theater_hall.id = movie_show_time.theater_hall_id AND theater_hall.deleted = 0
             LEFT JOIN cinema_spec cs2 ON theater_hall.cinema_spec_id = cs2.id AND cs2.deleted = 0
-            LEFT JOIN cinema_spec cs3 ON movie_show_time.spec_id = cs3.id AND cs3.deleted = 0
             LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
 
             <where>
@@ -263,7 +274,9 @@
             movie_show_time.status as status,
             movie_show_time.subtitle_id,
             movie_show_time.show_time_tag_id,
-            movie_show_time.spec_id,
+            movie_show_time.spec_ids,
+            movie_show_time.spec_ids[1] as spec_id,
+            movie_show_time.dimension_type,
             movie_show_time.movie_version_id,
             movie.id as movie_id,
             movie.name as movie_name,
@@ -277,7 +290,7 @@
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
                  LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
-                 LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
+                 LEFT JOIN cinema_spec ON cinema_spec.id = movie_show_time.spec_ids[1] AND cinema_spec.deleted = 0
                  LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
         WHERE
             movie_show_time.id = #{id}

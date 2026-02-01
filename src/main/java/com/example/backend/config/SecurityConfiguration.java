@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -14,6 +15,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+@Slf4j
 @EnableWebSecurity // 开启 web security
 @Configuration
 public class SecurityConfiguration {
@@ -25,8 +27,6 @@ public class SecurityConfiguration {
                 auth.anyRequest().permitAll();
             })
             .cors(conf -> {
-                System.out.println(conf);
-                System.out.println("hello world");
                 CorsConfiguration cors = new CorsConfiguration();
                 cors.addAllowedOrigin("*");
                 cors.addAllowedHeader("*");

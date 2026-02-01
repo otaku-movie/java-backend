@@ -9,6 +9,8 @@
         <result property="payMethod" column="pay_method"></result>
 
         <result property="payState" column="pay_state"></result>
+        <result property="refundState" column="refund_state"></result>
+        <result property="refundApplyStatus" column="refund_apply_status"></result>
         <result property="payTotal" column="pay_total"></result>
         <result property="payNumber" column="pay_number"></result>
         <result property="payTime" column="pay_time"></result>
@@ -25,11 +27,18 @@
         <result property="cinemaFullAddress" column="cinema_full_address"></result>
         <result property="theaterHallName" column="theater_hall_name"></result>
         <result property="specName" column="spec_name"></result>
+        <result property="dimensionType" column="dimension_type"></result>
+        <result property="movieShowTimeId" column="movie_show_time_id"></result>
+        <result property="theaterHallId" column="theater_hall_id"></result>
+        <result property="orderNumber" column="order_number"></result>
+        <result property="failureReason" column="failure_reason"></result>
     </resultMap>
     <select id="getMovieOrderSeatListByOrderIds" resultType="com.example.backend.response.order.MovieOrderSeat">
         SELECT
             select_seat.movie_order_id,
             select_seat.id,
+            select_seat.x AS seat_x,
+            select_seat.y AS seat_y,
             seat.seat_name,
             movie_ticket_type.name AS movie_ticket_type_name,
             seat_area.name as area_name,
@@ -45,7 +54,7 @@
                     #{id}
                 </foreach>
             </if>
---             AND select_seat.deleted = 0
+            AND (select_seat.deleted = 0 OR select_seat.deleted IS NULL)
         </where>
         ORDER BY select_seat.movie_order_id, select_seat.id
     </select>
@@ -67,9 +76,12 @@
     <select id="orderList" resultMap="orderList">
         SELECT
             movie_order.id,
+            movie_order.order_number,
             movie_order.order_total,
             movie_order.order_state,
             movie_order.pay_state,
+            (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
+            (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
             movie_order.pay_total,
             movie_order.pay_time,
             movie_order.pay_number,
@@ -85,13 +97,15 @@
             cinema.name as cinema_name,
             cinema.full_address as cinema_full_address,
             theater_hall.name as theater_hall_name,
-            cinema_spec.name as spec_name
+            movie_show_time.id as movie_show_time_id,
+            movie_show_time.theater_hall_id,
+            movie_show_time.dimension_type AS dimension_type,
+            (SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id)) FROM cinema_spec cs WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0) AS spec_name
         FROM movie_order
             LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
             LEFT JOIN movie ON movie_show_time.movie_id = movie.id
             LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
             LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
-            LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
             LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
         <where>
             movie_order.deleted = 0
@@ -127,13 +141,19 @@
     <select id="orderDetail" resultMap="orderList">
         SELECT
         movie_order.id,
+        movie_order.order_number,
         movie_order.order_total,
         movie_order.order_state,
         movie_order.pay_state,
+        (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
+        (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
         movie_order.pay_total,
         movie_order.pay_time,
         movie_order.pay_number,
         movie_order.create_time AS order_time,
+        movie_show_time.id as movie_show_time_id,
+        movie_show_time.theater_hall_id,
+        movie_show_time.dimension_type AS dimension_type,
         TO_CHAR(movie_show_time.start_time::date, 'YYYY-MM-DD') AS date,
         TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') AS start_time,
         TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
@@ -142,15 +162,16 @@
         movie.cover as movie_poster,
         cinema.id as cinema_id,
         cinema.name as cinema_name,
+        cinema.full_address as cinema_full_address,
         theater_hall.name as theater_hall_name,
-        cinema_spec.name as spec_name,
-        payment_methods.name as pay_method
+            (SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id)) FROM cinema_spec cs WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0) AS spec_name,
+            payment_methods.name as pay_method,
+            movie_order.failure_reason AS failure_reason
     FROM movie_order
         LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
         LEFT JOIN movie ON movie_show_time.movie_id = movie.id
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
-        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
     WHERE
         movie_order.id = #{orderId}
@@ -202,9 +223,12 @@
     <select id="userOrderList" resultMap="orderList">
         SELECT
             movie_order.id,
+            movie_order.order_number,
             movie_order.order_total,
             movie_order.order_state,
             movie_order.pay_state,
+            (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
+            (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
             movie_order.pay_total,
             movie_order.pay_time,
             movie_order.pay_number,
@@ -264,12 +288,16 @@
 
     <!-- 我的电影票查询 -->
     <resultMap id="myTicketsResult" type="com.example.backend.response.order.MyTicketsResponse">
+        <result property="movieShowTimeId" column="movie_show_time_id"></result>
         <result property="id" column="id"/>
+        <result property="orderNumber" column="order_number"/>
         <result property="orderTotal" column="order_total"/>
         <result property="orderState" column="order_state"/>
         <result property="orderTime" column="order_time"/>
         <result property="payMethod" column="pay_method"/>
         <result property="payState" column="pay_state"/>
+        <result property="refundState" column="refund_state"/>
+        <result property="refundApplyStatus" column="refund_apply_status"/>
         <result property="payTotal" column="pay_total"/>
         <result property="payNumber" column="pay_number"/>
         <result property="payTime" column="pay_time"/>
@@ -287,16 +315,21 @@
         <result property="theaterHallId" column="theater_hall_id"/>
         <result property="theaterHallName" column="theater_hall_name"/>
         <result property="specName" column="spec_name"/>
+        <result property="dimensionType" column="dimension_type"/>
+        <result property="movieShowTimeId" column="movie_show_time_id"/>
     </resultMap>
 
     <select id="getMyTickets" resultMap="myTicketsResult">
         SELECT DISTINCT
             movie_order.id,
+            movie_order.order_number,
             movie_order.order_total,
             movie_order.order_state,
             movie_order.create_time AS order_time,
             payment_methods.name AS pay_method,
             movie_order.pay_state,
+            (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
+            (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
             movie_order.pay_total,
             NULL AS pay_number,
             movie_order.pay_time,
@@ -313,14 +346,15 @@
             cinema.tel AS cinema_tel,
             theater_hall.id AS theater_hall_id,
             theater_hall.name AS theater_hall_name,
-            cinema_spec.name AS spec_name
+            movie_show_time.dimension_type AS dimension_type,
+            (SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id)) FROM cinema_spec cs WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0) AS spec_name,
+            movie_show_time.id AS movie_show_time_id
         FROM movie_order
         INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
         LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
         LEFT JOIN movie ON movie_show_time.movie_id = movie.id
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
-        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
         WHERE select_seat.user_id = #{userId}
         AND select_seat.deleted = 0
@@ -335,11 +369,14 @@
     <select id="getMyTicketsPage" resultMap="myTicketsResult">
         SELECT DISTINCT
             movie_order.id,
+            movie_order.order_number,
             movie_order.order_total,
             movie_order.order_state,
             movie_order.create_time AS order_time,
             payment_methods.name AS pay_method,
             movie_order.pay_state,
+            (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
+            (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
             movie_order.pay_total,
             NULL AS pay_number,
             movie_order.pay_time,
@@ -356,14 +393,15 @@
             cinema.tel AS cinema_tel,
             theater_hall.id AS theater_hall_id,
             theater_hall.name AS theater_hall_name,
-            cinema_spec.name AS spec_name
+            movie_show_time.dimension_type AS dimension_type,
+            (SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id)) FROM cinema_spec cs WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0) AS spec_name,
+            movie_show_time.id AS movie_show_time_id
         FROM movie_order
         INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
         LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
         LEFT JOIN movie ON movie_show_time.movie_id = movie.id
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
-        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
         WHERE select_seat.user_id = #{query.userId}
         AND select_seat.deleted = 0
@@ -426,11 +464,14 @@
     <select id="getMyTicketsByIds" resultMap="myTicketsResult">
         SELECT
             movie_order.id,
+            movie_order.order_number,
             movie_order.order_total,
             movie_order.order_state,
             movie_order.create_time AS order_time,
             payment_methods.name AS pay_method,
             movie_order.pay_state,
+            (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
+            (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
             movie_order.pay_total,
             NULL AS pay_number,
             movie_order.pay_time,
@@ -447,13 +488,14 @@
             cinema.tel AS cinema_tel,
             theater_hall.id AS theater_hall_id,
             theater_hall.name AS theater_hall_name,
-            cinema_spec.name AS spec_name
+            movie_show_time.dimension_type AS dimension_type,
+            (SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id)) FROM cinema_spec cs WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0) AS spec_name,
+            movie_show_time.id AS movie_show_time_id
         FROM movie_order
         LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
         LEFT JOIN movie ON movie_show_time.movie_id = movie.id
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
-        LEFT JOIN cinema_spec ON movie_show_time.spec_id = cinema_spec.id
         LEFT JOIN payment_methods ON movie_order.pay_method_id = payment_methods.id
         WHERE movie_order.id IN
         <foreach collection="orderIds" item="orderId" open="(" separator="," close=")">

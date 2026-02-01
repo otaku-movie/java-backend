@@ -14,6 +14,7 @@ import com.example.backend.mapper.MovieReplyMapper;
 import com.example.backend.response.comment.CommentReactionData;
 import com.example.backend.utils.Utils;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 import cn.dev33.satoken.stp.StpUtil;
 import java.util.*;
 
+@Slf4j
 @Service
 public class MovieCommentService extends ServiceImpl<MovieCommentMapper, MovieComment> {
   @Resource
@@ -71,7 +73,7 @@ public class MovieCommentService extends ServiceImpl<MovieCommentMapper, MovieCo
         reactionData.setDislikeCount(Integer.parseInt(dislikeCountStr));
       }
     } catch (NumberFormatException e) {
-      System.err.println("Failed to parse like/dislike count from Redis: " + e.getMessage());
+      log.warn("Failed to parse like/dislike count from Redis: {}", e.getMessage());
     }
 
     String keyName = type == CommentEnumType.comment.getCode() ? "commentId" : "replyId";

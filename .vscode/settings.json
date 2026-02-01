@@ -1,4 +1,11 @@
 {
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-21",
+      "path": "C:\\Program Files\\Zulu\\zulu-21.0.1",
+      "default": true
+    }
+  ],
   "java.configuration.updateBuildConfiguration": "automatic",
   "java.compile.nullAnalysis.mode": "automatic",
   "java.project.sourcePaths": [
@@ -16,5 +23,7 @@
   },
   "java.debug.settings.enableRunDebugCodeLens": true,
   "java.debug.settings.hotCodeReplace": "auto",
-  "java.debug.settings.onBuildFailureProceed": true
+  "java.debug.settings.onBuildFailureProceed": true,
+  "java.import.maven.enabled": true,
+  "java.clean.workspace": false
 }

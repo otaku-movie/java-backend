@@ -43,8 +43,12 @@ public class MovieShowTime {
   @TableField(value = "show_time_tag_id", typeHandler = IntegerArrayTypeHandler.class)
   List<Integer>  showTimeTagId;
 
-  @TableField("spec_id")
-  Integer  specId;
+  @TableField(value = "spec_ids", typeHandler = IntegerArrayTypeHandler.class)
+  List<Integer> specIds;
+
+  /** 放映类型：dict_item.code (dict.code=dimensionType)，1=2D 2=3D */
+  @TableField("dimension_type")
+  Integer dimensionType;
 
   @TableField("movie_version_id")
   Integer movieVersionId;

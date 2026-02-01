@@ -18,10 +18,48 @@ error:
   emailRepeat: "Email already exists"
   uploadError: "Upload failed"
   get: "{0} cannot be empty"
+  comment:
+    userRated: "User has already rated this movie, cannot rate again"
+  order:
+    payError: "Order has already been paid"
+    notFound: "Order not found"
+    creating: "Order is being created, please try again later"
+    createFailed: "Order creation failed"
+    cannotCancel: "Only created orders can be cancelled"
+    notOwner: "You do not have permission to operate this order"
+    orSeatExpired: "Order has expired or seat lock has expired, please select seats again"
+  refund:
+    orderNotPaid: "Only paid orders can apply for refund"
+    duplicateApply: "This order already has a pending refund application"
+  payment:
+    rateLimit: "Payment request is too frequent, please try again later"
+    inProgress: "Order payment is in progress, please do not submit repeatedly"
+  showtime:
+    notFound: "Showtime does not exist or has been deleted"
+  seat:
+    noValidSelection: "No valid seat selection found, please select again"
+    invalid: "Seat is invalid or not selected, please select again"
+    coordinateMismatch: "Seat coordinates do not match, please refresh and try again"
+    occupied: "Seat has been selected or locked by another user, please select again"
+    conflict: "Seat conflict, conflicting seat: {0}"
+    alreadySelected: "Seat has been selected, please select again, seat number: {0}"
+    alreadyLocked: "Seat has been locked (order created), please complete payment or cancel the order first, seat number: {0}"
+    selectionProcessing: "Seat selection request is being processed, please do not submit repeatedly"
+  ticketType:
+    notFound: "Ticket type does not exist, please select again"
+  creditCard:
+    notFound: "Credit card does not exist or no permission to access"
+    invalid: "No valid credit card information provided"
+    numberInvalid: "Credit card number format is invalid"
+    expiryInvalid: "Expiry date format is invalid, should be MM/YY format"
 email:
   verifyCode:
     title: "Verification Code"
-    content: "Your verification code is: {0}, the code is valid for 2 minutes."
+    content: "Your verification code is: {0}, the code is valid for 5 minutes."
+    htmlTitle: "Verification Code"
+    htmlLabel: "Your verification code is:"
+    htmlTip: "This code is valid for 5 minutes. Do not share it with others."
+    htmlFooter: "Do not forward this email"
 repeat:
   path: "Path"
   code: "Code"
@@ -244,4 +282,24 @@ dict:
     item:
       "1": "Original"
       "2": "Dubbed"
+  refund_state:
+    name: "Refund Status"
+    item:
+      "1": "No Refund"
+      "2": "Refunding"
+      "3": "Refunded"
+      "4": "Refund Failed"
+  refund_apply_status:
+    name: "Refund Application Status"
+    item:
+      "1": "No Application"
+      "2": "Applied"
+      "3": "Processing"
+      "4": "Approved"
+      "5": "Rejected"
+  dimensionType:
+    name: "Dimension Type"
+    item:
+      "1": "2D"
+      "2": "3D"
 

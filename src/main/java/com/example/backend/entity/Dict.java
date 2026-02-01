@@ -10,11 +10,11 @@ import lombok.Data;
 @TableName("dict")
 public class Dict {
   @TableId(value = "id", type = IdType.AUTO)
-  Integer id;
+  private Integer id;
 
   @TableField("name")
-  String name;
+  private String name;
 
   @TableField("code")
-  String code;
+  private String code;
 }

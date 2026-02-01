@@ -32,3 +32,6 @@ build/
 
 # VSCodeCounter reports
 .VSCodeCounter/
+
+# JVM crash logs
+hs_err_pid*.log

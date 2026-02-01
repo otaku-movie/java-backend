@@ -11,8 +11,11 @@ public class CreditCardUtils {
     // 卡号验证正则表达式
     private static final Pattern VISA_PATTERN = Pattern.compile("^4[0-9]{12}(?:[0-9]{3})?$");
     private static final Pattern MASTERCARD_PATTERN = Pattern.compile("^5[1-5][0-9]{14}$|^2(?:2(?:2[1-9]|[3-9][0-9])|[3-6][0-9][0-9]|7(?:[01][0-9]|20))[0-9]{12}$");
-    private static final Pattern JCB_PATTERN = Pattern.compile("^(?:2131|1800|35\\d{3})\\d{11}$");
+    private static final Pattern AMEX_PATTERN = Pattern.compile("^3[47][0-9]{13}$");
+    private static final Pattern JCB_PATTERN = Pattern.compile("^(?:2131|1800|35[0-9]{2})[0-9]{11}$");
     private static final Pattern UNIONPAY_PATTERN = Pattern.compile("^(62|81)[0-9]{14,17}$");
+    private static final Pattern DISCOVER_PATTERN = Pattern.compile("^6(?:011|5[0-9]{2})[0-9]{12}$");
+    private static final Pattern DINERS_PATTERN = Pattern.compile("^3(?:0[0-5]|[68][0-9])[0-9]{11}$");
 
     /**
      * 根据卡号识别卡类型
@@ -21,21 +24,32 @@ public class CreditCardUtils {
         if (!StringUtils.hasText(cardNumber)) {
             return "Unknown";
         }
-        
+
         // 移除空格和连字符
         String cleanNumber = cardNumber.replaceAll("[\\s-]", "");
-        
+
         if (VISA_PATTERN.matcher(cleanNumber).matches()) {
             return "Visa";
-        } else if (MASTERCARD_PATTERN.matcher(cleanNumber).matches()) {
-            return "MasterCard";
-        } else if (JCB_PATTERN.matcher(cleanNumber).matches()) {
-            return "JCB";
-        } else if (UNIONPAY_PATTERN.matcher(cleanNumber).matches()) {
-            return "UnionPay";
-        } else {
-            return "Unknown";
         }
+        if (MASTERCARD_PATTERN.matcher(cleanNumber).matches()) {
+            return "MasterCard";
+        }
+        if (AMEX_PATTERN.matcher(cleanNumber).matches()) {
+            return "AmericanExpress";
+        }
+        if (JCB_PATTERN.matcher(cleanNumber).matches()) {
+            return "JCB";
+        }
+        if (UNIONPAY_PATTERN.matcher(cleanNumber).matches()) {
+            return "UnionPay";
+        }
+        if (DISCOVER_PATTERN.matcher(cleanNumber).matches()) {
+            return "Discover";
+        }
+        if (DINERS_PATTERN.matcher(cleanNumber).matches()) {
+            return "Diners";
+        }
+        return "Unknown";
     }
 
     /**
@@ -100,19 +114,14 @@ public class CreditCardUtils {
     }
 
     /**
-     * 验证CVV格式
+     * 获取卡号前六位（BIN，用于显示遮罩，符合 PCI DSS 仅显示前6+后4位）
      */
-    public static boolean isValidCvv(String cvv, String cardType) {
-        if (!StringUtils.hasText(cvv)) {
-            return false;
+    public static String getFirstSixDigits(String cardNumber) {
+        if (!StringUtils.hasText(cardNumber)) {
+            return "";
         }
-        
-        // American Express 使用4位CVV，其他卡使用3位
-        if ("AmericanExpress".equals(cardType)) {
-            return cvv.matches("\\d{4}");
-        } else {
-            return cvv.matches("\\d{3}");
-        }
+        String cleanNumber = cardNumber.replaceAll("[\\s-]", "");
+        return cleanNumber.length() >= 6 ? cleanNumber.substring(0, 6) : cleanNumber;
     }
 
     /**
@@ -132,19 +141,35 @@ public class CreditCardUtils {
     }
 
     /**
-     * 格式化卡号显示（隐藏中间部分）
+     * 格式化卡号显示（隐藏中间部分，PCI DSS：仅显示前6位+后4位）
      */
     public static String maskCardNumber(String cardNumber) {
         if (!StringUtils.hasText(cardNumber)) {
             return "";
         }
-        
         String cleanNumber = cardNumber.replaceAll("[\\s-]", "");
+        if (cleanNumber.length() >= 10) {
+            String firstSix = cleanNumber.substring(0, 6);
+            String lastFour = cleanNumber.substring(cleanNumber.length() - 4);
+            return firstSix + " ****** " + lastFour;
+        }
         if (cleanNumber.length() >= 4) {
             String lastFour = cleanNumber.substring(cleanNumber.length() - 4);
             return "**** **** **** " + lastFour;
         }
-        
         return cleanNumber;
+    }
+
+    /**
+     * 根据前6位和后4位生成遮罩显示（用于已存储的卡，不持有完整卡号时）
+     */
+    public static String buildMaskedDisplay(String firstSixDigits, String lastFourDigits) {
+        if (StringUtils.hasText(firstSixDigits) && StringUtils.hasText(lastFourDigits)) {
+            return firstSixDigits + " ****** " + lastFourDigits;
+        }
+        if (StringUtils.hasText(lastFourDigits)) {
+            return "**** **** **** " + lastFourDigits;
+        }
+        return "";
     }
 }

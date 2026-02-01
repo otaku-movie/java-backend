@@ -14,6 +14,7 @@ import io.minio.MinioClient;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Null;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,6 +48,7 @@ class UploadResponse {
   String path;
 }
 
+@Slf4j
 @RestController
 public class UploadController {
 
@@ -60,7 +62,7 @@ public class UploadController {
   }
   @PostMapping(value = ApiPaths.Upload.UPLOAD, consumes = "multipart/form-data")
   public RestBean<UploadResponse> upload(MultipartFile file) throws IOException {
-    System.out.println(minioConfiguration);
+    log.debug("MinIO配置: endpoint={}", minioConfiguration != null ? minioConfiguration.getEndpoint() : "null");
 
     S3Client s3Client = S3Client.builder()
       .region(Region.US_EAST_1)  // 指定区域

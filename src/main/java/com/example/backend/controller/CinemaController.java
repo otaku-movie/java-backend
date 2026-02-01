@@ -8,24 +8,25 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
-import com.example.backend.entity.CinemaSpecSpec;
-import com.example.backend.entity.RestBean;
 import com.example.backend.entity.Cinema;
+import com.example.backend.entity.CinemaPriceConfig;
+import com.example.backend.entity.CinemaSpecSpec;
+import com.example.backend.entity.MovieTicketType;
+import com.example.backend.entity.RestBean;
 import com.example.backend.entity.TheaterHall;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.enumerate.ShowTimeState;
 import com.example.backend.mapper.CinemaMapper;
+import com.example.backend.mapper.CinemaPriceConfigMapper;
 import com.example.backend.mapper.MovieShowTimeMapper;
+import com.example.backend.mapper.MovieTicketTypeMapper;
 import com.example.backend.mapper.TheaterHallMapper;
 import com.example.backend.query.CinemaListQuery;
 import com.example.backend.query.GetCinemaMovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeListQuery;
-import com.example.backend.query.app.getMovieShowTimeQuery;
 import com.example.backend.response.CinemaResponse;
 import com.example.backend.response.MovieShowTimeList;
-import com.example.backend.response.app.AppBeforeMovieShowTimeResponse;
-import com.example.backend.response.app.AppMovieShowTimeResponse;
 import com.example.backend.response.app.GetCinemaMovieShowTimeListResponse;
 import com.example.backend.response.cinema.CinemaScreeningResponse;
 import com.example.backend.response.cinema.MovieShowingResponse;
@@ -41,16 +42,28 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Data
 class Spec {
     Integer specId;
     Integer plusPrice;
+}
+
+@Data
+class TicketTypeItem {
+    private String name;
+    private Integer price;
+}
+
+@Data
+class PriceConfigItem {
+    private Integer dimensionType;
+    private java.math.BigDecimal surcharge;
 }
 
 @Data
@@ -69,6 +82,8 @@ class SaveCinemaQuery {
   private Integer brandId;
   private Integer maxSelectSeatCount;
   private List<Spec> spec;
+  private List<TicketTypeItem> ticketType;
+  private List<PriceConfigItem> priceConfig;
 
   @NotNull
   private Integer regionId;
@@ -82,14 +97,16 @@ class SaveCinemaQuery {
 @RestController
 public class CinemaController {
   @Autowired
-  private MessageUtils messageUtils;
-  @Autowired
   private CinemaMapper cinemaMapper;
 
   @Autowired
   private TheaterHallMapper theaterHallMapper;
   @Autowired
   private MovieShowTimeMapper movieShowTimeMapper;
+  @Autowired
+  private MovieTicketTypeMapper movieTicketTypeMapper;
+  @Autowired
+  private CinemaPriceConfigMapper cinemaPriceConfigMapper;
 
   @Autowired
   private CinemaSpecSpecService cinemaSpecSpecService;
@@ -212,7 +229,7 @@ public class CinemaController {
   public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
-    QueryWrapper queryWrapper = new QueryWrapper();
+    QueryWrapper<TheaterHall> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("cinema_id", id);
     List<TheaterHall> theaterHallList = theaterHallMapper.selectList(queryWrapper);
 
@@ -305,11 +322,38 @@ public class CinemaController {
         return modal;
       }).toList();
 
-      QueryWrapper queryWrapper = new QueryWrapper();
+      QueryWrapper<CinemaSpecSpec> queryWrapper = new QueryWrapper<>();
       queryWrapper.eq("cinema_id", cinema.getId());
-
       cinemaSpecSpecService.remove(queryWrapper);
       cinemaSpecSpecService.saveBatch(spec);
+    }
+
+    if (query.getTicketType() != null) {
+      QueryWrapper<MovieTicketType> ttQw = new QueryWrapper<>();
+      ttQw.eq("cinema_id", cinema.getId());
+      movieTicketTypeMapper.delete(ttQw);
+      for (TicketTypeItem item : query.getTicketType()) {
+        if (item.getName() != null && !item.getName().isEmpty() && item.getPrice() != null) {
+          MovieTicketType tt = new MovieTicketType();
+          tt.setCinemaId(cinema.getId());
+          tt.setName(item.getName());
+          tt.setPrice(BigDecimal.valueOf(item.getPrice()));
+          movieTicketTypeMapper.insert(tt);
+        }
+      }
+    }
+
+    if (query.getPriceConfig() != null) {
+      cinemaPriceConfigMapper.physicalDeleteByCinemaId(cinema.getId());
+      for (PriceConfigItem item : query.getPriceConfig()) {
+        if (item.getDimensionType() != null && item.getSurcharge() != null) {
+          CinemaPriceConfig pc = new CinemaPriceConfig();
+          pc.setCinemaId(cinema.getId());
+          pc.setDimensionType(item.getDimensionType());
+          pc.setSurcharge(item.getSurcharge());
+          cinemaPriceConfigMapper.insert(pc);
+        }
+      }
     }
   }
   @SaCheckLogin
@@ -318,26 +362,26 @@ public class CinemaController {
   @PostMapping(ApiPaths.Admin.Cinema.SAVE)
   public RestBean<String> save(@RequestBody @Validated() SaveCinemaQuery query) {
     if (query.getId() == null) {
-      QueryWrapper wrapper = new QueryWrapper<>();
+      QueryWrapper<Cinema> wrapper = new QueryWrapper<>();
       wrapper.eq("name", query.getName());
       List<Cinema> list = cinemaMapper.selectList(wrapper);
 
       if (list.size() == 0) {
         saveCinema(query);
-        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
+        return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
         return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR));
       }
     } else {
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+      UpdateWrapper<Cinema> updateQueryWrapper = new UpdateWrapper<>();
       updateQueryWrapper.eq("id", query.getId());
       Cinema old = cinemaMapper.selectById(query.getId());
 
       if (Objects.equals(old.getName(), query.getName())) {
         saveCinema(query);
-        return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
+        return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
       } else {
-        QueryWrapper wrapper = new QueryWrapper<>();
+        QueryWrapper<Cinema> wrapper = new QueryWrapper<>();
         wrapper.eq("name", query.getName());
         Cinema find = cinemaMapper.selectOne(wrapper);
 
@@ -345,7 +389,7 @@ public class CinemaController {
           return RestBean.error(ResponseCode.REPEAT.getCode(), MessageUtils.getMessage(MessageKeys.Admin.REPEAT_ERROR));
         } else {
           saveCinema(query);
-          return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
+          return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
         }
       }
     }

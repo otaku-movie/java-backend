@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class CancelOrderQuery {
-  // 订单 ID
+  // 订单号
   @NotNull
-  private Integer orderId;
+  private String orderNumber;
 }

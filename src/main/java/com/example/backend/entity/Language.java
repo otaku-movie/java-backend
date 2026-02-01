@@ -11,23 +11,23 @@ import java.util.Date;
 @TableName("language")
 public class Language {
   @TableId(value = "id", type = IdType.AUTO)
-  Integer id;
+  private Integer id;
 
   @TableField("name")
-  String name;
+  private String name;
 
   @TableField("code")
-  String code;
+  private String code;
 
   @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
-  Date createTime;
+  private Date createTime;
 
   @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
-  Date updateTime;
+  private Date updateTime;
 
   @JsonIgnore
   @TableLogic

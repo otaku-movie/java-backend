@@ -15,9 +15,7 @@ import java.util.Date;
 public class MyMetaObjectHandler implements MetaObjectHandler {
     @Override
     public void insertFill(MetaObject metaObject) {
-        log.info("start insert fill ....");
-        System.out.println(Instant.now());
-        System.out.println(new Date().getTime());
+        log.debug("start insert fill ....");
         this.strictInsertFill(metaObject, "createTime", Date.class, new Date());
         this.strictInsertFill(metaObject, "updateTime", Date.class, new Date());
         Object deletedField = getFieldValByName("deleted", metaObject);

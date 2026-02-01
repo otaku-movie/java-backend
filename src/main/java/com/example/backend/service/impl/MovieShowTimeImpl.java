@@ -9,13 +9,16 @@ import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.utils.Utils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @Service
 public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieShowTime>  implements MovieShowTimeService  {
 
@@ -53,8 +56,9 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
     movieShowTime.setMovieId(query.getMovieId());
     movieShowTime.setStartTime(query.getStartTime());
     movieShowTime.setEndTime(query.getEndTime());
-    movieShowTime.setOpen(query.getOpen());
-    movieShowTime.setSpecId(query.getSpecId());
+    movieShowTime.setOpen(query.getOpen() != null ? query.getOpen() : true);
+    movieShowTime.setSpecIds(query.getSpecIds() != null ? query.getSpecIds() : new ArrayList<>());
+    movieShowTime.setDimensionType(query.getDimensionType());
     movieShowTime.setSubtitleId(query.getSubtitleId());
     movieShowTime.setShowTimeTagId(query.getShowTimeTagId());
     movieShowTime.setMovieVersionId(query.getMovieVersionId());
@@ -68,12 +72,11 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
 
     if (query.getId() == null) {
       movieShowTimeMapper.insert(movieShowTime);
-      System.out.println("可以插入");
+      log.debug("场次插入成功");
     } else {
-      query.setId(query.getId());
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
-      updateQueryWrapper.eq("id", query.getId());
-      movieShowTimeMapper.update(movieShowTime, updateQueryWrapper);
+      movieShowTime.setId(query.getId());
+      movieShowTimeMapper.updateById(movieShowTime);
+      log.debug("场次更新成功");
     }
   }
 
@@ -93,7 +96,7 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
         Date nextStartTime = (i + 1 < list.size()) ? Utils.getTimestamp(list.get(i + 1).getStartTime(), format) : null;
 
         if (nextStartTime != null) {
-          System.out.println("下个时间为：" + Utils.format(nextStartTime, format));
+          log.debug("下个时间为: {}", Utils.format(nextStartTime, format));
         }
 
         // 检查当前时间区间与传入时间区间是否有重叠

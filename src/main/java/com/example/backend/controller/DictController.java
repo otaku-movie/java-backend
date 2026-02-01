@@ -46,11 +46,11 @@ class DictItemEditQuery {
 
 @Data
 class SaveDictQuery {
-  Integer id;
+  private Integer id;
   @NotEmpty(message = "{validator.saveDict.name.required}")
-  String name;
+  private String name;
   @NotEmpty(message = "{validator.saveDict.code.required}")
-  String code;
+  private String code;
 }
 
 @RestController

@@ -47,4 +47,15 @@
             </if>
         </where>
     </select>
+    
+    <!-- 查询影厅座位数 -->
+    <select id="getSeatCount" resultType="java.lang.Integer">
+        SELECT
+            COUNT(seat.show)
+        FROM seat
+        WHERE
+            seat.deleted = 0 AND
+            seat.theater_hall_id = #{theaterHallId} AND
+            seat.show = TRUE
+    </select>
 </mapper>

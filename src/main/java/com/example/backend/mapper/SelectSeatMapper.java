@@ -19,6 +19,11 @@ public interface SelectSeatMapper extends BaseMapper<SelectSeat> {
   void  deleteSeat(Integer movieShowTimeId, Integer theaterHallId, Integer userId, List<Integer> x, List<Integer> y);
   
   /**
+   * 通过座位ID删除选座信息
+   */
+  void deleteSeatBySeatId(Integer movieShowTimeId, Integer theaterHallId, Integer userId, List<Integer> seatIds);
+  
+  /**
    * 统计指定坐标的座位数量（并发控制）
    */
   Integer countSeatsByCoordinates(Integer movieShowTimeId, Integer theaterHallId, List<Integer> x, List<Integer> y, Integer userId);

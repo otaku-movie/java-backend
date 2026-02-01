@@ -3,7 +3,7 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Spring Boot - BackendApplication",
+      "name": "Spring Boot - BackendApplication (F5)",
       "request": "launch",
       "mainClass": "com.example.backend.BackendApplication",
       "projectName": "backend",
@@ -11,6 +11,21 @@
       "vmArgs": "-Dspring.profiles.active=dev",
       "console": "internalConsole",
       "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "java",
+      "name": "Attach to Docker (Remote Debug)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "projectName": "backend",
+      "timeout": 30000,
+      "sourcePaths": [
+        "${workspaceFolder}/src/main/java"
+      ],
+      "sourcePathFilter": [
+        "+com.example.backend.**"
+      ]
     }
   ]
 }

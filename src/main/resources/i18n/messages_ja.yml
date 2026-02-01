@@ -18,10 +18,48 @@ error:
   emailRepeat: "メールアドレスは既に存在します"
   uploadError: "アップロード失敗"
   get: "{0}は空にできません"
+  comment:
+    userRated: "ユーザーは既にこの映画を評価しています。再度評価することはできません"
+  order:
+    payError: "注文は既に支払い済みです"
+    notFound: "注文が見つかりません"
+    creating: "注文を作成中です。しばらくしてから再度お試しください"
+    createFailed: "注文の作成に失敗しました"
+    cannotCancel: "作成済みの注文のみキャンセルできます"
+    notOwner: "この注文を操作する権限がありません"
+    orSeatExpired: "注文の有効期限が切れたか、座席のロックが解除されました。再度座席を選択してください"
+  refund:
+    orderNotPaid: "支払い済みの注文のみ返金申請ができます"
+    duplicateApply: "この注文には既に処理待ちの返金申請があります"
+  payment:
+    rateLimit: "支払いリクエストが頻繁すぎます。しばらくしてから再度お試しください"
+    inProgress: "注文の支払い処理中です。重複して送信しないでください"
+  showtime:
+    notFound: "上映時間が存在しないか、既に削除されています"
+  seat:
+    noValidSelection: "有効な座席選択が見つかりません。再度選択してください"
+    invalid: "座席が無効であるか、選択されていません。再度選択してください"
+    coordinateMismatch: "座席の座標が一致しません。ページを更新して再度お試しください"
+    occupied: "座席は他のユーザーによって選択またはロックされています。再度選択してください"
+    conflict: "座席の競合、競合する座席: {0}"
+    alreadySelected: "座席は既に選択されています。再度選択してください。座席番号: {0}"
+    alreadyLocked: "座席は既にロックされています（注文が作成されました）。支払いを完了するか、注文をキャンセルしてから再度選択してください。座席番号: {0}"
+    selectionProcessing: "座席選択リクエストは処理中です。重複して送信しないでください"
+  ticketType:
+    notFound: "チケットタイプが存在しません。再度選択してください"
+  creditCard:
+    notFound: "クレジットカードが存在しないか、アクセス権限がありません"
+    invalid: "有効なクレジットカード情報が提供されていません"
+    numberInvalid: "クレジットカード番号の形式が無効です"
+    expiryInvalid: "有効期限の形式が無効です。MM/YY形式である必要があります"
 email:
   verifyCode:
     title: "確認コード"
-    content: "あなたの確認コードは: {0} です。このコードは2分間有効です。"
+    content: "あなたの確認コードは: {0} です。このコードは5分間有効です。"
+    htmlTitle: "確認コード"
+    htmlLabel: "あなたの確認コードは："
+    htmlTip: "このコードは5分間有効です。他人に教えないでください。"
+    htmlFooter: "このメールを転送しないでください"
 repeat:
   path: "パス"
   code: "コード"
@@ -244,4 +282,24 @@ dict:
     item:
       "1": "オリジナル版"
       "2": "吹き替え版"
+  refund_state:
+    name: "返金状態"
+    item:
+      "1": "返金なし"
+      "2": "返金中"
+      "3": "返金済み"
+      "4": "返金失敗"
+  refund_apply_status:
+    name: "返金申請状態"
+    item:
+      "1": "申請なし"
+      "2": "申請済み"
+      "3": "処理中"
+      "4": "承認済み"
+      "5": "却下"
+  dimensionType:
+    name: "放映タイプ"
+    item:
+      "1": "2D"
+      "2": "3D"
 

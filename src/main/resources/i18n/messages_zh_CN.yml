@@ -23,10 +23,44 @@ error:
     userRated: "用户已经评分过该电影，无法再次评分"
   order:
     payError: "订单已经支付完成"
+    notFound: "订单不存在"
+    creating: "订单正在创建中，请稍后重试"
+    createFailed: "订单创建失败"
+    cannotCancel: "只有已创建的订单才能取消"
+    orSeatExpired: "订单已超时或座位锁定已过期，请重新选座"
+    notOwner: "无权操作此订单"
+  refund:
+    orderNotPaid: "只有已支付的订单才能申请退款"
+    duplicateApply: "该订单已有待处理的退款申请"
+  payment:
+    rateLimit: "支付请求过于频繁，请稍后再试"
+    inProgress: "订单正在支付中，请勿重复提交"
+  showtime:
+    notFound: "场次不存在或已被删除"
+  seat:
+    noValidSelection: "当前没有有效的选座记录，请重新选座"
+    invalid: "座位已失效或未选中，请重新选择"
+    coordinateMismatch: "座位坐标不匹配，请刷新后重试"
+    occupied: "座位已被其他用户选择或锁定，请重新选择"
+    conflict: "座位冲突，冲突的座位为：{0}"
+    alreadySelected: "座位已被选择，请重新选择，座位号是{0}"
+    alreadyLocked: "座位已被锁定（已创建订单），请先完成支付或取消订单，座位号是{0}"
+    selectionProcessing: "选座请求正在处理中，请勿重复提交"
+  ticketType:
+    notFound: "票种不存在，请重新选择"
+  creditCard:
+    notFound: "信用卡不存在或无权限访问"
+    invalid: "未提供有效的信用卡信息"
+    numberInvalid: "信用卡号格式无效"
+    expiryInvalid: "有效期格式无效，应为MM/YY格式"
 email:
   verifyCode:
     title: "验证码"
-    content: "您的验证码是: {0}，验证码2分钟内有效。"
+    content: "您的验证码是: {0}，验证码5分钟内有效。"
+    htmlTitle: "验证码"
+    htmlLabel: "您的验证码是："
+    htmlTip: "验证码5分钟内有效，请勿泄露给他人。"
+    htmlFooter: "请勿转发此邮件"
 repeat:
   path: "路径"
   code: "code"
@@ -259,3 +293,23 @@ dict:
     item:
       "1": "原版"
       "2": "配音版"
+  refund_state:
+    name: "退款状态"
+    item:
+      "1": "无退款"
+      "2": "退款中"
+      "3": "已退款"
+      "4": "退款失败"
+  refund_apply_status:
+    name: "退款申请状态"
+    item:
+      "1": "无申请"
+      "2": "已申请"
+      "3": "处理中"
+      "4": "已同意"
+      "5": "已拒绝"
+  dimensionType:
+    name: "放映类型"
+    item:
+      "1": "2D"
+      "2": "3D"

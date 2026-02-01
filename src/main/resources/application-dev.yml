@@ -1,20 +1,24 @@
 spring:
   datasource:
+    # 使用 PostgreSQL 官方 JDBC 驱动（42.7.3，支持 PostgreSQL 17）
     driver-class-name: org.postgresql.Driver
-    # 添加字符编码参数，解决中日英编码问题
-    url: jdbc:postgresql://localhost:5432/test_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public
-    username: postgres
-    password: postgre
-#  datasource:
-#    driver-class-name: org.postgresql.Driver
-#    url: jdbc:postgresql://43.154.172.94:5432/test_movie
-#    username: postgres
-#    password: Apoptoxin4869
+    # Docker 环境可通过 SPRING_DATASOURCE_URL 覆盖，本地默认连接 localhost
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/test_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgre}
   data:
     redis:
-      host: localhost
-      port: 6379
+      # Docker 环境使用容器服务名，本地开发使用 localhost
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
       database: 0
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+  rabbitmq:
+    # Docker 环境使用容器服务名，本地开发使用 localhost
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
   servlet:
     multipart:
       # 请求最大大小 不设置会报错
@@ -37,7 +41,9 @@ logging:
     org.springframework.context: INFO
     org.hibernate: DEBUG
     com.zaxxer.hikari: DEBUG
-    # 关闭 MyBatis 的 SQL 输出（我们使用自定义的 SqlPerformanceInterceptor 来记录 SQL）
+    # p6spy SQL 日志输出（输出完整的 SQL，参数已填充）
+    p6spy: INFO
+    # 关闭 MyBatis 默认的 SQL 输出（使用 p6spy 输出）
     org.mybatis: WARN
     org.apache.ibatis: WARN
     com.baomidou.mybatisplus: WARN

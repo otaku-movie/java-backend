@@ -24,6 +24,9 @@ public class TheaterHall {
   @TableField("column_count")
   Integer columnCount;
 
+  @TableField("seat_count")
+  Integer seatCount;
+
   @TableField("cinema_id")
   Integer cinemaId;
 

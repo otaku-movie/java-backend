@@ -40,14 +40,13 @@ import java.util.List;
 
 @Data
 class ReReleaseSaveQuery {
-  Integer id;
+  private Integer id;
 
   @NotNull(message = "{validator.movieComment.movieId.required}")
-  Integer movieId;
+  private Integer movieId;
 
-
-  Date startDate;
-  Date endDate;
+  private Date startDate;
+  private Date endDate;
 }
 
 @RestController

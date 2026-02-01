@@ -18,6 +18,4 @@ class UserSelectSeatList {
   private String areaName;
 
   private Integer movieTicketTypeId;
-
-  private BigDecimal plusPrice;
 }

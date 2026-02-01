@@ -57,8 +57,8 @@ mybatis:
   database:
     type: postgresql
 mybatis-plus:
-  # 关闭 MyBatis Plus 的 SQL 输出（我们使用自定义的 SqlPerformanceInterceptor 来记录 SQL）
-  # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  # 关闭 MyBatis Plus 的 SQL 输出（使用 p6spy 输出完整的 SQL）
+  # log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   mapper-locations: classpath:/mapper/*Mapper.xml
   global-config:
     db-config:
@@ -86,3 +86,17 @@ sa-token:
   token-style: uuid
   # 是否输出操作日志
   is-log: true
+
+# 选座配置
+seat-selection:
+  # 选座自动取消时间（单位：秒），默认15分钟
+  auto-cancel-timeout: 900
+
+# 订单配置
+order:
+  # 订单支付超时时间（单位：秒），默认15分钟
+  payment-timeout: 900
+  # 支付限流：每个用户每分钟最大支付请求次数
+  payment-rate-limit: 10
+  # 支付锁超时时间（单位：秒），防止重复支付
+  payment-lock-timeout: 60

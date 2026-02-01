@@ -9,9 +9,12 @@ import com.example.backend.query.CreditCardSaveQuery;
 import com.example.backend.query.CreditCardUpdateQuery;
 import com.example.backend.response.CreditCardResponse;
 import com.example.backend.utils.CreditCardUtils;
-import org.springframework.beans.BeanUtils;
+import com.example.backend.exception.BusinessException;
+import com.example.backend.enumerate.ResponseCode;
+import com.example.backend.constants.MessageKeys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -43,6 +46,14 @@ public class CreditCardService extends ServiceImpl<CreditCardMapper, CreditCard>
     }
 
     /**
+     * 根据ID获取用户的信用卡响应（遮罩敏感信息，符合 PCI DSS）
+     */
+    public CreditCardResponse getCreditCardResponse(Integer cardId) {
+        CreditCard card = getUserCreditCard(cardId);
+        return card == null ? null : convertToResponse(card);
+    }
+
+    /**
      * 保存信用卡
      */
     @Transactional
@@ -51,17 +62,28 @@ public class CreditCardService extends ServiceImpl<CreditCardMapper, CreditCard>
         
         // 验证信用卡信息
         validateCreditCardData(query);
-        
+
+        // PCI DSS: 不存储完整卡号，使用令牌化
         CreditCard creditCard = new CreditCard();
-        BeanUtils.copyProperties(query, creditCard);
         creditCard.setUserId(userId);
-        
-        // 自动检测卡类型
-        String detectedCardType = CreditCardUtils.detectCardType(query.getCardNumber());
-        creditCard.setCardType(detectedCardType);
-        
-        // 设置后四位数字
+        creditCard.setCardHolderName(query.getCardHolderName());
+        creditCard.setExpiryDate(query.getExpiryDate());
+        creditCard.setIsDefault(query.getIsDefault());
+
+        // 生成令牌（真实场景应由支付网关如 Stripe 返回 token）
+        creditCard.setCardToken(java.util.UUID.randomUUID().toString().replace("-", ""));
+
+        // 仅存储前6位+后4位用于显示遮罩（PCI DSS 允许）
+        creditCard.setFirstSixDigits(CreditCardUtils.getFirstSixDigits(query.getCardNumber()));
         creditCard.setLastFourDigits(CreditCardUtils.getLastFourDigits(query.getCardNumber()));
+
+        // 优先从卡号推导卡类型；若推导为 Unknown 且前端有传 cardType 则使用 fallback
+        String detectedCardType = CreditCardUtils.detectCardType(query.getCardNumber());
+        if ("Unknown".equals(detectedCardType) && StringUtils.hasText(query.getCardType())) {
+            creditCard.setCardType(query.getCardType());
+        } else {
+            creditCard.setCardType(detectedCardType);
+        }
         
         // 如果设为默认卡，先取消其他默认卡
         if (Boolean.TRUE.equals(query.getIsDefault())) {
@@ -87,18 +109,25 @@ public class CreditCardService extends ServiceImpl<CreditCardMapper, CreditCard>
         
         CreditCard existingCard = creditCardMapper.selectByIdAndUserId(query.getId(), userId);
         if (existingCard == null) {
-            throw new RuntimeException("信用卡不存在或无权限访问");
+            throw new BusinessException(ResponseCode.CREDIT_CARD_NOT_FOUND, MessageKeys.Error.CREDIT_CARD_NOT_FOUND);
         }
-        
-        CreditCard updateCard = new CreditCard();
-        BeanUtils.copyProperties(query, updateCard);
-        
-        // 如果设为默认卡，先取消其他默认卡
+
+        // 仅更新允许修改的字段，不触碰 token / 卡号相关字段
+        if (StringUtils.hasText(query.getCardHolderName())) {
+            existingCard.setCardHolderName(query.getCardHolderName());
+        }
+        if (StringUtils.hasText(query.getExpiryDate())) {
+            existingCard.setExpiryDate(query.getExpiryDate());
+        }
+
         if (Boolean.TRUE.equals(query.getIsDefault())) {
             clearUserDefaultCards(userId);
         }
-        
-        creditCardMapper.updateById(updateCard);
+        if (query.getIsDefault() != null) {
+            existingCard.setIsDefault(query.getIsDefault());
+        }
+
+        creditCardMapper.updateById(existingCard);
     }
 
     /**
@@ -110,7 +139,7 @@ public class CreditCardService extends ServiceImpl<CreditCardMapper, CreditCard>
         
         CreditCard existingCard = creditCardMapper.selectByIdAndUserId(cardId, userId);
         if (existingCard == null) {
-            throw new RuntimeException("信用卡不存在或无权限访问");
+            throw new BusinessException(ResponseCode.CREDIT_CARD_NOT_FOUND, MessageKeys.Error.CREDIT_CARD_NOT_FOUND);
         }
         
         // 如果删除的是默认卡，需要设置另一张卡为默认卡
@@ -137,7 +166,7 @@ public class CreditCardService extends ServiceImpl<CreditCardMapper, CreditCard>
         
         CreditCard existingCard = creditCardMapper.selectByIdAndUserId(cardId, userId);
         if (existingCard == null) {
-            throw new RuntimeException("信用卡不存在或无权限访问");
+            throw new BusinessException(ResponseCode.CREDIT_CARD_NOT_FOUND, MessageKeys.Error.CREDIT_CARD_NOT_FOUND);
         }
         
         // 取消其他默认卡
@@ -178,27 +207,29 @@ public class CreditCardService extends ServiceImpl<CreditCardMapper, CreditCard>
     private void validateCreditCardData(CreditCardSaveQuery query) {
         // 验证卡号
         if (!CreditCardUtils.isValidCardNumber(query.getCardNumber())) {
-            throw new RuntimeException("信用卡号格式无效");
+            throw new BusinessException(ResponseCode.PARAMETER_FORMAT_ERROR, MessageKeys.Error.CREDIT_CARD_NUMBER_INVALID);
         }
         
         // 验证有效期
         if (!CreditCardUtils.isValidExpiryDate(query.getExpiryDate())) {
-            throw new RuntimeException("有效期格式无效，应为MM/YY格式");
-        }
-        
-        // 验证CVV
-        String detectedCardType = CreditCardUtils.detectCardType(query.getCardNumber());
-        if (!CreditCardUtils.isValidCvv(query.getCvv(), detectedCardType)) {
-            throw new RuntimeException("CVV格式无效");
+            throw new BusinessException(ResponseCode.PARAMETER_FORMAT_ERROR, MessageKeys.Error.CREDIT_CARD_EXPIRY_INVALID);
         }
     }
 
     /**
-     * 转换为响应对象
+     * 转换为响应对象（不包含敏感数据，卡号仅返回遮罩格式）
      */
     private CreditCardResponse convertToResponse(CreditCard creditCard) {
         CreditCardResponse response = new CreditCardResponse();
-        BeanUtils.copyProperties(creditCard, response);
+        response.setId(creditCard.getId());
+        response.setCardType(creditCard.getCardType());
+        response.setLastFourDigits(creditCard.getLastFourDigits());
+        response.setCardHolderName(creditCard.getCardHolderName());
+        response.setExpiryDate(creditCard.getExpiryDate());
+        response.setIsDefault(creditCard.getIsDefault());
+        response.setCreateTime(creditCard.getCreateTime());
+        response.setMaskedCardNumber(CreditCardUtils.buildMaskedDisplay(
+                creditCard.getFirstSixDigits(), creditCard.getLastFourDigits()));
         return response;
     }
 }

@@ -87,6 +87,62 @@ public final class MessageKeys {
         public static final String UPLOAD = "error.uploadError";
         /** 不能为空 - 验证相关 */
         public static final String REQUIRED = "error.get";
+        
+        // ==================== 业务错误消息 ====================
+        /** 场次不存在或已被删除 */
+        public static final String SHOWTIME_NOT_FOUND = "error.showtime.notFound";
+        /** 当前没有有效的选座记录 */
+        public static final String NO_VALID_SEAT_SELECTION = "error.seat.noValidSelection";
+        /** 订单正在创建中 */
+        public static final String ORDER_CREATING = "error.order.creating";
+        /** 座位已失效或未选中 */
+        public static final String SEAT_INVALID = "error.seat.invalid";
+        /** 座位坐标不匹配 */
+        public static final String SEAT_COORDINATE_MISMATCH = "error.seat.coordinateMismatch";
+        /** 票种不存在 */
+        public static final String TICKET_TYPE_NOT_FOUND = "error.ticketType.notFound";
+        /** 座位已被其他用户选择或锁定 */
+        public static final String SEAT_OCCUPIED = "error.seat.occupied";
+        /** 座位冲突 */
+        public static final String SEAT_CONFLICT = "error.seat.conflict";
+        /** 座位已被选择 */
+        public static final String SEAT_ALREADY_SELECTED = "error.seat.alreadySelected";
+        /** 座位已被锁定（即使是同一用户） */
+        public static final String SEAT_ALREADY_LOCKED = "error.seat.alreadyLocked";
+        /** 选座请求正在处理中 */
+        public static final String SEAT_SELECTION_PROCESSING = "error.seat.selectionProcessing";
+        /** 订单不存在 */
+        public static final String ORDER_NOT_FOUND = "error.order.notFound";
+        /** 只有已创建的订单才能取消 */
+        public static final String ORDER_CANNOT_CANCEL = "error.order.cannotCancel";
+        /** 订单创建失败 */
+        public static final String ORDER_CREATE_FAILED = "error.order.createFailed";
+        /** 订单已超时或座位锁定已过期，请重新选座 */
+        public static final String ORDER_OR_SEAT_EXPIRED = "error.order.orSeatExpired";
+        /** 无权操作此订单 */
+        public static final String ORDER_NOT_OWNER = "error.order.notOwner";
+        /** 只有已支付的订单才能申请退款 */
+        public static final String REFUND_ORDER_NOT_PAID = "error.refund.orderNotPaid";
+        /** 该订单已有待处理的退款申请 */
+        public static final String REFUND_DUPLICATE_APPLY = "error.refund.duplicateApply";
+        /** 支付请求过于频繁，请稍后再试 */
+        public static final String PAYMENT_RATE_LIMIT = "error.payment.rateLimit";
+        /** 订单正在支付中，请勿重复提交 */
+        public static final String PAYMENT_IN_PROGRESS = "error.payment.inProgress";
+        /** 信用卡不存在或无权限访问 */
+        public static final String CREDIT_CARD_NOT_FOUND = "error.creditCard.notFound";
+        /** 未提供有效的信用卡信息 */
+        public static final String CREDIT_CARD_INVALID = "error.creditCard.invalid";
+        /** 信用卡号格式无效 */
+        public static final String CREDIT_CARD_NUMBER_INVALID = "error.creditCard.numberInvalid";
+        /** 有效期格式无效 */
+        public static final String CREDIT_CARD_EXPIRY_INVALID = "error.creditCard.expiryInvalid";
+        /** 座位ID不能为空 */
+        public static final String SEAT_ID_REQUIRED = "error.seat.idRequired";
+        /** 座位名称不能为空 */
+        public static final String SEAT_NAME_REQUIRED = "error.seat.nameRequired";
+        /** TTL配置无效（必须大于0） */
+        public static final String TTL_INVALID = "error.config.ttlInvalid";
     }
     
     /**
@@ -335,8 +391,16 @@ public final class MessageKeys {
                 private VerifyCode() {}
                 /** 验证码标题 - 邮件发送 */
                 public static final String TITLE = "email.verifyCode.title";
-                /** 验证码内容 - 邮件发送 */
+                /** 验证码内容(纯文本) - 邮件发送 */
                 public static final String CONTENT = "email.verifyCode.content";
+                /** 验证码邮件-标题 */
+                public static final String HTML_TITLE = "email.verifyCode.htmlTitle";
+                /** 验证码邮件-标签 */
+                public static final String HTML_LABEL = "email.verifyCode.htmlLabel";
+                /** 验证码邮件-提示 */
+                public static final String HTML_TIP = "email.verifyCode.htmlTip";
+                /** 验证码邮件-页脚 */
+                public static final String HTML_FOOTER = "email.verifyCode.htmlFooter";
             }
         }
     }

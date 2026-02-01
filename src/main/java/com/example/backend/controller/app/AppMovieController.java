@@ -32,9 +32,10 @@ import java.util.stream.Collectors;
 
 
 @Data
-class  getMovieStaffQuery {
-  Integer movieId;
+class getMovieStaffQuery {
+  private Integer movieId;
 }
+
 @RestController
 public class AppMovieController {
   @Autowired
@@ -178,7 +179,11 @@ public class AppMovieController {
           // 时间已经在分组前转换为30小时制了，直接使用
           showTime.setStartTime(item.getStartTime());
           showTime.setEndTime(item.getEndTime());
-          showTime.setSpecName(item.getSpecName());
+          showTime.setSpecNames(item.getSpecName() != null && !item.getSpecName().isEmpty()
+              ? Arrays.asList(item.getSpecName().split("、"))
+              : new ArrayList<>());
+          // 放映类型为空时默认 1（2D）
+          showTime.setDimensionType(item.getDimensionType());
           showTime.setTotalSeats(item.getTotalSeats());
           showTime.setSelectedSeats(item.getSelectedSeats());
           // 计算可用座位数

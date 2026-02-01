@@ -2,9 +2,11 @@ package com.example.backend.query.app;
 
 import com.example.backend.query.PaginationQuery;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = false)
 @Data
 public class getMovieShowTimeQuery extends PaginationQuery {
   Integer movieId;
@@ -12,6 +14,8 @@ public class getMovieShowTimeQuery extends PaginationQuery {
   Integer subtitleId;
   // 特殊标签筛选
   Integer showTimeTagId;
+  /** 放映类型筛选：2D/3D，对应 dict_item.id，如 1=2D、2=3D */
+  Integer dimensionType;
   // 地区筛选
   Integer regionId;
   Integer prefectureId;

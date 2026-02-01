@@ -39,8 +39,7 @@ public class BackendApplication {
 
 		// 通过 Environment 取激活的 Profile
 		String[] profiles = ctx.getEnvironment().getActiveProfiles();
-		System.out.println("Active Profiles: " + Arrays.toString(profiles));
-
-		System.out.println("启动成功，Sa-Token 配置如下：" + SaManager.getConfig());
+		org.slf4j.LoggerFactory.getLogger(BackendApplication.class).info("Active Profiles: {}", Arrays.toString(profiles));
+		org.slf4j.LoggerFactory.getLogger(BackendApplication.class).info("启动成功，Sa-Token 配置: {}", SaManager.getConfig());
 	}
 }

@@ -46,9 +46,6 @@ public class Seat {
   @TableField("seat_position_group")
   String seatPositionGroup;
 
-  @TableField("seat_type")
-  Integer seatType;
-
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

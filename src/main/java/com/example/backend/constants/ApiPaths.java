@@ -227,14 +227,14 @@ public final class ApiPaths {
             public static final String SPEC_SAVE = ADMIN_BASE + "/cinema/spec/save";
             /** 影院规格删除 - DELETE /api/admin/cinema/spec/remove */
             public static final String SPEC_REMOVE = ADMIN_BASE + "/cinema/spec/remove";
-            /** 电影票类型列表 - POST /api/cinema/ticketType/list */
+            /** 电影票类型列表（只读）- POST /api/cinema/ticketType/list；增删改已合并到影院保存接口 */
             public static final String TICKET_TYPE_LIST = BASE + "/cinema/ticketType/list";
-            /** 电影票类型详情 - GET /api/cinema/ticketType/detail */
-            public static final String TICKET_TYPE_DETAIL = BASE + "/cinema/ticketType/detail";
-            /** 电影票类型保存 - POST /api/admin/cinema/ticketType/save */
-            public static final String TICKET_TYPE_SAVE = ADMIN_BASE + "/cinema/ticketType/save";
-            /** 电影票类型删除 - DELETE /api/admin/cinema/ticketType/remove */
-            public static final String TICKET_TYPE_REMOVE = ADMIN_BASE + "/cinema/ticketType/remove";
+            /** 票价配置列表 - POST /api/cinema/priceConfig/list */
+            public static final String PRICE_CONFIG_LIST = BASE + "/cinema/priceConfig/list";
+            /** 票价配置保存 - POST /api/admin/cinema/priceConfig/save */
+            public static final String PRICE_CONFIG_SAVE = ADMIN_BASE + "/cinema/priceConfig/save";
+            /** 票价配置删除 - DELETE /api/admin/cinema/priceConfig/remove */
+            public static final String PRICE_CONFIG_REMOVE = ADMIN_BASE + "/cinema/priceConfig/remove";
         }
         
         /**
@@ -312,6 +312,17 @@ public final class ApiPaths {
             public static final String REMOVE = ADMIN_BASE + "/movie_show_time/remove";
             /** 保存场次 - POST /api/admin/movie_show_time/save */
             public static final String SAVE = ADMIN_BASE + "/movie_show_time/save";
+        }
+        
+        /**
+         * Admin 端 - 退款管理
+         */
+        public static final class Refund {
+            private Refund() {}
+            /** 退款列表 - POST /api/admin/refund/list */
+            public static final String LIST = ADMIN_BASE + "/refund/list";
+            /** 处理退款 - POST /api/admin/refund/process */
+            public static final String PROCESS = ADMIN_BASE + "/refund/process";
         }
         
         /**
@@ -637,6 +648,23 @@ public final class ApiPaths {
         }
         
         /**
+         * 通用 - 退款模块
+         */
+        public static final class Refund {
+            private Refund() {}
+            /** 按订单号查退款列表 - GET /api/refund/list */
+            public static final String LIST = COMMON_BASE + "/refund/list";
+            /** 我的退款列表(分页) - POST /api/refund/myList */
+            public static final String MY_LIST = COMMON_BASE + "/refund/myList";
+            /** 退款详情 - GET /api/refund/detail */
+            public static final String DETAIL = COMMON_BASE + "/refund/detail";
+            /** 申请退款 - POST /api/refund/apply */
+            public static final String APPLY = COMMON_BASE + "/refund/apply";
+            /** 取消申请 - POST /api/refund/cancel */
+            public static final String CANCEL = COMMON_BASE + "/refund/cancel";
+        }
+        
+        /**
          * 通用 - 订单模块
          */
         public static final class Order {
@@ -708,6 +736,8 @@ public final class ApiPaths {
         public static final String CAPTCHA = COMMON_BASE + "/verify/captcha";
         /** 校验验证码 - POST /api/verify/checkCaptcha */
         public static final String CHECK_CAPTCHA = COMMON_BASE + "/verify/checkCaptcha";
+        /** 邮件模板预览 - GET /api/verify/emailPreview */
+        public static final String EMAIL_PREVIEW = COMMON_BASE + "/verify/emailPreview";
     }
     
     /**

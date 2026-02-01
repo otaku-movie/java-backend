@@ -1,0 +1,57 @@
+version: '3.8'
+
+# 开发环境 Docker Compose 配置
+# 使用方式: docker-compose -f docker-compose.dev.yml up
+
+services:
+  # Redis 缓存（开发环境使用宿主机 PostgreSQL，本文件不再启动 Postgres 容器）
+  redis:
+    image: redis:7-alpine
+    container_name: movie-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - movie-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # RabbitMQ 消息队列
+  # 使用 3.13.1 版本以兼容延迟消息插件
+  rabbitmq:
+    image: rabbitmq:3.13.1-management-alpine
+    container_name: movie-rabbitmq-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"   # AMQP 端口
+      - "15672:15672" # 管理界面端口
+    volumes:
+      - rabbitmq_dev_data:/var/lib/rabbitmq
+    networks:
+      - movie-network
+    # 使用 TTL + DLX 方案实现延迟消息，无需安装插件
+    # RabbitMQ 4.x 不再支持 delayed_message_exchange 插件
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis_dev_data:
+    driver: local
+  rabbitmq_dev_data:
+    driver: local
+  postgres_dev_data:
+    driver: local
+
+networks:
+  movie-network:
+    driver: bridge

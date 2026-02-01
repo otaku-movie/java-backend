@@ -19,8 +19,9 @@ public class MovieShowTimeQuery {
   String startTime;
   @NotNull
   String endTime;
-  @NotNull
-  Integer specId;
+  List<Integer> specIds;
+  /** 放映类型 dict_item.id 或 code (2D/3D) */
+  Integer dimensionType;
   List<Integer> subtitleId;
   List<Integer> showTimeTagId;
   Integer movieVersionId;

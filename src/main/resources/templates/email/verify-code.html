@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .wrapper {
+      max-width: 440px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .header {
+      background: #1e293b;
+      padding: 28px 24px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #f8fafc;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    .content {
+      padding: 36px 32px;
+    }
+    .label {
+      color: #64748b;
+      font-size: 15px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .code-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px 32px;
+      text-align: center;
+      margin: 24px 0;
+    }
+    .code {
+      font-size: 36px;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+    .tip {
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.6;
+      padding-top: 8px;
+    }
+    .footer {
+      border-top: 1px solid #f1f5f9;
+      padding: 20px 32px;
+      text-align: center;
+    }
+    .footer span {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>{{title}}</h1>
+    </div>
+    <div class="content">
+      <p class="label">{{label}}</p>
+      <div class="code-box">
+        <div class="code">{{code}}</div>
+      </div>
+      <p class="tip">{{tip}}</p>
+    </div>
+    <div class="footer">
+      <span>{{footer}}</span>
+    </div>
+  </div>
+</body>
+</html>

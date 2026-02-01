@@ -15,6 +15,7 @@ import com.example.backend.response.AreaResponse;
 import com.example.backend.response.movie.MovieResponse;
 import com.example.backend.utils.MessageUtils;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@EqualsAndHashCode(callSuper = false)
 @Data
 class AppVersionListQuery extends PaginationQuery {
   private String platform;
