@@ -45,6 +45,15 @@ public class UserSelectSeat {
   /** 规格ID列表（IMAX/Dolby等） */
   private List<Integer> specIds;
 
+  /** 是否支持ムビチケ等前売り券 */
+  private Boolean allowPresale;
+
+  /** 定价模式：1=系统活动 2=固定价格 */
+  private Integer pricingMode;
+
+  /** 固定价格模式下的单价（pricing_mode=2 时使用） */
+  private BigDecimal fixedAmount;
+
   /** 规格名称+加价列表（用于展示） */
   private List<SpecPriceItem> specPriceList;
 

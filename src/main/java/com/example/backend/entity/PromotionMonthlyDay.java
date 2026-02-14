@@ -18,8 +18,8 @@ public class PromotionMonthlyDay {
   @TableId(value = "id", type = IdType.AUTO)
   private Integer id;
 
-  @TableField("promotion_id")
-  private Integer promotionId;
+  @TableField("cinema_id")
+  private Integer cinemaId;
 
   @TableField("name")
   private String name;
@@ -29,6 +29,14 @@ public class PromotionMonthlyDay {
 
   @TableField("price")
   private Integer price;
+
+  /** 规则优先级，数值越小越优先，同类型内排序 */
+  @TableField("priority")
+  private Integer priority;
+
+  /** 是否启用 */
+  @TableField("enabled")
+  private Boolean enabled;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)

@@ -25,6 +25,13 @@
         <result property="movieShowTimeTagsId" column="show_time_tag_id"  typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
         <result property="movieVersionId" column="movie_version_id"></result>
         <result property="versionCode" column="version_code"></result>
+        <result property="open" column="open"></result>
+        <result property="publishAt" column="publish_at"></result>
+        <result property="saleOpenAt" column="sale_open_at"></result>
+        <result property="pricingMode" column="pricing_mode"></result>
+        <result property="fixedAmount" column="fixed_amount"></result>
+        <result property="surcharge" column="surcharge"></result>
+        <result property="allowPresale" column="allow_presale"></result>
     </resultMap>
     <resultMap id="userSelectSeat" type="com.example.backend.response.UserSelectSeat">
         <result property="movieShowTimeId" column="movie_show_time_id"></result>
@@ -65,6 +72,10 @@
         <result property="theaterHallName" column="theater_hall_name"></result>
         <result property="dimensionType" column="dimension_type"></result>
         <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
+        <result property="specName" column="spec_name"></result>
+        <result property="allowPresale" column="allow_presale"></result>
+        <result property="pricingMode" column="pricing_mode"></result>
+        <result property="fixedAmount" column="fixed_amount"></result>
     </resultMap>
     <select id="userSelectSeat" resultMap="userSelectSeat">
         SELECT
@@ -112,7 +123,15 @@
             cinema.name                             AS cinema_name,
             theater_hall.name                       AS theater_hall_name,
             movie_show_time.dimension_type         AS dimension_type,
-            movie_show_time.spec_ids                AS spec_ids
+            movie_show_time.spec_ids                AS spec_ids,
+            (
+                SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id))
+                FROM cinema_spec cs
+                WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0
+            )                                       AS spec_name,
+            movie_show_time.allow_presale           AS allow_presale,
+            movie_show_time.pricing_mode            AS pricing_mode,
+            movie_show_time.fixed_amount           AS fixed_amount
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id AND theater_hall.deleted = 0
@@ -272,6 +291,13 @@
             movie_show_time.start_time,
             movie_show_time.end_time,
             movie_show_time.status as status,
+            movie_show_time.open,
+            movie_show_time.publish_at,
+            movie_show_time.sale_open_at,
+            movie_show_time.pricing_mode,
+            movie_show_time.fixed_amount,
+            movie_show_time.surcharge,
+            movie_show_time.allow_presale,
             movie_show_time.subtitle_id,
             movie_show_time.show_time_tag_id,
             movie_show_time.spec_ids,

@@ -31,6 +31,12 @@ spring:
       max-http-form-post-size: -1
     port: 8080
     address: 0.0.0.0
+minio:
+  accessKey: RQXIcweef6ZzjFWFsDrj
+  secretKey: pfASmYyXgqQnR81CHTLyIIaHTt1SoxUcTgYaeR2p
+  endpoint: http://43.154.172.94:9000/
+  previewURL: https://drive.bangumi.xyz/
+  bucket: test-movie
 logging:
   level:
     root: INFO

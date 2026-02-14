@@ -66,10 +66,11 @@ public class MovieOrderController {
 
   @Autowired
   private MovieTicketTypeMapper movieTicketTypeMapper;
-  
+
   @org.springframework.beans.factory.annotation.Value("${order.payment-timeout:900}")
   private long paymentTimeoutSeconds;
 
+  /** 创建订单：价格由后端统一计算（含预售券抵扣、固定票价等），返回的 order 含 orderTotal；详情接口同样返回该金额 */
   @SaCheckLogin
   @PostMapping(ApiPaths.Common.Order.CREATE)
   public RestBean<MovieOrder> createOrder(@RequestBody @Validated MovieOrderSaveQuery query) throws Exception {
@@ -77,6 +78,7 @@ public class MovieOrderController {
 
     return RestBean.success(order, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
+  /** 订单详情：返回后端计算的 orderTotal（含预售券/固定票价等），前端以该金额展示 */
   @SaCheckLogin
   @GetMapping(ApiPaths.Common.Order.DETAIL)
   public RestBean<OrderListResponse> OrderDetail(@RequestParam("orderNumber") String orderNumber) {

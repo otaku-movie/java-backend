@@ -20,17 +20,38 @@ public class IntegerArrayTypeHandler extends BaseTypeHandler<List<Integer>> {
 
   @Override
   public List<Integer> getNullableResult(ResultSet rs, String columnName) throws SQLException {
-    return convertArrayToList(rs.getArray(columnName));
+    try {
+      return convertArrayToList(rs.getArray(columnName));
+    } catch (SQLException ex) {
+      if (isNoResultError(ex)) {
+        return parseFromString(rs.getString(columnName));
+      }
+      throw ex;
+    }
   }
 
   @Override
   public List<Integer> getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
-    return convertArrayToList(rs.getArray(columnIndex));
+    try {
+      return convertArrayToList(rs.getArray(columnIndex));
+    } catch (SQLException ex) {
+      if (isNoResultError(ex)) {
+        return parseFromString(rs.getString(columnIndex));
+      }
+      throw ex;
+    }
   }
 
   @Override
   public List<Integer> getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
-    return convertArrayToList(cs.getArray(columnIndex));
+    try {
+      return convertArrayToList(cs.getArray(columnIndex));
+    } catch (SQLException ex) {
+      if (isNoResultError(ex)) {
+        return parseFromString(cs.getString(columnIndex));
+      }
+      throw ex;
+    }
   }
 
   private List<Integer> convertArrayToList(Array array) throws SQLException {
@@ -43,5 +64,46 @@ public class IntegerArrayTypeHandler extends BaseTypeHandler<List<Integer>> {
       result.add((Integer) obj);
     }
     return result;
+  }
+
+  private static boolean isNoResultError(SQLException ex) {
+    String message = ex.getMessage();
+    if (message == null) {
+      return false;
+    }
+    return message.contains("No results were returned by the query")
+        || message.contains("查询没有传回任何结果")
+        || message.contains("The column name")
+        || message.contains("was not found in this ResultSet");
+  }
+
+  private static List<Integer> parseFromString(String raw) {
+    if (raw == null) {
+      return null;
+    }
+    String text = raw.trim();
+    if (text.isEmpty()) {
+      return null;
+    }
+    if (text.startsWith("{") && text.endsWith("}")) {
+      text = text.substring(1, text.length() - 1);
+    }
+    if (text.isEmpty()) {
+      return null;
+    }
+    String[] parts = text.split(",");
+    List<Integer> result = new ArrayList<>(parts.length);
+    for (String part : parts) {
+      String p = part.trim();
+      if (p.isEmpty()) {
+        continue;
+      }
+      try {
+        result.add(Integer.parseInt(p));
+      } catch (NumberFormatException ignore) {
+        // ignore non-numeric entries
+      }
+    }
+    return result.isEmpty() ? null : result;
   }
 }

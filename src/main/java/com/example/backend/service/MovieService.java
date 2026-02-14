@@ -7,16 +7,22 @@ import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.entity.Character;
 import com.example.backend.enumerate.DubbingVersionEnum;
+import com.example.backend.enumerate.MovieReleaseState;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.SaveMovieQuery;
 import com.example.backend.utils.MessageUtils;
 import com.example.backend.query.CharacterSaveQuery;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Data
@@ -24,6 +30,7 @@ class MovieResponse {
   private  Integer id;
 }
 
+@Slf4j
 @Service
 public class MovieService extends ServiceImpl<MovieMapper, Movie> {
   @Autowired
@@ -275,5 +282,47 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
     movieResponse.setId(movie.getId());
 
     return RestBean.success(movieMapper.movieDetail(movie.getId()), MessageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
+  }
+
+  /**
+   * 定时任务：根据 startDate/endDate 更新电影上映状态（上映中、已结束）。
+   * 仅处理日期格式为 yyyy-MM-dd 的电影。
+   */
+  @Transactional(rollbackFor = Exception.class)
+  public void updateMovieReleaseState() {
+    QueryWrapper<Movie> queryWrapper = new QueryWrapper<>();
+    queryWrapper.ne("status", MovieReleaseState.ended.getType());
+    List<Movie> movieList = list(queryWrapper);
+    String regex = "^\\d{4}-\\d{2}-\\d{2}$";
+    List<Movie> toUpdate = movieList.stream()
+        .filter(item -> (item.getStartDate() != null && Pattern.matches(regex, item.getStartDate()))
+            || (item.getEndDate() != null && Pattern.matches(regex, item.getEndDate())))
+        .map(item -> {
+          LocalDate currentDate = LocalDate.now();
+          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+          try {
+            if (item.getStartDate() != null && item.getEndDate() != null) {
+              LocalDate startDate = LocalDate.parse(item.getStartDate(), formatter);
+              LocalDate endDate = LocalDate.parse(item.getEndDate(), formatter);
+              if (!currentDate.isBefore(startDate) && currentDate.isBefore(endDate)) {
+                item.setStatus(MovieReleaseState.nowShowing.getType());
+              } else if (currentDate.isAfter(endDate)) {
+                item.setStatus(MovieReleaseState.ended.getType());
+              }
+            } else if (item.getStartDate() != null) {
+              LocalDate startDate = LocalDate.parse(item.getStartDate(), formatter);
+              if (!currentDate.isBefore(startDate)) {
+                item.setStatus(MovieReleaseState.nowShowing.getType());
+              }
+            }
+          } catch (Exception e) {
+            log.warn("日期解析错误: {}", e.getMessage());
+          }
+          return item;
+        })
+        .collect(Collectors.toList());
+    if (!toUpdate.isEmpty()) {
+      updateBatchById(toUpdate, toUpdate.size());
+    }
   }
 }

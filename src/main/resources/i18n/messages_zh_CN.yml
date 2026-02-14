@@ -293,14 +293,14 @@ dict:
     item:
       "1": "原版"
       "2": "配音版"
-  refund_state:
+  refundState:
     name: "退款状态"
     item:
       "1": "无退款"
       "2": "退款中"
       "3": "已退款"
       "4": "退款失败"
-  refund_apply_status:
+  refundApplyStatus:
     name: "退款申请状态"
     item:
       "1": "无申请"
@@ -313,3 +313,35 @@ dict:
     item:
       "1": "2D"
       "2": "3D"
+  presaleDeliveryType:
+    name: "预售券交付方式"
+    item:
+      "1": "虚拟"
+      "2": "实体"
+  presaleMubitikeType:
+    name: "预售券券类型"
+    item:
+      "1": "网络券"
+      "2": "卡片券"
+  presaleDiscountMode:
+    name: "预售券折扣模式"
+    item:
+      "1": "固定"
+      "2": "比例"
+  ruleTypePriority:
+    name: "规则类型优先级"
+    item:
+      "1": "月度规则"
+      "2": "周度规则"
+      "3": "固定日规则"
+      "4": "时段规则"
+      "5": "固定票价"
+      "6": "票种规则"
+  # 票种生效周期（dict.code=ticketTypeScheduleType）。每次在 sql 中新增/变更字典或 dict_item 时，请在此处及 en_US、ja 中追加对应翻译
+  ticketTypeScheduleType:
+    name: "票种生效周期类型"
+    item:
+      "1": "每周"
+      "2": "每月"
+      "3": "每日"
+      "4": "特定日期"

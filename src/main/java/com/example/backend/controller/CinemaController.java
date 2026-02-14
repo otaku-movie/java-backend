@@ -46,7 +46,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Data
 class Spec {
@@ -56,14 +60,41 @@ class Spec {
 
 @Data
 class TicketTypeItem {
+    private Integer id;
     private String name;
     private Integer price;
+    private String description;
+    private Boolean enabled;
+    private Integer scheduleType;
+    /** 适用星期几：前端可传 "1,2,3" 或 [1,2,3]，保存时转为 List，scheduleType=周 时使用 */
+    private Object applicableWeekdays;
+    /** 每月几号 1-31，前端可传 [1,15,28]，scheduleType=月 时使用 */
+    private Object applicableMonthDays;
+    /** 特定日期 YYYY-MM-DD 数组，scheduleType=特定日期 时使用 */
+    private Object applicableDates;
+    /** 每日生效时段 开始 HH:mm，scheduleType=每日 时使用 */
+    private String dailyStartTime;
+    /** 每日生效时段 结束 HH:mm，scheduleType=每日 时使用 */
+    private String dailyEndTime;
 }
 
 @Data
 class PriceConfigItem {
     private Integer dimensionType;
     private java.math.BigDecimal surcharge;
+}
+
+@Data
+class CinemaTicketTypeSaveQuery {
+  @NotNull(message = "{validator.saveCinema.cinemaId.required}")
+  private Integer cinemaId;
+  private TicketTypeItem ticketType;
+}
+
+@Data
+class CinemaTicketTypeReorderQuery {
+  private Integer cinemaId;
+  private List<Integer> ticketTypeIds;
 }
 
 @Data
@@ -332,12 +363,22 @@ public class CinemaController {
       QueryWrapper<MovieTicketType> ttQw = new QueryWrapper<>();
       ttQw.eq("cinema_id", cinema.getId());
       movieTicketTypeMapper.delete(ttQw);
+      int orderNum = 0;
       for (TicketTypeItem item : query.getTicketType()) {
         if (item.getName() != null && !item.getName().isEmpty() && item.getPrice() != null) {
           MovieTicketType tt = new MovieTicketType();
           tt.setCinemaId(cinema.getId());
           tt.setName(item.getName());
           tt.setPrice(BigDecimal.valueOf(item.getPrice()));
+          tt.setDescription(item.getDescription());
+          tt.setEnabled(item.getEnabled() != null ? item.getEnabled() : true);
+          tt.setScheduleType(item.getScheduleType());
+          tt.setApplicableWeekdays(toApplicableWeekdaysList(item.getApplicableWeekdays()));
+          tt.setApplicableMonthDays(toApplicableMonthDaysList(item.getApplicableMonthDays()));
+          tt.setApplicableDates(toApplicableDatesList(item.getApplicableDates()));
+          tt.setDailyStartTime(item.getDailyStartTime());
+          tt.setDailyEndTime(item.getDailyEndTime());
+          tt.setOrderNum(orderNum++);
           movieTicketTypeMapper.insert(tt);
         }
       }
@@ -395,6 +436,85 @@ public class CinemaController {
     }
   }
   @SaCheckLogin
+  @CheckPermission(code = "cinema.save")
+  @Transactional
+  @PostMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_SAVE)
+  public RestBean<MovieTicketType> saveTicketTypes(@RequestBody @Validated CinemaTicketTypeSaveQuery query) {
+    if (query.getCinemaId() == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    if (cinemaMapper.selectById(query.getCinemaId()) == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    TicketTypeItem item = query.getTicketType();
+    if (item == null || item.getName() == null || item.getName().isEmpty() || item.getPrice() == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    MovieTicketType tt = new MovieTicketType();
+    tt.setCinemaId(query.getCinemaId());
+    tt.setName(item.getName());
+    tt.setPrice(BigDecimal.valueOf(item.getPrice()));
+    tt.setDescription(item.getDescription());
+    tt.setEnabled(item.getEnabled() != null ? item.getEnabled() : true);
+    tt.setScheduleType(item.getScheduleType());
+    tt.setApplicableWeekdays(toApplicableWeekdaysList(item.getApplicableWeekdays()));
+    tt.setApplicableMonthDays(toApplicableMonthDaysList(item.getApplicableMonthDays()));
+    tt.setApplicableDates(toApplicableDatesList(item.getApplicableDates()));
+    tt.setDailyStartTime(item.getDailyStartTime());
+    tt.setDailyEndTime(item.getDailyEndTime());
+    if (item.getId() != null) {
+      MovieTicketType existing = movieTicketTypeMapper.selectById(item.getId());
+      if (existing == null || !existing.getCinemaId().equals(query.getCinemaId())) {
+        return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+      }
+      tt.setId(item.getId());
+      tt.setOrderNum(existing.getOrderNum());
+      movieTicketTypeMapper.updateById(tt);
+    } else {
+      Integer maxOrder = movieTicketTypeMapper.selectMaxOrderNumByCinemaId(query.getCinemaId());
+      tt.setOrderNum(maxOrder != null ? maxOrder + 1 : 0);
+      movieTicketTypeMapper.insert(tt);
+    }
+    return RestBean.success(movieTicketTypeMapper.selectById(tt.getId()), MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
+  }
+
+  @SaCheckLogin
+  @CheckPermission(code = "cinema.save")
+  @DeleteMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_REMOVE)
+  public RestBean<String> removeTicketType(@RequestParam Integer id) {
+    if (id == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    MovieTicketType tt = movieTicketTypeMapper.selectById(id);
+    if (tt == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    movieTicketTypeMapper.deleteById(id);
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
+  }
+
+  @SaCheckLogin
+  @CheckPermission(code = "cinema.save")
+  @PostMapping(ApiPaths.Admin.Cinema.TICKET_TYPE_REORDER)
+  public RestBean<String> reorderTicketTypes(@RequestBody CinemaTicketTypeReorderQuery reorderQuery) {
+    if (reorderQuery.getCinemaId() == null || reorderQuery.getTicketTypeIds() == null || reorderQuery.getTicketTypeIds().isEmpty()) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    if (cinemaMapper.selectById(reorderQuery.getCinemaId()) == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    for (int i = 0; i < reorderQuery.getTicketTypeIds().size(); i++) {
+      Integer tid = reorderQuery.getTicketTypeIds().get(i);
+      MovieTicketType tt = movieTicketTypeMapper.selectById(tid);
+      if (tt != null && tt.getCinemaId().equals(reorderQuery.getCinemaId())) {
+        tt.setOrderNum(i);
+        movieTicketTypeMapper.updateById(tt);
+      }
+    }
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
+  }
+
+  @SaCheckLogin
   @CheckPermission(code = "cinema.remove")
   @DeleteMapping(ApiPaths.Admin.Cinema.REMOVE)
   public RestBean<Null> remove (@RequestParam Integer id) {
@@ -404,6 +524,51 @@ public class CinemaController {
 
     return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }
+  /** 将前端传入的 applicableWeekdays（"1,2,3" 或 [1,2,3]）转为 List<Integer> */
+  private static List<Integer> toApplicableWeekdaysList(Object o) {
+    return toIntegerList(o);
+  }
+
+  /** 将前端传入的 applicableMonthDays（[1,15,28] 或 "1,15,28"）转为 List<Integer> */
+  private static List<Integer> toApplicableMonthDaysList(Object o) {
+    return toIntegerList(o);
+  }
+
+  private static List<Integer> toIntegerList(Object o) {
+    if (o == null) return null;
+    if (o instanceof List) {
+      List<?> list = (List<?>) o;
+      return list.stream()
+          .map(e -> e instanceof Number ? ((Number) e).intValue() : Integer.parseInt(String.valueOf(e)))
+          .collect(Collectors.toList());
+    }
+    if (o instanceof String) {
+      String s = ((String) o).trim();
+      if (s.isEmpty()) return null;
+      return Arrays.stream(s.split(","))
+          .map(String::trim)
+          .filter(x -> !x.isEmpty())
+          .map(Integer::parseInt)
+          .collect(Collectors.toList());
+    }
+    return null;
+  }
+
+  /** 将前端传入的 applicableDates（["2025-01-01","2025-01-15"] 或 "2025-01-01,2025-01-15"）转为 List<String> */
+  private static List<String> toApplicableDatesList(Object o) {
+    if (o == null) return null;
+    if (o instanceof List) {
+      List<?> list = (List<?>) o;
+      return list.stream().map(String::valueOf).filter(s -> !s.isBlank()).collect(Collectors.toList());
+    }
+    if (o instanceof String) {
+      String s = ((String) o).trim();
+      if (s.isEmpty()) return null;
+      return Arrays.stream(s.split(",")).map(String::trim).filter(x -> !x.isEmpty()).collect(Collectors.toList());
+    }
+    return null;
+  }
+
   @GetMapping(ApiPaths.Common.Cinema.SPEC)
   public RestBean<List<com.example.backend.response.Spec>> cinemaSpec (@RequestParam Integer cinemaId) {
       if(cinemaId == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));

@@ -29,6 +29,22 @@ public class PromotionController {
   @Autowired
   private PromotionService promotionService;
 
+  /**
+   * App 端：按影院获取价格策略列表，按优先级升序返回，供前端按顺序计算价格。
+   * 无需登录即可调用。
+   */
+  @GetMapping(ApiPaths.Common.Cinema.PROMOTIONS)
+  public RestBean<java.util.List<PromotionListItemResponse>> listByCinema(@RequestParam Integer cinemaId) {
+    if (cinemaId == null) {
+      return RestBean.error(
+        ResponseCode.PARAMETER_ERROR.getCode(),
+        MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR)
+      );
+    }
+    java.util.List<PromotionListItemResponse> list = promotionService.listPromotionsByCinema(cinemaId);
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+  }
+
   @SaCheckLogin
   // @CheckPermission(code = "promotion.detail")
   @GetMapping(ApiPaths.Admin.Promotion.DETAIL)
@@ -39,7 +55,7 @@ public class PromotionController {
         MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR)
       );
     }
-    PromotionDetailResponse response = promotionService.getPromotionDetail(cinemaId);
+    PromotionDetailResponse response = promotionService.getPromotionDetail(cinemaId, null);
     return RestBean.<PromotionDetailResponse>success(response, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 

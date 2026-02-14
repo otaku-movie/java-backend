@@ -40,4 +40,9 @@ public class MovieResponse {
   String levelDescription;
   double rate;
   Integer totalRatings;
+
+  /** 关联的预售券 id，有则可在 C 端跳转预售券详情 */
+  Integer presaleId;
+  /** 该预售券是否含特典 */
+  Boolean hasBonus;
 }

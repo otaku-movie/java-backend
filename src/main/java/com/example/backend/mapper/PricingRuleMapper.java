@@ -1,9 +1,9 @@
 package com.example.backend.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.backend.entity.Promotion;
+import com.example.backend.entity.PricingRule;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface PromotionMapper extends BaseMapper<Promotion> {
+public interface PricingRuleMapper extends BaseMapper<PricingRule> {
 }

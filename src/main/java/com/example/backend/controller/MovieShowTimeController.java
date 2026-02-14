@@ -21,7 +21,10 @@ import com.example.backend.response.showTime.MovieShowTimeDetail;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import com.example.backend.service.MovieShowTimeService;
+import com.example.backend.service.MovieTicketTypeService;
 import com.example.backend.service.SeatService;
 import com.example.backend.service.SelectSeatService;
 import com.example.backend.utils.MessageUtils;
@@ -70,6 +73,12 @@ class CancelSelectSeatQuery {
   List<SeatPosition> seatPosition;
 }
 
+/** 场次可用票种列表请求（App 选票页） */
+@Data
+class ShowTimeTicketTypeListQuery {
+  private Integer movieShowTimeId;
+}
+
 @RestController
 public class MovieShowTimeController {
   @Autowired
@@ -83,6 +92,22 @@ public class MovieShowTimeController {
 
   @Autowired
   private MovieShowTimeService movieShowTimeService;
+
+  @Autowired
+  private MovieTicketTypeService movieTicketTypeService;
+
+  @Autowired
+  private MovieShowTimeTicketTypeMapper movieShowTimeTicketTypeMapper;
+
+  /** 获取该场次可用票种列表（App 选票页调用） */
+  @PostMapping(ApiPaths.Common.ShowTime.TICKET_TYPE_LIST)
+  public RestBean<List<MovieTicketType>> ticketTypeList(@RequestBody(required = false) ShowTimeTicketTypeListQuery query) {
+    if (query == null || query.getMovieShowTimeId() == null) {
+      return RestBean.success(Collections.emptyList(), MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+    }
+    List<MovieTicketType> list = movieTicketTypeService.listByShowtime(query.getMovieShowTimeId());
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+  }
 
   @PostMapping(ApiPaths.Common.ShowTime.LIST)
   public RestBean<List<MovieShowTimeList>> list(MovieShowTimeListQuery query)  {
@@ -133,12 +158,27 @@ public class MovieShowTimeController {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     MovieShowTimeDetail result = movieShowTimeMapper.movieShowTimeDetail(id);
+    if (result == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
     result.setMovieShowTimeTags(
       movieShowTimeMapper.getMovieShowTimeTags(result.getMovieShowTimeTagsId())
     );
     result.setSubtitle(
       movieShowTimeMapper.getMovieShowTimeSubtitle(result.getSubtitleId())
     );
+    List<MovieShowTimeTicketType> configs = movieShowTimeTicketTypeMapper.selectList(
+        new QueryWrapper<MovieShowTimeTicketType>().eq("show_time_id", id));
+    if (configs != null && !configs.isEmpty()) {
+      Map<Integer, BigDecimal> overrides = new HashMap<>();
+      Map<Integer, Boolean> enabledMap = new HashMap<>();
+      for (MovieShowTimeTicketType c : configs) {
+        if (c.getTicketTypeId() != null) {
+          if (c.getOverridePrice() != null) overrides.put(c.getTicketTypeId(), c.getOverridePrice());
+          enabledMap.put(c.getTicketTypeId(), c.getEnabled() != null ? c.getEnabled() : true);
+        }
+      }
+      result.setTicketTypeOverrides(overrides.isEmpty() ? null : overrides);
+      result.setTicketTypeEnabled(enabledMap);
+    }
 
     return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }

@@ -11,9 +11,10 @@ import lombok.Data;
 
 import java.util.Date;
 
+/** 影院促销配置：一影院一行，规则类型优先级、是否前售券等 */
 @Data
-@TableName("promotion")
-public class Promotion {
+@TableName("cinema_price_rules_config")
+public class CinemaPriceRulesConfig {
 
   @TableId(value = "id", type = IdType.AUTO)
   private Integer id;
@@ -21,11 +22,24 @@ public class Promotion {
   @TableField("cinema_id")
   private Integer cinemaId;
 
-  @TableField("name")
-  private String name;
-
   @TableField("remark")
   private String remark;
+
+  @TableField("allow_muviticket")
+  private Boolean allowMuviticket;
+
+  @TableField("monthly_priority")
+  private Integer monthlyPriority;
+  @TableField("weekly_priority")
+  private Integer weeklyPriority;
+  @TableField("specific_date_priority")
+  private Integer specificDatePriority;
+  @TableField("time_range_priority")
+  private Integer timeRangePriority;
+  @TableField("fixed_price_priority")
+  private Integer fixedPricePriority;
+  @TableField("ticket_type_priority")
+  private Integer ticketTypePriority;
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)

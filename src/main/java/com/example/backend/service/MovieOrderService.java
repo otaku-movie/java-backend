@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -170,6 +171,80 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     if (!Objects.equals(order.getOrderState(), OrderState.order_created.getCode())) {
       throw new BusinessException(ResponseCode.ORDER_STATE_INVALID, MessageKeys.Error.ORDER_CANNOT_CANCEL);
     }
+  }
+
+  /**
+   * 统一处理订单超时：将订单置为超时、将 select_seat 表中该订单座位置为可用（原子），再清理 Redis。
+   * 供 RabbitMQ 订单超时消费者与定时任务（兜底）共同调用。
+   * <p>
+   * 原子性：订单状态更新与 select_seat 更新在同一事务内；Redis 清理在事务提交后执行，
+   * 若 Redis 失败仅打日志不抛异常，避免回滚已提交的 DB，后续可依赖兜底任务或重试。
+   * </p>
+   *
+   * @param orderId 订单 ID
+   * @return 是否执行了超时处理（订单存在且原状态为 order_created 时返回 true）
+   */
+  @Transactional(rollbackFor = Exception.class)
+  public boolean processOrderTimeout(Integer orderId) {
+    if (orderId == null) {
+      return false;
+    }
+    MovieOrder order = movieOrderMapper.selectById(orderId);
+    if (order == null) {
+      log.warn("订单不存在，跳过超时处理: orderId={}", orderId);
+      return false;
+    }
+    if (order.getOrderState() == null || !order.getOrderState().equals(OrderState.order_created.getCode())) {
+      log.debug("订单状态已变更，跳过超时处理: orderId={}, orderState={}", orderId, order.getOrderState());
+      return false;
+    }
+    // 1. 原子更新：订单状态 + select_seat 状态（同一事务）
+    order.setOrderState(OrderState.order_timeout.getCode());
+    movieOrderMapper.updateById(order);
+    UpdateWrapper<SelectSeat> updateWrapper = new UpdateWrapper<>();
+    updateWrapper
+        .eq("movie_order_id", orderId)
+        .set("select_seat_state", SeatState.available.getCode());
+    selectSeatMapper.update(null, updateWrapper);
+    // 2. 事务提交后再清理 Redis，失败不抛异常以免回滚 DB
+    try {
+      clearLockedSeatsFromRedis(order.getId(), order.getMovieShowTimeId());
+    } catch (Exception e) {
+      log.warn("订单超时后清理 Redis 失败（DB 已提交，可依赖兜底重试）: orderId={}, error={}", orderId, e.getMessage(), e);
+    }
+    log.info("订单超时处理完成（含 DB 选座释放）: orderId={}, orderNumber={}", orderId, order.getOrderNumber());
+    return true;
+  }
+
+  /**
+   * 定时任务兜底：扫描仍为 order_created 且已超过支付超时时间的订单，逐个调用 {@link #processOrderTimeout}。
+   *
+   * @param paymentTimeoutSeconds 支付超时时间（秒），与 order.payment-timeout 一致
+   * @return 实际执行超时处理的数量
+   */
+  public int processExpiredOrdersFallback(int paymentTimeoutSeconds) {
+    QueryWrapper<MovieOrder> queryWrapper = new QueryWrapper<>();
+    queryWrapper.eq("order_state", OrderState.order_created.getCode());
+    List<MovieOrder> orderList = movieOrderMapper.selectList(queryWrapper);
+    java.time.LocalDateTime now = java.time.LocalDateTime.now();
+    int processed = 0;
+    for (MovieOrder order : orderList) {
+      Date createTime = order.getCreateTime();
+      if (createTime == null) {
+        log.warn("订单 createTime 为空，跳过 id={}", order.getId());
+        continue;
+      }
+      java.time.LocalDateTime createTimeLocal = createTime.toInstant()
+          .atZone(java.time.ZoneId.systemDefault())
+          .toLocalDateTime();
+      if (java.time.Duration.between(createTimeLocal, now).getSeconds() < paymentTimeoutSeconds) {
+        continue;
+      }
+      if (processOrderTimeout(order.getId())) {
+        processed++;
+      }
+    }
+    return processed;
   }
 
   /**
@@ -462,42 +537,75 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     }
     
     try {
-      // 7. 组装每个座位的价格明细
-      List<SeatGroupQuery> data = uniqueSeatGroups.stream().map(item -> {
-      SelectSeat selected = redisSeatMap.get(item.getSeatId());
-      if (selected == null) {
-        throw new BusinessException(ResponseCode.SEAT_INVALID_OR_NOT_SELECTED, MessageKeys.Error.SEAT_INVALID);
-      }
-      // 校验坐标一致性（防止前端伪造）
-      if (!item.getX().equals(selected.getX()) || !item.getY().equals(selected.getY())) {
-        throw new BusinessException(ResponseCode.SEAT_COORDINATE_MISMATCH, MessageKeys.Error.SEAT_COORDINATE_MISMATCH);
-      }
+      // 是否使用ムビチケ前売り券：前 mubitikeUseCount 个座位基础价抵消，3D/IMAX 等加价照常
+      boolean useMubitike = query.getMubitikeUseCount() != null && query.getMubitikeUseCount() > 0
+          && query.getMubitikeCode() != null && !query.getMubitikeCode().trim().isEmpty()
+          && query.getMubitikePassword() != null && !query.getMubitikePassword().trim().isEmpty();
+      int mubitikeCount = useMubitike ? Math.min(query.getMubitikeUseCount(), uniqueSeatGroups.size()) : 0;
 
-      MovieTicketType movieTicketType = movieTicketTypeMapper.selectById(item.getMovieTicketTypeId());
-      if (movieTicketType == null) {
-        throw new BusinessException(ResponseCode.TICKET_TYPE_NOT_FOUND, MessageKeys.Error.TICKET_TYPE_NOT_FOUND);
+      // 7. 组装每个座位的价格明细（按顺序前 mubitikeCount 个座位使用前売り券：基础价=0，仅收 3D/规格加价）
+      List<SeatGroupQuery> data = new ArrayList<>();
+      for (int i = 0; i < uniqueSeatGroups.size(); i++) {
+        SeatGroup item = uniqueSeatGroups.get(i);
+        SelectSeat selected = redisSeatMap.get(item.getSeatId());
+        if (selected == null) {
+          throw new BusinessException(ResponseCode.SEAT_INVALID_OR_NOT_SELECTED, MessageKeys.Error.SEAT_INVALID);
+        }
+        if (!item.getX().equals(selected.getX()) || !item.getY().equals(selected.getY())) {
+          throw new BusinessException(ResponseCode.SEAT_COORDINATE_MISMATCH, MessageKeys.Error.SEAT_COORDINATE_MISMATCH);
+        }
+
+        Integer pricingMode = baseInfo.getPricingMode() != null ? baseInfo.getPricingMode() : 1;
+        boolean isFixedPrice = (pricingMode == com.example.backend.service.TicketPriceService.PRICING_MODE_FIXED);
+        Integer ticketTypeIdForSeat = item.getMovieTicketTypeId();
+        if (ticketTypeIdForSeat == null && isFixedPrice) {
+          List<MovieTicketType> cinemaTypes = cinemaId != null
+              ? movieTicketTypeMapper.selectList(
+                  new QueryWrapper<MovieTicketType>()
+                      .eq("cinema_id", cinemaId)
+                      .and(w -> w.isNull("enabled").or().eq("enabled", true))
+                      .orderByAsc("order_num", "create_time")
+                      .last("LIMIT 1"))
+              : Collections.emptyList();
+          if (!cinemaTypes.isEmpty()) {
+            ticketTypeIdForSeat = cinemaTypes.get(0).getId();
+          }
+        }
+        if (ticketTypeIdForSeat == null) {
+          throw new BusinessException(ResponseCode.TICKET_TYPE_NOT_FOUND, MessageKeys.Error.TICKET_TYPE_NOT_FOUND);
+        }
+        MovieTicketType movieTicketType = movieTicketTypeMapper.selectById(ticketTypeIdForSeat);
+        if (movieTicketType == null) {
+          throw new BusinessException(ResponseCode.TICKET_TYPE_NOT_FOUND, MessageKeys.Error.TICKET_TYPE_NOT_FOUND);
+        }
+
+        SeatListResponse seatInfo = seatInfoMap.get(item.getSeatId());
+        BigDecimal areaPrice = BigDecimal.ZERO;
+        if (seatInfo != null && seatInfo.getAreaPrice() != null) {
+          areaPrice = BigDecimal.valueOf(seatInfo.getAreaPrice());
+        }
+
+        boolean seatUsesMubitike = (i < mubitikeCount);
+        BigDecimal ticketPrice;
+        if (seatUsesMubitike) {
+          ticketPrice = ticketPriceService.calculatePriceByShowtime(movieShowTimeId, null, null, true, null);
+        } else if (isFixedPrice) {
+          ticketPrice = ticketPriceService.calculatePriceByShowtime(movieShowTimeId, null, null, false, null);
+        } else {
+          ticketPrice = ticketPriceService.calculatePrice(cinemaId, movieTicketType.getId(), dimensionType, specIds);
+        }
+
+        SeatGroupQuery modal = new SeatGroupQuery();
+        modal.setX(item.getX());
+        modal.setY(item.getY());
+        modal.setSeatId(item.getSeatId());
+        modal.setTheaterHallId(theaterHallId);
+        modal.setMovieTicketTypeId(movieTicketType.getId());
+        modal.setMovieTicketTypePrice(ticketPrice);
+        modal.setAreaPrice(areaPrice);
+        modal.setPlusPrice(BigDecimal.ZERO);
+        data.add(modal);
       }
-
-      SeatListResponse seatInfo = seatInfoMap.get(item.getSeatId());
-      BigDecimal areaPrice = BigDecimal.ZERO;
-      if (seatInfo != null && seatInfo.getAreaPrice() != null) {
-        areaPrice = BigDecimal.valueOf(seatInfo.getAreaPrice());
-      }
-
-      BigDecimal ticketPrice = ticketPriceService.calculatePrice(
-          cinemaId, movieTicketType.getId(), dimensionType, specIds);
-
-      SeatGroupQuery modal = new SeatGroupQuery();
-      modal.setX(item.getX());
-      modal.setY(item.getY());
-      modal.setSeatId(item.getSeatId());
-      modal.setTheaterHallId(theaterHallId);
-      modal.setMovieTicketTypeId(movieTicketType.getId());
-      modal.setMovieTicketTypePrice(ticketPrice);
-      modal.setAreaPrice(areaPrice);
-      modal.setPlusPrice(BigDecimal.ZERO);
-      return modal;
-    }).toList();
 
     // 6. 计算总价
     BigDecimal total = data.stream()

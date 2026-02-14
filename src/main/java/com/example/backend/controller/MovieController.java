@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
@@ -53,6 +54,11 @@ public class MovieController {
   // 电影角色
   @Autowired
   private MovieCharacterMapper movieCharacterMapper;
+
+  @Autowired
+  private PresaleMapper presaleMapper;
+  @Autowired
+  private PresaleSpecificationMapper presaleSpecificationMapper;
   // 电影规格
   @Autowired
   private MovieSpecMapper movieSpecMapper;
@@ -114,6 +120,18 @@ public class MovieController {
     result.setCinemaCount(movieMapper.getAllCinemaCount(result.getId()));
     result.setTheaterCount(movieMapper.getAllTheaterCount(result.getId()));
 
+    Presale presale = presaleMapper.selectOne(
+        Wrappers.<Presale>lambdaQuery().eq(Presale::getMovieId, id).last("LIMIT 1"));
+    if (presale != null) {
+      result.setPresaleId(presale.getId());
+      long hasBonusCount = presaleSpecificationMapper.selectCount(
+          Wrappers.<PresaleSpecification>lambdaQuery()
+              .eq(PresaleSpecification::getPresaleId, presale.getId())
+              .and(w -> w.eq(PresaleSpecification::getBonusIncluded, true)
+                  .or()
+                  .apply("bonus_title IS NOT NULL AND TRIM(COALESCE(bonus_title,'')) != ''")));
+      result.setHasBonus(hasBonusCount > 0);
+    }
 
     return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Common.Movie.GET_SUCCESS));
   }

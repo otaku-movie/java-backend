@@ -282,14 +282,14 @@ dict:
     item:
       "1": "オリジナル版"
       "2": "吹き替え版"
-  refund_state:
+  refundState:
     name: "返金状態"
     item:
       "1": "返金なし"
       "2": "返金中"
       "3": "返金済み"
       "4": "返金失敗"
-  refund_apply_status:
+  refundApplyStatus:
     name: "返金申請状態"
     item:
       "1": "申請なし"
@@ -302,4 +302,35 @@ dict:
     item:
       "1": "2D"
       "2": "3D"
+  presale_delivery_type:
+    name: "前売券交付方式"
+    item:
+      "1": "デジタル"
+      "2": "実体"
+  presaleMubitikeType:
+    name: "前売券券種"
+    item:
+      "1": "オンライン券"
+      "2": "カード券"
+  presaleDiscountMode:
+    name: "前売券割引モード"
+    item:
+      "1": "固定"
+      "2": "割合"
+  ruleTypePriority:
+    name: "規則タイプ優先度"
+    item:
+      "1": "月度規則"
+      "2": "週度規則"
+      "3": "固定日規則"
+      "4": "時間帯規則"
+      "5": "固定料金"
+      "6": "券種規則"
+  ticketTypeScheduleType:
+    name: "券種適用周期"
+    item:
+      "1": "毎週"
+      "2": "毎月"
+      "3": "毎日"
+      "4": "特定日"
 

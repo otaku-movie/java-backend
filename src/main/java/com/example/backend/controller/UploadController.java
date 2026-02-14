@@ -16,6 +16,7 @@ import jakarta.validation.constraints.Null;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,7 +63,12 @@ public class UploadController {
   }
   @PostMapping(value = ApiPaths.Upload.UPLOAD, consumes = "multipart/form-data")
   public RestBean<UploadResponse> upload(MultipartFile file) throws IOException {
-    log.debug("MinIO配置: endpoint={}", minioConfiguration != null ? minioConfiguration.getEndpoint() : "null");
+    if (minioConfiguration == null || !StringUtils.hasText(minioConfiguration.getEndpoint())) {
+      log.warn("MinIO 未配置或 endpoint 为空，无法上传");
+      return RestBean.error(ResponseCode.ERROR.getCode(),
+        MessageUtils.getMessage(MessageKeys.Upload.ERROR));
+    }
+    log.debug("MinIO配置: endpoint={}", minioConfiguration.getEndpoint());
 
     S3Client s3Client = S3Client.builder()
       .region(Region.US_EAST_1)  // 指定区域
@@ -111,6 +117,11 @@ public class UploadController {
 
   @DeleteMapping(ApiPaths.Upload.DELETE)
   public RestBean<Null> delete(@Validated @RequestParam @NotEmpty(message = "path 不能为空") String path ) {
+    if (minioConfiguration == null || !StringUtils.hasText(minioConfiguration.getEndpoint())) {
+      log.warn("MinIO 未配置或 endpoint 为空，无法删除");
+      return RestBean.error(ResponseCode.ERROR.getCode(),
+        MessageUtils.getMessage(MessageKeys.Upload.ERROR));
+    }
     S3Client s3Client = S3Client.builder()
       .region(Region.US_EAST_1)  // 指定区域
       .endpointOverride(URI.create(minioConfiguration.getEndpoint()))

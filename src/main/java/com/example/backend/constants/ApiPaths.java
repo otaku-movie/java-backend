@@ -80,6 +80,15 @@ public final class ApiPaths {
             /** 影院场次 - POST /api/app/cinema/movie/showTime */
             public static final String MOVIE_SHOW_TIME = APP_BASE + "/cinema/movie/showTime";
         }
+
+        /**
+         * App 端 - 预售券模块（C 端查看预售券详情，无需登录）
+         */
+        public static final class Presale {
+            private Presale() {}
+            /** 预售券详情 - GET /api/app/presale/detail?id= */
+            public static final String DETAIL = APP_BASE + "/presale/detail";
+        }
     }
 
     // ==================== Admin 端 API 路径 ====================
@@ -227,8 +236,14 @@ public final class ApiPaths {
             public static final String SPEC_SAVE = ADMIN_BASE + "/cinema/spec/save";
             /** 影院规格删除 - DELETE /api/admin/cinema/spec/remove */
             public static final String SPEC_REMOVE = ADMIN_BASE + "/cinema/spec/remove";
-            /** 电影票类型列表（只读）- POST /api/cinema/ticketType/list；增删改已合并到影院保存接口 */
+            /** 电影票类型列表（只读）- POST /api/cinema/ticketType/list */
             public static final String TICKET_TYPE_LIST = BASE + "/cinema/ticketType/list";
+            /** 影院票种单条保存（有id更新/无id插入）- POST /api/admin/cinema/ticketType/save */
+            public static final String TICKET_TYPE_SAVE = ADMIN_BASE + "/cinema/ticketType/save";
+            /** 影院票种单条删除 - DELETE /api/admin/cinema/ticketType/remove */
+            public static final String TICKET_TYPE_REMOVE = ADMIN_BASE + "/cinema/ticketType/remove";
+            /** 影院票种排序 - POST /api/admin/cinema/ticketType/reorder */
+            public static final String TICKET_TYPE_REORDER = ADMIN_BASE + "/cinema/ticketType/reorder";
             /** 票价配置列表 - POST /api/cinema/priceConfig/list */
             public static final String PRICE_CONFIG_LIST = BASE + "/cinema/priceConfig/list";
             /** 票价配置保存 - POST /api/admin/cinema/priceConfig/save */
@@ -349,6 +364,21 @@ public final class ApiPaths {
             public static final String SAVE = ADMIN_BASE + "/promotion/save";
             /** 删除活动 - DELETE /api/admin/promotion/remove */
             public static final String REMOVE = ADMIN_BASE + "/promotion/remove";
+        }
+
+        /**
+         * Admin 端 - 预售券管理
+         */
+        public static final class Presale {
+            private Presale() {}
+            /** 预售券详情 - GET /api/admin/presale/detail */
+            public static final String DETAIL = ADMIN_BASE + "/presale/detail";
+            /** 预售券列表 - POST /api/admin/presale/list */
+            public static final String LIST = ADMIN_BASE + "/presale/list";
+            /** 保存预售券 - POST /api/admin/presale/save */
+            public static final String SAVE = ADMIN_BASE + "/presale/save";
+            /** 删除预售券 - DELETE /api/admin/presale/remove */
+            public static final String REMOVE = ADMIN_BASE + "/presale/remove";
         }
         
         /**
@@ -508,6 +538,8 @@ public final class ApiPaths {
             public static final String LIST = COMMON_BASE + "/cinema/list";
             /** 影院详情 - GET /api/cinema/detail */
             public static final String DETAIL = COMMON_BASE + "/cinema/detail";
+            /** 影院价格策略（促销）列表，按优先级排序，供 app 端价格计算 - GET /api/cinema/promotions */
+            public static final String PROMOTIONS = COMMON_BASE + "/cinema/promotions";
             /** 影院规格 - GET /api/cinema/spec */
             public static final String SPEC = COMMON_BASE + "/cinema/spec";
             /** 正在上映 - GET /api/cinema/screening */
@@ -605,6 +637,8 @@ public final class ApiPaths {
             public static final String USER_SELECT_SEAT = COMMON_BASE + "/movie_show_time/user_select_seat";
             /** 选座列表 - GET /api/movie_show_time/select_seat/list */
             public static final String SELECT_SEAT_LIST = COMMON_BASE + "/movie_show_time/select_seat/list";
+            /** 场次可用票种列表（App 选票页）- POST /api/movie_show_time/ticketType/list */
+            public static final String TICKET_TYPE_LIST = COMMON_BASE + "/movie_show_time/ticketType/list";
         }
         
         /**
@@ -762,6 +796,8 @@ public final class ApiPaths {
         public static final String UPDATE_MOVIE_SCREENING_STATE = COMMON_BASE + "/scheduled/updateMovieScreeningState";
         /** 更新电影订单状态 - POST /api/scheduled/updateMovieOrderState */
         public static final String UPDATE_MOVIE_ORDER_STATE = COMMON_BASE + "/scheduled/updateMovieOrderState";
+        /** 更新场次定时公开/开放购票状态 - POST /api/scheduled/updateShowTimePublishState */
+        public static final String UPDATE_SHOWTIME_PUBLISH_STATE = COMMON_BASE + "/scheduled/updateShowTimePublishState";
     }
     
     /**

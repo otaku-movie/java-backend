@@ -76,6 +76,16 @@ public class GlobalExceptionHandler {
   }
 
   /**
+   * 处理非法参数异常（业务校验不通过）
+   */
+  @ExceptionHandler(IllegalArgumentException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public RestBean handleIllegalArgumentException(IllegalArgumentException ex) {
+    log.warn("参数校验失败: {}", ex.getMessage());
+    return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), ex.getMessage());
+  }
+
+  /**
    * 处理运行时异常
    */
   @ExceptionHandler(RuntimeException.class)
