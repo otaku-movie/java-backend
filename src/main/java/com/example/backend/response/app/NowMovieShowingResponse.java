@@ -20,4 +20,6 @@ public class NowMovieShowingResponse {
   List<Staff> cast;
   List<HelloMovie> helloMovie;
   String startDate;
+  /** 是否有入场者特典（设计 3.4） */
+  Boolean hasBenefits;
 }

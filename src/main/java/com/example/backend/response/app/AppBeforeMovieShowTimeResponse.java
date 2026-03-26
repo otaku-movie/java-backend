@@ -20,6 +20,8 @@ public class AppBeforeMovieShowTimeResponse {
   private Double distance;
   private Integer movieVersionId;
   private Integer versionCode;
+  private Integer movieId;
+  private java.util.List<Integer> specIds;
 
   public Integer getCinemaId() { return cinemaId; }
   public void setCinemaId(Integer cinemaId) { this.cinemaId = cinemaId; }
@@ -57,4 +59,8 @@ public class AppBeforeMovieShowTimeResponse {
   public void setMovieVersionId(Integer movieVersionId) { this.movieVersionId = movieVersionId; }
   public Integer getVersionCode() { return versionCode; }
   public void setVersionCode(Integer versionCode) { this.versionCode = versionCode; }
+  public Integer getMovieId() { return movieId; }
+  public void setMovieId(Integer movieId) { this.movieId = movieId; }
+  public java.util.List<Integer> getSpecIds() { return specIds; }
+  public void setSpecIds(java.util.List<Integer> specIds) { this.specIds = specIds; }
 }

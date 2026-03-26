@@ -34,6 +34,11 @@ error:
   payment:
     rateLimit: "Payment request is too frequent, please try again later"
     inProgress: "Order payment is in progress, please do not submit repeatedly"
+  benefit:
+    dateInvalid: "Invalid date format, should be yyyy-MM-dd"
+    noItem: "No item under this phase, please add one in phase detail first"
+    itemRequired: "Please select a benefit phase"
+    stockDuplicate: "Stock already allocated for this cinema and phase, please edit the existing row to change quantity"
   showtime:
     notFound: "Showtime does not exist or has been deleted"
   seat:
@@ -86,6 +91,25 @@ validator:
     email:
       required: "Email cannot be empty"
       notEmail: "Not a valid email address"
+  benefit:
+    movieId:
+      required: "Movie ID cannot be empty"
+    name:
+      required: "Benefit name cannot be empty"
+    startDate:
+      required: "Start date cannot be empty"
+  benefitFeedback:
+    cinemaId:
+      required: "Cinema is required"
+    benefitId:
+      required: "Please select benefit phase"
+    benefitItemId:
+      required: "Please select benefit phase"
+  benefitStock:
+    cinemaId:
+      required: "Cinema is required"
+    benefitItemId:
+      required: "Benefit item is required"
   movieComment:
     movieId:
       required: "movieId cannot be empty"
@@ -333,4 +357,10 @@ dict:
       "2": "Monthly"
       "3": "Daily"
       "4": "Specific Date"
+  benefitPhaseStatus:
+    name: "Benefit Phase Status"
+    item:
+      "1": "Upcoming"
+      "2": "Ongoing"
+      "3": "Ended"
 

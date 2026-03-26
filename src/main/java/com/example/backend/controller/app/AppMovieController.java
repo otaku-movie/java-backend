@@ -13,6 +13,7 @@ import com.example.backend.enumerate.ShowTimeState;
 import com.example.backend.mapper.MovieMapper;
 import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.query.app.AppMovieListQuery;
+import com.example.backend.service.BenefitService;
 import com.example.backend.query.app.getMovieShowTimeQuery;
 import com.example.backend.response.app.*;
 import com.example.backend.utils.MessageUtils;
@@ -43,6 +44,8 @@ public class AppMovieController {
 
   @Autowired
   private MovieMapper movieMapper;
+  @Autowired
+  private BenefitService benefitService;
 
   @GetMapping(ApiPaths.App.Movie.NOW_SHOWING)
   public RestBean<List<NowMovieShowingResponse>> list(
@@ -72,6 +75,9 @@ public class AppMovieController {
         List<com.example.backend.response.movie.HelloMovie> movieHelloMovies = helloMovieMap.getOrDefault(movie.getId(), Collections.emptyList());
         movie.setHelloMovie(movieHelloMovies);
       });
+
+      Map<Integer, Boolean> hasBenefitsMap = benefitService.hasAnyBenefitsForMovies(movieIds);
+      list.getRecords().forEach(movie -> movie.setHasBenefits(Boolean.TRUE.equals(hasBenefitsMap.get(movie.getId()))));
     }
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
@@ -191,6 +197,11 @@ public class AppMovieController {
           showTime.setAvailableSeats(availableSeats);
           showTime.setMovieVersionId(item.getMovieVersionId());
           showTime.setVersionCode(item.getVersionCode());
+          String showDateStr = item.getStartTime() != null && item.getStartTime().length() >= 10
+              ? item.getStartTime().substring(0, 10) : null;
+          List<Integer> specIds = item.getSpecIds() != null ? item.getSpecIds() : Collections.emptyList();
+          showTime.setHasBenefits(benefitService.hasBenefitsForShowtime(
+              item.getMovieId(), item.getCinemaId(), showDateStr, item.getDimensionType(), specIds));
           return showTime;
         })
         .sorted((t1, t2) -> {

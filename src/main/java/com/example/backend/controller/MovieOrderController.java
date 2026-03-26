@@ -65,6 +65,9 @@ public class MovieOrderController {
   private com.example.backend.service.SelectSeatService selectSeatService;
 
   @Autowired
+  private com.example.backend.service.BenefitService benefitService;
+
+  @Autowired
   private MovieTicketTypeMapper movieTicketTypeMapper;
 
   @org.springframework.beans.factory.annotation.Value("${order.payment-timeout:900}")
@@ -146,6 +149,20 @@ public class MovieOrderController {
         : Collections.emptyList());
     // 放映类型为空时默认 1（2D）
     order.setDimensionType(order.getDimensionType() != null ? order.getDimensionType() : 1);
+
+    // 当前用户是否已对该订单对应场次特典提交过反馈
+    int userId = StpUtil.getLoginIdAsInt();
+    Integer cinemaId = order.getCinemaId();
+    Integer movieId = order.getMovieId();
+    String dateStr = order.getDate();
+    boolean benefitFeedbackSubmitted = false;
+    if (cinemaId != null && movieId != null && dateStr != null && !dateStr.isEmpty()) {
+      Integer benefitId = benefitService.getFirstBenefitIdForOrder(movieId, dateStr);
+      if (benefitId != null) {
+        benefitFeedbackSubmitted = benefitService.hasUserSubmittedFeedback(userId, cinemaId, benefitId);
+      }
+    }
+    order.setBenefitFeedbackSubmitted(benefitFeedbackSubmitted);
 
     return RestBean.success(order, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }

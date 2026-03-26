@@ -143,6 +143,14 @@ public final class MessageKeys {
         public static final String SEAT_NAME_REQUIRED = "error.seat.nameRequired";
         /** TTL配置无效（必须大于0） */
         public static final String TTL_INVALID = "error.config.ttlInvalid";
+        /** 特典日期格式无效，应为 yyyy-MM-dd */
+        public static final String BENEFIT_DATE_INVALID = "error.benefit.dateInvalid";
+        /** 该阶段下暂无物料，请先在阶段详情中添加物料 */
+        public static final String BENEFIT_NO_ITEM = "error.benefit.noItem";
+        /** 请选择特典阶段或指定物料 */
+        public static final String BENEFIT_ITEM_REQUIRED = "error.benefit.itemRequired";
+        /** 该影院该阶段已分配过库存，请通过编辑修改数量 */
+        public static final String BENEFIT_STOCK_DUPLICATE = "error.benefit.stockDuplicate";
     }
     
     /**

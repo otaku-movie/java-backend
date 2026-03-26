@@ -338,10 +338,14 @@
         <result property="distance" column="distance"></result>
         <result property="movieVersionId" column="movie_version_id"></result>
         <result property="versionCode" column="version_code"></result>
+        <result property="movieId" column="movie_id"></result>
+        <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
     </resultMap>
     <select id="getMovieShowTime" resultMap="getMovieShowTime">
 
         SELECT DISTINCT
+            movie_show_time.movie_id AS movie_id,
+            movie_show_time.spec_ids AS spec_ids,
             cinema.id AS cinema_id,
             cinema.name AS cinema_name,
             cinema.full_address AS cinema_address,

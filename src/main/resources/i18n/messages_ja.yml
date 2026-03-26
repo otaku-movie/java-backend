@@ -34,6 +34,11 @@ error:
   payment:
     rateLimit: "支払いリクエストが頻繁すぎます。しばらくしてから再度お試しください"
     inProgress: "注文の支払い処理中です。重複して送信しないでください"
+  benefit:
+    dateInvalid: "日付形式が無効です。yyyy-MM-dd 形式である必要があります"
+    noItem: "このフェーズに物料がありません。フェーズ詳細で追加してください"
+    itemRequired: "特典フェーズを選択してください"
+    stockDuplicate: "この劇場・フェーズには既に在庫を割り当て済みです。編集で数量を変更してください"
   showtime:
     notFound: "上映時間が存在しないか、既に削除されています"
   seat:
@@ -86,6 +91,25 @@ validator:
     email:
       required: "メールアドレスは空にできません"
       notEmail: "有効なメールアドレスではありません"
+  benefit:
+    movieId:
+      required: "映画IDは空にできません"
+    name:
+      required: "特典名は空にできません"
+    startDate:
+      required: "開始日は空にできません"
+  benefitFeedback:
+    cinemaId:
+      required: "劇場を選択してください"
+    benefitId:
+      required: "特典フェーズを選択してください"
+    benefitItemId:
+      required: "特典フェーズを選択してください"
+  benefitStock:
+    cinemaId:
+      required: "劇場を選択してください"
+    benefitItemId:
+      required: "特典物料を選択してください"
   movieComment:
     movieId:
       required: "movieIdは空にできません"
@@ -333,4 +357,10 @@ dict:
       "2": "毎月"
       "3": "毎日"
       "4": "特定日"
+  benefitPhaseStatus:
+    name: "特典フェーズ状態"
+    item:
+      "1": "開始前"
+      "2": "実施中"
+      "3": "終了"
 

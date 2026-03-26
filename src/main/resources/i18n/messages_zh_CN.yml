@@ -35,6 +35,11 @@ error:
   payment:
     rateLimit: "支付请求过于频繁，请稍后再试"
     inProgress: "订单正在支付中，请勿重复提交"
+  benefit:
+    dateInvalid: "日期格式无效，应为 yyyy-MM-dd"
+    noItem: "该阶段下暂无物料，请先在阶段详情中添加物料"
+    itemRequired: "请选择特典阶段"
+    stockDuplicate: "该影院该阶段已分配过库存，请通过编辑修改数量"
   showtime:
     notFound: "场次不存在或已被删除"
   seat:
@@ -89,6 +94,26 @@ validator:
     email:
       required: "邮箱不能为空"
       notEmail: "不是个有效的邮箱地址"
+  # 特典
+  benefit:
+    movieId:
+      required: "电影ID不能为空"
+    name:
+      required: "特典名称不能为空"
+    startDate:
+      required: "开始日期不能为空"
+  benefitFeedback:
+    cinemaId:
+      required: "影院不能为空"
+    benefitId:
+      required: "请选择特典阶段"
+    benefitItemId:
+      required: "请选择特典阶段"
+  benefitStock:
+    cinemaId:
+      required: "影院不能为空"
+    benefitItemId:
+      required: "特典物料不能为空"
   # 电影评论
   movieComment:
     movieId:
@@ -345,3 +370,9 @@ dict:
       "2": "每月"
       "3": "每日"
       "4": "特定日期"
+  benefitPhaseStatus:
+    name: "特典阶段状态"
+    item:
+      "1": "之前"
+      "2": "进行中"
+      "3": "已结束"

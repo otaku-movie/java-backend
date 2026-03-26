@@ -48,4 +48,6 @@ public class OrderListResponse {
   List<MovieOrderSeat> seat;
   /** 订单失败/取消/超时原因，仅失败/取消/超时时有值 */
   String failureReason;
+  /** 当前用户是否已对该订单对应场次特典提交过反馈（已反馈则详情页不展示反馈入口） */
+  Boolean benefitFeedbackSubmitted;
 }

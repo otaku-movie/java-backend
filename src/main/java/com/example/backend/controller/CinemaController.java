@@ -30,6 +30,7 @@ import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.response.app.GetCinemaMovieShowTimeListResponse;
 import com.example.backend.response.cinema.CinemaScreeningResponse;
 import com.example.backend.response.cinema.MovieShowingResponse;
+import com.example.backend.service.BenefitService;
 import com.example.backend.service.CinemaSpecSpecService;
 import com.example.backend.utils.MessageUtils;
 import com.example.backend.utils.Utils;
@@ -141,6 +142,8 @@ public class CinemaController {
 
   @Autowired
   private CinemaSpecSpecService cinemaSpecSpecService;
+  @Autowired
+  private BenefitService benefitService;
 
   @PostMapping(ApiPaths.Common.Cinema.LIST)
   public RestBean<List<CinemaResponse>> list(@RequestBody CinemaListQuery query)  {
@@ -154,6 +157,11 @@ public class CinemaController {
       
       // 获取当前上映的电影
       List<MovieShowingResponse> nowShowingMovies = cinemaMapper.getMovieShowing(item.getId());
+      if (!nowShowingMovies.isEmpty()) {
+        List<Integer> movieIds = nowShowingMovies.stream().map(MovieShowingResponse::getId).toList();
+        java.util.Map<Integer, Boolean> hasBenefitsMap = benefitService.hasBenefitsForMovies(movieIds, LocalDate.now().toString());
+        nowShowingMovies.forEach(m -> m.setHasBenefits(Boolean.TRUE.equals(hasBenefitsMap.get(m.getId()))));
+      }
       item.setNowShowingMovies(nowShowingMovies);
 
       return item;
@@ -311,7 +319,11 @@ public class CinemaController {
   @GetMapping(ApiPaths.Common.Cinema.MOVIE_SHOWING)
   public RestBean<Object> GetMovieShowing(@RequestParam("id") Integer id) {
     List<MovieShowingResponse> result = cinemaMapper.getMovieShowing(id);
-
+    if (!result.isEmpty()) {
+      List<Integer> movieIds = result.stream().map(MovieShowingResponse::getId).toList();
+      java.util.Map<Integer, Boolean> hasBenefitsMap = benefitService.hasBenefitsForMovies(movieIds, LocalDate.now().toString());
+      result.forEach(m -> m.setHasBenefits(Boolean.TRUE.equals(hasBenefitsMap.get(m.getId()))));
+    }
     return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @Transactional

@@ -89,6 +89,17 @@ public final class ApiPaths {
             /** 预售券详情 - GET /api/app/presale/detail?id= */
             public static final String DETAIL = APP_BASE + "/presale/detail";
         }
+
+        /**
+         * App 端 - 入场者特典（C 端查看某电影的特典列表，无需登录）
+         */
+        public static final class Benefit {
+            private Benefit() {}
+            /** 按电影查询特典列表 - GET /api/app/benefit/list?movieId= */
+            public static final String LIST = APP_BASE + "/benefit/list";
+            /** 用户提交特典反馈（已领完等）- POST /api/app/benefit/feedback */
+            public static final String FEEDBACK_SUBMIT = APP_BASE + "/benefit/feedback";
+        }
     }
 
     // ==================== Admin 端 API 路径 ====================
@@ -250,6 +261,19 @@ public final class ApiPaths {
             public static final String PRICE_CONFIG_SAVE = ADMIN_BASE + "/cinema/priceConfig/save";
             /** 票价配置删除 - DELETE /api/admin/cinema/priceConfig/remove */
             public static final String PRICE_CONFIG_REMOVE = ADMIN_BASE + "/cinema/priceConfig/remove";
+
+            /** 影院维度 - 特典 */
+            public static final class Benefit {
+                private Benefit() {}
+                /** 按电影查询影院特典汇总（每家多少、剩余、反馈数）- GET /api/admin/cinema/benefit/summary?movieId= */
+                public static final String SUMMARY = ADMIN_BASE + "/cinema/benefit/summary";
+                /** 影院库存列表 - POST /api/admin/cinema/benefit/stock/list */
+                public static final String STOCK_LIST = ADMIN_BASE + "/cinema/benefit/stock/list";
+                /** 保存/更新影院库存 - POST /api/admin/cinema/benefit/stock/save */
+                public static final String STOCK_SAVE = ADMIN_BASE + "/cinema/benefit/stock/save";
+                /** 用户反馈列表 - POST /api/admin/cinema/benefit/feedback/list */
+                public static final String FEEDBACK_LIST = ADMIN_BASE + "/cinema/benefit/feedback/list";
+            }
         }
         
         /**
@@ -410,6 +434,21 @@ public final class ApiPaths {
             private Chart() {}
             /** 图表数据 - GET /api/admin/chart */
             public static final String DATA = ADMIN_BASE + "/chart";
+        }
+
+        /**
+         * Admin 端 - 入场者特典管理（设计 6）
+         */
+        public static final class Benefit {
+            private Benefit() {}
+            /** 阶段列表 - POST /api/admin/benefit/list */
+            public static final String LIST = ADMIN_BASE + "/benefit/list";
+            /** 阶段详情 - GET /api/admin/benefit/detail */
+            public static final String DETAIL = ADMIN_BASE + "/benefit/detail";
+            /** 保存阶段 - POST /api/admin/benefit/save */
+            public static final String SAVE = ADMIN_BASE + "/benefit/save";
+            /** 删除阶段 - DELETE /api/admin/benefit/remove */
+            public static final String REMOVE = ADMIN_BASE + "/benefit/remove";
         }
     }
 
