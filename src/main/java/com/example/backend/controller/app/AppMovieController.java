@@ -1,17 +1,14 @@
 package com.example.backend.controller.app;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
-import com.example.backend.entity.HelloMovie;
-import com.example.backend.entity.Movie;
-import com.example.backend.entity.MovieShowTime;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ShowTimeState;
 import com.example.backend.mapper.MovieMapper;
 import com.example.backend.mapper.MovieShowTimeMapper;
+import com.example.backend.mapper.ReReleaseMapper;
 import com.example.backend.query.app.AppMovieListQuery;
 import com.example.backend.service.BenefitService;
 import com.example.backend.query.app.getMovieShowTimeQuery;
@@ -22,11 +19,7 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,10 +33,9 @@ class getMovieStaffQuery {
 @RestController
 public class AppMovieController {
   @Autowired
-  private MovieShowTimeMapper movieShowTimeMapper;
-
-  @Autowired
   private MovieMapper movieMapper;
+  @Autowired
+  private ReReleaseMapper reReleaseMapper;
   @Autowired
   private BenefitService benefitService;
 
@@ -51,11 +43,28 @@ public class AppMovieController {
   public RestBean<List<NowMovieShowingResponse>> list(
     @ModelAttribute AppMovieListQuery query
   )  {
-    QueryWrapper wrapper = new QueryWrapper<>();
     Page<MovieMapper> page = new Page<>(query.getPage(), query.getPageSize());
 
-    // 第一步：获取基本的电影信息
+    // 第一步：获取基本的电影信息（普通上映）
     IPage<NowMovieShowingResponse> list = movieMapper.nowMovieShowing(query, page);
+
+    // 追加：合并当前日期有效的重映电影（仅合并到第 1 页，避免复杂分页）
+    if (query.getPage() != null && query.getPage() == 1) {
+      String today = LocalDate.now().toString();
+      List<NowMovieShowingResponse> reReleases = reReleaseMapper.activeNowShowing(today);
+      if (reReleases != null && !reReleases.isEmpty()) {
+        // 不再按 movieId 去重：重映条目需要在列表里可见（即使该电影也在普通上映中）
+        List<NowMovieShowingResponse> merged = new ArrayList<>();
+        merged.addAll(reReleases);
+        if (list.getRecords() != null) merged.addAll(list.getRecords());
+        // 截断到 pageSize
+        if (query.getPageSize() != null && merged.size() > query.getPageSize()) {
+          merged = merged.subList(0, query.getPageSize());
+        }
+        list.setRecords(merged);
+        list.setTotal(list.getTotal() + reReleases.size());
+      }
+    }
     
     if (list.getRecords() != null && !list.getRecords().isEmpty()) {
       // 第二步：提取电影ID列表
@@ -76,8 +85,29 @@ public class AppMovieController {
         movie.setHelloMovie(movieHelloMovies);
       });
 
-      Map<Integer, Boolean> hasBenefitsMap = benefitService.hasAnyBenefitsForMovies(movieIds);
-      list.getRecords().forEach(movie -> movie.setHasBenefits(Boolean.TRUE.equals(hasBenefitsMap.get(movie.getId()))));
+      // 普通上映/重映的特典需要区分：普通上映只看 re_release_id 为空；重映看对应 re_release_id
+      List<Integer> normalMovieIds = list.getRecords().stream()
+        .filter(m -> m.getIsReRelease() == null || !m.getIsReRelease() || m.getReReleaseId() == null)
+        .map(NowMovieShowingResponse::getId)
+        .filter(Objects::nonNull)
+        .distinct()
+        .toList();
+      Map<Integer, Boolean> normalBenefitsMap = benefitService.hasAnyBenefitsForMovies(normalMovieIds);
+
+      List<NowMovieShowingResponse> rrRecords = list.getRecords().stream()
+        .filter(m -> Boolean.TRUE.equals(m.getIsReRelease()) && m.getReReleaseId() != null && m.getId() != null)
+        .toList();
+      List<Integer> rrMovieIds = rrRecords.stream().map(NowMovieShowingResponse::getId).distinct().toList();
+      List<Integer> rrIds = rrRecords.stream().map(NowMovieShowingResponse::getReReleaseId).distinct().toList();
+      Map<String, Boolean> rrBenefitsMap = benefitService.hasAnyBenefitsForReReleases(rrMovieIds, rrIds);
+
+      list.getRecords().forEach(movie -> {
+        if (Boolean.TRUE.equals(movie.getIsReRelease()) && movie.getReReleaseId() != null && movie.getId() != null) {
+          movie.setHasBenefits(Boolean.TRUE.equals(rrBenefitsMap.get(movie.getId() + "_" + movie.getReReleaseId())));
+        } else {
+          movie.setHasBenefits(Boolean.TRUE.equals(normalBenefitsMap.get(movie.getId())));
+        }
+      });
     }
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
@@ -97,6 +127,22 @@ public class AppMovieController {
     Page<MovieMapper> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieComingSoonResponse> list = movieMapper.getMovieComingSoon(query, page);
+
+    // 合并未来重映（仅第 1 页）
+    if (query.getPage() != null && query.getPage() == 1) {
+      String today = LocalDate.now().toString();
+      List<MovieComingSoonResponse> reReleases = reReleaseMapper.upcomingComingSoon(today);
+      if (reReleases != null && !reReleases.isEmpty()) {
+        List<MovieComingSoonResponse> merged = new ArrayList<>();
+        merged.addAll(reReleases);
+        if (list.getRecords() != null) merged.addAll(list.getRecords());
+        if (query.getPageSize() != null && merged.size() > query.getPageSize()) {
+          merged = merged.subList(0, query.getPageSize());
+        }
+        list.setRecords(merged);
+        list.setTotal(list.getTotal() + reReleases.size());
+      }
+    }
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
@@ -197,11 +243,13 @@ public class AppMovieController {
           showTime.setAvailableSeats(availableSeats);
           showTime.setMovieVersionId(item.getMovieVersionId());
           showTime.setVersionCode(item.getVersionCode());
+          showTime.setReReleaseId(item.getReReleaseId());
+          showTime.setReReleaseVersionInfo(item.getReReleaseVersionInfo());
           String showDateStr = item.getStartTime() != null && item.getStartTime().length() >= 10
               ? item.getStartTime().substring(0, 10) : null;
           List<Integer> specIds = item.getSpecIds() != null ? item.getSpecIds() : Collections.emptyList();
           showTime.setHasBenefits(benefitService.hasBenefitsForShowtime(
-              item.getMovieId(), item.getCinemaId(), showDateStr, item.getDimensionType(), specIds));
+              item.getMovieId(), item.getCinemaId(), showDateStr, item.getReReleaseId(), item.getDimensionType(), specIds));
           return showTime;
         })
         .sorted((t1, t2) -> {
@@ -246,6 +294,13 @@ public class AppMovieController {
       return  t1Format.compareTo(t2Format);
     }).toList();
     return RestBean.success(sorted, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+  }
+
+  /** 电影详情页：重映历史（按 movieId 查询） */
+  @GetMapping(ApiPaths.App.Movie.RE_RELEASE_HISTORY)
+  public RestBean<List<ReReleaseHistoryResponse>> reReleaseHistory(@RequestParam Integer movieId) {
+    List<ReReleaseHistoryResponse> list = reReleaseMapper.historyByMovieId(movieId);
+    return RestBean.success(list, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
   }
 
 }

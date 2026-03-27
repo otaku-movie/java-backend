@@ -22,6 +22,26 @@ public class ReRelease {
   @TableField("end_date")
   Date endDate;
 
+  /** 特殊版本说明/备注（可为空） */
+  @TableField("version_info")
+  String versionInfo;
+
+  /** 可选：覆盖展示名（为空则复用 movie.name） */
+  @TableField("display_name_override")
+  String displayNameOverride;
+
+  /** 可选：覆盖海报（为空则复用 movie.cover） */
+  @TableField("poster_override")
+  String posterOverride;
+
+  /** 1=启用 0=停用 */
+  @TableField("status")
+  Integer status;
+
+  /** 可选：覆盖片长（分钟，为空则复用 movie.time） */
+  @TableField("time_override")
+  Integer timeOverride;
+
 
   @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")

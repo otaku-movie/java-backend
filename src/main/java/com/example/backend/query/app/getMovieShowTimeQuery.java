@@ -10,6 +10,8 @@ import java.util.List;
 @Data
 public class getMovieShowTimeQuery extends PaginationQuery {
   Integer movieId;
+  /** 可选：重映计划ID。传入时仅查询该重映批次的场次；不传则仅查询非重映场次 */
+  Integer reReleaseId;
   List<Integer> specId;
   Integer subtitleId;
   // 特殊标签筛选

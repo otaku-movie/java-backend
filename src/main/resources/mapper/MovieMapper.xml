@@ -21,6 +21,7 @@
         <result property="levelId" column="level_id"></result>
         <result property="levelName" column="level_name"></result>
         <result property="levelDescription" column="level_description"></result>
+        <result property="hasReRelease" column="has_re_release"></result>
     </resultMap>
     <!--    根据电影id 获取标签 -->
     <select id="getMovieTags" resultType="com.example.backend.response.movie.Tags">
@@ -96,7 +97,13 @@
     <select id="movieList" resultMap="movieList" resultType="com.example.backend.response.movie.MovieResponse">
             SELECT
                 movie.*,
-                level.name AS level_name
+                level.name AS level_name,
+                EXISTS(
+                    SELECT 1
+                    FROM re_release rr
+                    WHERE rr.deleted = 0
+                      AND rr.movie_id = movie.id
+                ) AS has_re_release
             FROM
                 movie
             LEFT JOIN level ON movie.level_id = level.id
@@ -110,6 +117,26 @@
                 </if>
                 <if test="query.status != null and !query.status.equals('')">
                     AND movie.status = #{query.status}
+                </if>
+                <if test="query.hasReRelease != null">
+                    <choose>
+                        <when test="query.hasReRelease == 1">
+                            AND EXISTS(
+                                SELECT 1
+                                FROM re_release rr2
+                                WHERE rr2.deleted = 0
+                                  AND rr2.movie_id = movie.id
+                            )
+                        </when>
+                        <otherwise>
+                            AND NOT EXISTS(
+                                SELECT 1
+                                FROM re_release rr2
+                                WHERE rr2.deleted = 0
+                                  AND rr2.movie_id = movie.id
+                            )
+                        </otherwise>
+                    </choose>
                 </if>
             </where>
             ORDER BY movie.update_time DESC
@@ -146,6 +173,9 @@
         <result property="startDate" column="start_date"></result>
 
         <result property="levelName" column="level_name"></result>
+        <result property="presaleId" column="presale_id"></result>
+        <result property="hasPresaleTicket" column="has_presale_ticket"></result>
+        <result property="hasBonus" column="has_bonus"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -169,14 +199,22 @@
             movie.cover,
             movie.start_date,
             level.name AS level_name,
+            presale.id AS presale_id,
+            (presale.id IS NOT NULL) AS has_presale_ticket,
+            (EXISTS (
+                SELECT 1 FROM presale_specification ps
+                WHERE ps.presale_id = presale.id
+                  AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
+            )) AS has_bonus,
             MIN(movie_show_time.start_time::timestamp) AS show_time
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN level ON movie.level_id = level.id
+                 LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
         WHERE movie_show_time.deleted = 0
           AND movie_show_time.start_time::timestamp >= CURRENT_TIMESTAMP
           AND movie_show_time.open = TRUE
-        GROUP BY movie.id, movie.name, movie.cover, movie.start_date, level.name
+        GROUP BY movie.id, movie.name, movie.cover, movie.start_date, level.name, presale.id
         ORDER BY MIN(movie_show_time.start_time::timestamp) ASC
     </select>
 
@@ -340,6 +378,8 @@
         <result property="versionCode" column="version_code"></result>
         <result property="movieId" column="movie_id"></result>
         <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
+        <result property="reReleaseId" column="re_release_id"></result>
+        <result property="reReleaseVersionInfo" column="re_release_version_info"></result>
     </resultMap>
     <select id="getMovieShowTime" resultMap="getMovieShowTime">
 
@@ -357,6 +397,8 @@
             movie_show_time.end_time AS end_time,
             theater_hall.id AS theater_hall_id,
             theater_hall.name AS theater_hall_name,
+            movie_show_time.re_release_id AS re_release_id,
+            re_release.version_info AS re_release_version_info,
             (
                 SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id))
                 FROM cinema_spec cs
@@ -401,10 +443,19 @@
                 LEFT JOIN cinema ON movie_show_time.cinema_id = cinema."id"
                 LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
                 LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
+                LEFT JOIN re_release ON re_release.id = movie_show_time.re_release_id AND re_release.deleted = 0
         WHERE
             movie_show_time.deleted = 0
              AND movie_show_time.status = #{showTimeState}
              AND movie_show_time.movie_id = #{query.movieId}
+            <choose>
+                <when test="query.reReleaseId != null">
+                    AND movie_show_time.re_release_id = #{query.reReleaseId}
+                </when>
+                <otherwise>
+                    AND movie_show_time.re_release_id IS NULL
+                </otherwise>
+            </choose>
              AND movie_show_time.start_time::timestamp >= now()
              AND cinema.deleted = 0
         <if test="query.regionId != null">

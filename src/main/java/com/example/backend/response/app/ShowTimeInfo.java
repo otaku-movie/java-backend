@@ -24,6 +24,8 @@ public class ShowTimeInfo {
   private List<MovieShowTimeTag> showTimeTags;
   private Integer movieVersionId;
   private Integer versionCode;
+  private Integer reReleaseId;
+  private String reReleaseVersionInfo;
   /** 该场次是否有入场者特典（设计 3.2） */
   private Boolean hasBenefits;
 
@@ -59,6 +61,10 @@ public class ShowTimeInfo {
   public void setMovieVersionId(Integer movieVersionId) { this.movieVersionId = movieVersionId; }
   public Integer getVersionCode() { return versionCode; }
   public void setVersionCode(Integer versionCode) { this.versionCode = versionCode; }
+  public Integer getReReleaseId() { return reReleaseId; }
+  public void setReReleaseId(Integer reReleaseId) { this.reReleaseId = reReleaseId; }
+  public String getReReleaseVersionInfo() { return reReleaseVersionInfo; }
+  public void setReReleaseVersionInfo(String reReleaseVersionInfo) { this.reReleaseVersionInfo = reReleaseVersionInfo; }
   public Boolean getHasBenefits() { return hasBenefits; }
   public void setHasBenefits(Boolean hasBenefits) { this.hasBenefits = hasBenefits; }
 }

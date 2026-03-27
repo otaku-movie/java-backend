@@ -37,4 +37,11 @@ public class MovieComingSoonResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date earliestShowTime;  // 最早场次时间
+
+    /** 是否为重映条目（重映计划合并到“即将上映”时使用） */
+    private Boolean isReRelease;
+    /** 关联的重映计划 id（isReRelease=true 时有值） */
+    private Integer reReleaseId;
+    /** 重映版本信息（可选） */
+    private String reReleaseVersionInfo;
 }

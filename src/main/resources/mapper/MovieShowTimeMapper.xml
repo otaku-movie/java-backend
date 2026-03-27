@@ -19,6 +19,7 @@
         <result property="specId" column="spec_id"></result>
         <result property="specName" column="spec_name"></result>
         <result property="dimensionType" column="dimension_type"></result>
+        <result property="reReleaseId" column="re_release_id"></result>
         <result property="seatCount" column="seat_count"></result>
         <result property="selectedSeatCount" column="selected_seat_count"></result>
         <result property="subtitleId" column="subtitle_id"  typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
@@ -179,6 +180,7 @@
                 movie_show_time.subtitle_id,
                 movie_show_time.show_time_tag_id,
                 movie_show_time.movie_version_id,
+                movie_show_time.re_release_id,
                 movie.id AS movie_id,
                 movie.name AS movie_name,
                 movie.cover AS movie_cover,
@@ -304,6 +306,7 @@
             movie_show_time.spec_ids[1] as spec_id,
             movie_show_time.dimension_type,
             movie_show_time.movie_version_id,
+            movie_show_time.re_release_id,
             movie.id as movie_id,
             movie.name as movie_name,
             cinema.id as cinema_id,

@@ -13,6 +13,8 @@ public class BenefitSaveQuery {
   private Integer id;
   @NotNull(message = "{validator.benefit.movieId.required}")
   private Integer movieId;
+  /** 可选：关联重映计划（为空表示普通上映特典） */
+  private Integer reReleaseId;
   @NotBlank(message = "{validator.benefit.name.required}")
   private String name;
   /** 特典数量（可选） */

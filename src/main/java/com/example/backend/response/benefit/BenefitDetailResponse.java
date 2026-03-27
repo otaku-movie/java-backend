@@ -9,6 +9,8 @@ import java.util.List;
 public class BenefitDetailResponse {
   private Integer id;
   private Integer movieId;
+  /** 关联重映计划（为空表示普通上映特典） */
+  private Integer reReleaseId;
   private String movieName;
   private String name;
   /** 特典数量 */

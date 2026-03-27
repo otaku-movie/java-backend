@@ -8,7 +8,11 @@
         <result property="cover" column="cover"></result>
         <result property="startDate" column="start_date"></result>
         <result property="endDate" column="end_date"></result>
-<!--        <result property="status" column="status"></result>-->
+        <result property="status" column="status"></result>
+        <result property="versionInfo" column="version_info"></result>
+        <result property="displayNameOverride" column="display_name_override"></result>
+        <result property="posterOverride" column="poster_override"></result>
+        <result property="timeOverride" column="time_override"></result>
     </resultMap>
     <select id="reReleaseList" resultMap="reReleaseList" resultType="com.example.backend.response.reRelease.ReReleaseListResponse">
         SELECT
@@ -17,13 +21,21 @@
             re_release.movie_id,
             re_release."id",
             re_release.start_date,
-            re_release.end_date
+            re_release.end_date,
+            re_release.status,
+            re_release.version_info,
+            re_release.display_name_override,
+            re_release.poster_override,
+            re_release.time_override
         FROM
             re_release
         LEFT JOIN movie ON re_release.movie_id = movie.id
             <where>
                 re_release.deleted = 0
-                <if test="query.id != null">
+                <if test="query.movieId != null">
+                    AND movie.id = #{query.movieId}
+                </if>
+                <if test="query.movieId == null and query.id != null">
                     AND movie.id = #{query.id}
                 </if>
                 <if test="query.name != null and !query.name.equals('')">
@@ -33,5 +45,105 @@
                     AND movie.status = #{query.status}
                 </if>
             </where>
+    </select>
+
+    <select id="activeNowShowing" resultType="com.example.backend.response.app.NowMovieShowingResponse">
+        SELECT
+            movie.id AS id,
+            COALESCE(NULLIF(re_release.display_name_override, ''), movie.name) AS name,
+            COALESCE(NULLIF(re_release.poster_override, ''), movie.cover) AS cover,
+            level.name AS levelName,
+            movie.start_date AS startDate,
+            TRUE AS isReRelease,
+            re_release.id AS reReleaseId,
+            re_release.version_info AS reReleaseVersionInfo,
+            presale.id AS presaleId,
+            (presale.id IS NOT NULL) AS hasPresaleTicket,
+            (EXISTS (
+                SELECT 1 FROM presale_specification ps
+                WHERE ps.presale_id = presale.id
+                  AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
+            )) AS hasBonus
+        FROM re_release
+        LEFT JOIN movie ON re_release.movie_id = movie.id AND movie.deleted = 0
+        LEFT JOIN level ON movie.level_id = level.id
+        -- 必须存在未开始且公开的排片场次，才算“正在上映”
+        LEFT JOIN movie_show_time mst ON mst.re_release_id = re_release.id
+            AND mst.deleted = 0
+            AND mst.open = TRUE
+            AND mst.start_time::timestamp >= CURRENT_TIMESTAMP
+        LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
+        WHERE
+            re_release.deleted = 0
+            AND COALESCE(re_release.status, 1) = 1
+            -- 只要存在未开始且公开的排片场次，就在“正在上映”里可见（不再依赖 start_date/end_date 门槛）
+            AND mst.id IS NOT NULL
+        GROUP BY
+            movie.id, re_release.id, level.name, presale.id
+    </select>
+
+    <select id="upcomingComingSoon" resultType="com.example.backend.response.app.MovieComingSoonResponse">
+        SELECT
+            movie.id AS id,
+            COALESCE(NULLIF(re_release.display_name_override, ''), movie.name) AS name,
+            COALESCE(NULLIF(re_release.poster_override, ''), movie.cover) AS cover,
+            TO_CHAR(re_release.start_date, 'YYYY-MM-DD') AS startDate,
+            COALESCE(re_release.time_override, movie.time) AS time,
+            movie.original_name AS originalName,
+            movie.description AS description,
+            movie.level_id AS levelId,
+            movie.status AS status,
+            movie.deleted AS deleted,
+            movie.create_time AS createTime,
+            movie.update_time AS updateTime,
+            level.name AS levelName,
+            COUNT(DISTINCT mst.id) AS presaleShowTimeCount,
+            MIN(mst.start_time::timestamp) AS earliestShowTime,
+            presale.id AS presaleId,
+            (presale.id IS NOT NULL) AS hasPresaleTicket,
+            (EXISTS (
+                SELECT 1 FROM presale_specification ps
+                WHERE ps.presale_id = presale.id
+                  AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
+            )) AS hasBonus,
+            TRUE AS isReRelease,
+            re_release.id AS reReleaseId,
+            re_release.version_info AS reReleaseVersionInfo
+        FROM re_release
+        LEFT JOIN movie ON re_release.movie_id = movie.id AND movie.deleted = 0
+        LEFT JOIN level ON movie.level_id = level.id
+        LEFT JOIN movie_show_time mst ON mst.re_release_id = re_release.id
+            AND mst.deleted = 0
+            AND mst.open = TRUE
+            AND mst.start_time::timestamp > CURRENT_TIMESTAMP
+        LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
+        WHERE
+            re_release.deleted = 0
+            AND COALESCE(re_release.status, 1) = 1
+            -- start_date 在今天之后视为“即将上映”
+            AND re_release.start_date > TO_DATE(#{today}, 'YYYY-MM-DD')
+        GROUP BY
+            movie.id, movie.name, movie.cover, re_release.start_date, movie.time, movie.original_name,
+            movie.description, movie.level_id, movie.status, movie.deleted, movie.create_time,
+            movie.update_time, level.name, presale.id,
+            re_release.id, re_release.display_name_override, re_release.poster_override, re_release.time_override, re_release.version_info
+        ORDER BY re_release.start_date ASC
+    </select>
+
+    <select id="historyByMovieId" resultType="com.example.backend.response.app.ReReleaseHistoryResponse">
+        SELECT
+            re_release.id AS id,
+            TO_CHAR(re_release.start_date, 'YYYY-MM-DD') AS startDate,
+            CASE WHEN re_release.end_date IS NULL THEN NULL ELSE TO_CHAR(re_release.end_date, 'YYYY-MM-DD') END AS endDate,
+            COALESCE(re_release.status, 1) AS status,
+            re_release.version_info AS versionInfo,
+            re_release.display_name_override AS displayNameOverride,
+            re_release.poster_override AS posterOverride,
+            re_release.time_override AS timeOverride
+        FROM re_release
+        WHERE
+            re_release.deleted = 0
+            AND re_release.movie_id = #{movieId}
+        ORDER BY re_release.start_date DESC, re_release.id DESC
     </select>
 </mapper>

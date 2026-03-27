@@ -1,7 +1,6 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -11,12 +10,10 @@ import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.ResponseCode;
-import com.example.backend.enumerate.SeatState;
 import com.example.backend.mapper.*;
 import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
-import com.example.backend.response.UserSelectSeat;
 import com.example.backend.response.showTime.MovieShowTimeDetail;
 
 import java.math.BigDecimal;
@@ -25,8 +22,6 @@ import java.util.Map;
 import java.util.HashMap;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.service.MovieTicketTypeService;
-import com.example.backend.service.SeatService;
-import com.example.backend.service.SelectSeatService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -38,6 +33,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -98,6 +94,9 @@ public class MovieShowTimeController {
 
   @Autowired
   private MovieShowTimeTicketTypeMapper movieShowTimeTicketTypeMapper;
+
+  @Autowired
+  private ReReleaseMapper reReleaseMapper;
 
   /** 获取该场次可用票种列表（App 选票页调用） */
   @PostMapping(ApiPaths.Common.ShowTime.TICKET_TYPE_LIST)
@@ -201,6 +200,28 @@ public class MovieShowTimeController {
   @CheckPermission(code = "movieShowTime.save")
   @PostMapping(ApiPaths.Admin.ShowTime.SAVE)
   public RestBean<Object> save(@RequestBody @Validated MovieShowTimeQuery query) throws ParseException {
+    // 重映校验：启用、movieId 匹配、日期在有效期内
+    if (query.getReReleaseId() != null) {
+      ReRelease rr = reReleaseMapper.selectById(query.getReReleaseId());
+      if (rr == null || (rr.getStatus() != null && rr.getStatus() == 0)) {
+        return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+      }
+      if (rr.getMovieId() == null || !rr.getMovieId().equals(query.getMovieId())) {
+        return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+      }
+      // 从 startTime 取日期部分进行有效期校验
+      try {
+        Date showDate = new SimpleDateFormat("yyyy-MM-dd").parse(query.getStartTime().substring(0, 10));
+        if (rr.getStartDate() != null && showDate.before(rr.getStartDate())) {
+          return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+        }
+        if (rr.getEndDate() != null && showDate.after(rr.getEndDate())) {
+          return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+        }
+      } catch (Exception ignored) {
+        return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+      }
+    }
     String format = "yyyy-MM-dd HH:mm:ss";
     List<MovieShowTime> list = movieShowTimeService.getSortedMovieShowTimes(
       query, format

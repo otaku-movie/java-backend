@@ -36,6 +36,8 @@ public class MovieShowTimeDetail {
   Integer dimensionType;
   Integer movieVersionId;
   Integer versionCode;  // 配音版本ID（字典值）
+  /** 关联重映计划（为空表示普通上映场次） */
+  Integer reReleaseId;
   /** 是否开放选座（管理端编辑回填） */
   Boolean open;
   /** 定时公开时间 yyyy-MM-dd HH:mm:ss */

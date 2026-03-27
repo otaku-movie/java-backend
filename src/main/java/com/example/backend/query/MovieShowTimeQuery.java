@@ -27,6 +27,8 @@ public class MovieShowTimeQuery {
   List<Integer> subtitleId;
   List<Integer> showTimeTagId;
   Integer movieVersionId;
+  /** 关联重映计划（为空表示普通上映场次） */
+  Integer reReleaseId;
   /** 定价模式：1=系统活动模式 2=固定价格模式 */
   Integer pricingMode;
   /** 固定价格模式下的基础票价，pricing_mode=2 时使用 */

@@ -52,6 +52,10 @@ public class MovieShowTime {
   @TableField("movie_version_id")
   Integer movieVersionId;
 
+  /** 关联重映计划（为空表示普通上映场次） */
+  @TableField("re_release_id")
+  Integer reReleaseId;
+
   /** 定价模式：1=系统活动模式(按规则匹配) 2=固定价格模式 */
   @TableField("pricing_mode")
   Integer pricingMode;

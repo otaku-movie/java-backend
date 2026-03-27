@@ -15,6 +15,10 @@ public class Benefit {
   @TableField("movie_id")
   private Integer movieId;
 
+  /** 关联重映计划（为空表示普通上映特典） */
+  @TableField("re_release_id")
+  private Integer reReleaseId;
+
   @TableField("name")
   private String name;
 

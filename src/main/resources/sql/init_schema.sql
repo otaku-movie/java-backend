@@ -166,6 +166,8 @@ CREATE TABLE IF NOT EXISTS movie_show_time (
     spec_ids INTEGER[],
     dimension_type INTEGER DEFAULT 1,
     movie_version_id INTEGER,
+    -- 关联重映计划（为空表示普通上映场次）
+    re_release_id INTEGER,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0,
@@ -322,8 +324,18 @@ CREATE TABLE IF NOT EXISTS staff_character (
 CREATE TABLE IF NOT EXISTS re_release (
     id SERIAL PRIMARY KEY,
     movie_id INTEGER NOT NULL,
-    release_date DATE NOT NULL,
-    description TEXT,
+    -- 重映有效期（end_date 可为空表示长期）
+    start_date DATE NOT NULL,
+    end_date DATE,
+    -- 特殊版本说明/备注（可为空）
+    version_info TEXT,
+    -- 可选：覆盖展示名/海报（为空则复用 movie 表字段）
+    display_name_override VARCHAR(255),
+    poster_override VARCHAR(255),
+    -- 可选：覆盖片长（分钟，为空则复用 movie.time）
+    time_override INTEGER,
+    -- 1=启用 0=停用
+    status INTEGER DEFAULT 1,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0,

@@ -70,6 +70,8 @@ public final class ApiPaths {
             public static final String STAFF = APP_BASE + "/movie/staff";
             /** 场次查询 - POST /api/app/movie/showTime */
             public static final String SHOW_TIME = APP_BASE + "/movie/showTime";
+            /** 电影重映历史 - GET /api/app/movie/reReleaseHistory?movieId= */
+            public static final String RE_RELEASE_HISTORY = APP_BASE + "/movie/reReleaseHistory";
         }
         
         /**

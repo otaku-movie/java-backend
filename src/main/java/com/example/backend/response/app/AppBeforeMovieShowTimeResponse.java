@@ -22,6 +22,8 @@ public class AppBeforeMovieShowTimeResponse {
   private Integer versionCode;
   private Integer movieId;
   private java.util.List<Integer> specIds;
+  private Integer reReleaseId;
+  private String reReleaseVersionInfo;
 
   public Integer getCinemaId() { return cinemaId; }
   public void setCinemaId(Integer cinemaId) { this.cinemaId = cinemaId; }
@@ -63,4 +65,8 @@ public class AppBeforeMovieShowTimeResponse {
   public void setMovieId(Integer movieId) { this.movieId = movieId; }
   public java.util.List<Integer> getSpecIds() { return specIds; }
   public void setSpecIds(java.util.List<Integer> specIds) { this.specIds = specIds; }
+  public Integer getReReleaseId() { return reReleaseId; }
+  public void setReReleaseId(Integer reReleaseId) { this.reReleaseId = reReleaseId; }
+  public String getReReleaseVersionInfo() { return reReleaseVersionInfo; }
+  public void setReReleaseVersionInfo(String reReleaseVersionInfo) { this.reReleaseVersionInfo = reReleaseVersionInfo; }
 }

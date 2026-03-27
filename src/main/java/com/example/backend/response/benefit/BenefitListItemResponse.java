@@ -7,6 +7,8 @@ import lombok.Data;
 public class BenefitListItemResponse {
   private Integer id;
   private Integer movieId;
+  /** 关联重映计划（为空表示普通上映特典） */
+  private Integer reReleaseId;
   private String movieName;
   private String name;
   private Integer quantity;

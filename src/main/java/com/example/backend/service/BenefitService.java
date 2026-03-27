@@ -62,9 +62,9 @@ public class BenefitService {
   /**
    * 某电影在指定日期是否有有效特典（存在有效阶段）。
    */
-  public boolean hasBenefitsForMovie(Integer movieId, String dateStr) {
+  public boolean hasBenefitsForMovie(Integer movieId, Integer reReleaseId, String dateStr) {
     if (movieId == null || dateStr == null) return false;
-    return !listBenefitsByMovieAndDate(movieId, dateStr).isEmpty();
+    return !listBenefitsByMovieAndDate(movieId, reReleaseId, dateStr).isEmpty();
   }
 
   /**
@@ -74,9 +74,27 @@ public class BenefitService {
     Map<Integer, Boolean> out = new HashMap<>();
     if (movieIds == null || movieIds.isEmpty()) return out;
     for (Integer id : movieIds) out.put(id, false);
+    // 仅普通上映特典（re_release_id 为空）参与该批量判断
     List<Benefit> all = benefitMapper.selectList(
-      new LambdaQueryWrapper<Benefit>().in(Benefit::getMovieId, movieIds));
+      new LambdaQueryWrapper<Benefit>()
+        .in(Benefit::getMovieId, movieIds)
+        .isNull(Benefit::getReReleaseId));
     for (Benefit b : all) out.put(b.getMovieId(), true);
+    return out;
+  }
+
+  /** 批量：重映条目是否有特典。返回 key(movieId_reReleaseId) -> 是否有特典 */
+  public Map<String, Boolean> hasAnyBenefitsForReReleases(Collection<Integer> movieIds, Collection<Integer> reReleaseIds) {
+    Map<String, Boolean> out = new HashMap<>();
+    if (movieIds == null || movieIds.isEmpty() || reReleaseIds == null || reReleaseIds.isEmpty()) return out;
+    List<Benefit> all = benefitMapper.selectList(
+      new LambdaQueryWrapper<Benefit>()
+        .in(Benefit::getMovieId, movieIds)
+        .in(Benefit::getReReleaseId, reReleaseIds));
+    for (Benefit b : all) {
+      if (b.getMovieId() == null || b.getReReleaseId() == null) continue;
+      out.put(b.getMovieId() + "_" + b.getReReleaseId(), true);
+    }
     return out;
   }
 
@@ -88,7 +106,7 @@ public class BenefitService {
     if (movieIds == null || movieIds.isEmpty() || dateStr == null) return out;
     for (Integer id : movieIds) out.put(id, false);
     for (Integer movieId : movieIds) {
-      if (!listBenefitsByMovieAndDate(movieId, dateStr).isEmpty()) {
+      if (!listBenefitsByMovieAndDate(movieId, null, dateStr).isEmpty()) {
         out.put(movieId, true);
       }
     }
@@ -99,9 +117,10 @@ public class BenefitService {
    * 某场次是否有特典：电影在该场次日期有有效阶段，且该影院对某阶段有库存（remaining > 0）。
    */
   public boolean hasBenefitsForShowtime(Integer movieId, Integer cinemaId, String showDateStr,
-                                        Integer dimensionType, List<Integer> specIds) {
+                                       Integer reReleaseId,
+                                       Integer dimensionType, List<Integer> specIds) {
     if (movieId == null || cinemaId == null || showDateStr == null) return false;
-    List<Benefit> benefits = listBenefitsByMovieAndDate(movieId, showDateStr);
+    List<Benefit> benefits = listBenefitsByMovieAndDate(movieId, reReleaseId, showDateStr);
     for (Benefit b : benefits) {
       BenefitTheaterStock stock = benefitTheaterStockMapper.selectOne(
         new LambdaQueryWrapper<BenefitTheaterStock>()
@@ -114,14 +133,16 @@ public class BenefitService {
     return false;
   }
 
-  public List<Benefit> listBenefitsByMovieAndDate(Integer movieId, String dateStr) {
+  public List<Benefit> listBenefitsByMovieAndDate(Integer movieId, Integer reReleaseId, String dateStr) {
     if (movieId == null || dateStr == null) return Collections.emptyList();
-    return benefitMapper.selectList(
-      new LambdaQueryWrapper<Benefit>()
-        .eq(Benefit::getMovieId, movieId)
-        .le(Benefit::getStartDate, dateStr)
-        .and(w -> w.isNull(Benefit::getEndDate).or().eq(Benefit::getEndDate, "").or().ge(Benefit::getEndDate, dateStr))
-        .orderByAsc(Benefit::getOrderNum));
+    LambdaQueryWrapper<Benefit> w = new LambdaQueryWrapper<Benefit>()
+      .eq(Benefit::getMovieId, movieId)
+      .le(Benefit::getStartDate, dateStr)
+      .and(x -> x.isNull(Benefit::getEndDate).or().eq(Benefit::getEndDate, "").or().ge(Benefit::getEndDate, dateStr))
+      .orderByAsc(Benefit::getOrderNum);
+    if (reReleaseId == null) w.isNull(Benefit::getReReleaseId);
+    else w.eq(Benefit::getReReleaseId, reReleaseId);
+    return benefitMapper.selectList(w);
   }
 
   public Integer getStockRemaining(Integer cinemaId, Integer benefitId) {
@@ -140,6 +161,8 @@ public class BenefitService {
       query.getPageSize() != null ? query.getPageSize() : 10);
     LambdaQueryWrapper<Benefit> wrapper = new LambdaQueryWrapper<>();
     if (query.getMovieId() != null) wrapper.eq(Benefit::getMovieId, query.getMovieId());
+    if (query.getReReleaseId() != null) wrapper.eq(Benefit::getReReleaseId, query.getReReleaseId());
+    if (query.getReReleaseId() == null) wrapper.isNull(Benefit::getReReleaseId);
     if (StringUtils.hasText(query.getName())) wrapper.like(Benefit::getName, query.getName());
     wrapper.orderByAsc(Benefit::getOrderNum).orderByDesc(Benefit::getId);
     IPage<Benefit> result = benefitMapper.selectPage(page, wrapper);
@@ -169,6 +192,7 @@ public class BenefitService {
       BenefitListItemResponse r = new BenefitListItemResponse();
       r.setId(b.getId());
       r.setMovieId(b.getMovieId());
+      r.setReReleaseId(b.getReReleaseId());
       r.setMovieName(movieNameMap.get(b.getMovieId()));
       r.setName(b.getName());
       r.setQuantity(b.getQuantity());
@@ -190,13 +214,14 @@ public class BenefitService {
 
   /** App 端：按电影 ID 获取该电影下所有特典阶段详情（含物料列表） */
   /** App 端：按开始时间倒序（新的在前） */
-  public List<BenefitDetailResponse> listBenefitDetailByMovie(Integer movieId) {
+  public List<BenefitDetailResponse> listBenefitDetailByMovie(Integer movieId, Integer reReleaseId) {
     if (movieId == null) return Collections.emptyList();
-    List<Benefit> benefits = benefitMapper.selectList(
-      new LambdaQueryWrapper<Benefit>()
-        .eq(Benefit::getMovieId, movieId)
-        .orderByDesc(Benefit::getStartDate)
-        .orderByDesc(Benefit::getId));
+    LambdaQueryWrapper<Benefit> w = new LambdaQueryWrapper<Benefit>()
+      .eq(Benefit::getMovieId, movieId);
+    if (reReleaseId == null) w.isNull(Benefit::getReReleaseId);
+    else w.eq(Benefit::getReReleaseId, reReleaseId);
+    w.orderByDesc(Benefit::getStartDate).orderByDesc(Benefit::getId);
+    List<Benefit> benefits = benefitMapper.selectList(w);
     return benefits.stream().map(b -> getBenefitDetail(b.getId())).filter(Objects::nonNull).toList();
   }
 
@@ -207,6 +232,7 @@ public class BenefitService {
     BenefitDetailResponse r = new BenefitDetailResponse();
     r.setId(b.getId());
     r.setMovieId(b.getMovieId());
+    r.setReReleaseId(b.getReReleaseId());
     Movie m = movieMapper.selectById(b.getMovieId());
     r.setMovieName(m != null ? m.getName() : null);
     r.setName(b.getName());
@@ -285,6 +311,7 @@ public class BenefitService {
     Benefit b = query.getId() != null ? benefitMapper.selectById(query.getId()) : new Benefit();
     if (b == null) b = new Benefit();
     b.setMovieId(query.getMovieId());
+    b.setReReleaseId(query.getReReleaseId());
     b.setName(query.getName());
     b.setQuantity(query.getQuantity());
     b.setDescription(query.getDescription());
@@ -460,7 +487,7 @@ public class BenefitService {
    */
   public Integer getFirstBenefitIdForOrder(Integer movieId, String dateStr) {
     if (movieId == null || dateStr == null) return null;
-    List<Benefit> list = listBenefitsByMovieAndDate(movieId, dateStr);
+    List<Benefit> list = listBenefitsByMovieAndDate(movieId, null, dateStr);
     return list.isEmpty() ? null : list.get(0).getId();
   }
 

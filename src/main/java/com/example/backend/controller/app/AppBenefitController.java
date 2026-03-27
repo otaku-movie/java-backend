@@ -26,11 +26,12 @@ public class AppBenefitController {
   private BenefitService benefitService;
 
   @GetMapping(ApiPaths.App.Benefit.LIST)
-  public RestBean<List<BenefitDetailResponse>> list(@RequestParam Integer movieId) {
+  public RestBean<List<BenefitDetailResponse>> list(@RequestParam Integer movieId,
+                                                    @RequestParam(required = false) Integer reReleaseId) {
     if (movieId == null) {
       return RestBean.success(List.of(), MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
     }
-    List<BenefitDetailResponse> list = benefitService.listBenefitDetailByMovie(movieId);
+    List<BenefitDetailResponse> list = benefitService.listBenefitDetailByMovie(movieId, reReleaseId);
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 

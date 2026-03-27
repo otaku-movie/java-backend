@@ -45,4 +45,7 @@ public class MovieResponse {
   Integer presaleId;
   /** 该预售券是否含特典 */
   Boolean hasBonus;
+
+  /** 是否存在重映计划（用于后台电影选择弹窗打标签/入口） */
+  Boolean hasReRelease;
 }
