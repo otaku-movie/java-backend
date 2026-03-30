@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.AppVersionMapper">
+    <select id="latestForCheck" resultType="com.example.backend.response.app.AppVersionCheckResponse">
+        SELECT
+            version_name AS latestVersion,
+            COALESCE(build_number, version_code, 0) AS latestBuildNumber,
+            COALESCE(is_force_update, force_update, FALSE) AS forceUpdate,
+            download_url AS downloadUrl,
+            CASE
+                WHEN #{lang} LIKE 'ja%' THEN COALESCE(release_note_ja, release_note_zh, update_message, '')
+                WHEN #{lang} LIKE 'en%' THEN COALESCE(release_note_en, release_note_zh, update_message, '')
+                ELSE COALESCE(release_note_zh, update_message, '')
+            END AS releaseNote,
+            min_supported_version AS minSupportedVersion
+        FROM app_version
+        WHERE
+            deleted = 0
+            AND platform = #{platform}
+            AND (release_percent IS NULL OR release_percent > 0)
+        ORDER BY
+            CASE WHEN COALESCE(is_latest, FALSE) THEN 1 ELSE 0 END DESC,
+            COALESCE(build_number, version_code, 0) DESC,
+            id DESC
+        LIMIT 1
+    </select>
+</mapper>
+

@@ -102,6 +102,15 @@ public final class ApiPaths {
             /** 用户提交特典反馈（已领完等）- POST /api/app/benefit/feedback */
             public static final String FEEDBACK_SUBMIT = APP_BASE + "/benefit/feedback";
         }
+
+        /**
+         * App 端 - 版本检查
+         */
+        public static final class Version {
+            private Version() {}
+            /** 版本检查 - GET /api/app/version/check */
+            public static final String CHECK = APP_BASE + "/version/check";
+        }
     }
 
     // ==================== Admin 端 API 路径 ====================
@@ -427,6 +436,14 @@ public final class ApiPaths {
             private AppVersion() {}
             /** 版本列表 - POST /api/admin/app/versionList */
             public static final String LIST = ADMIN_BASE + "/app/versionList";
+            /** 版本详情 - GET /api/admin/app/version/detail */
+            public static final String DETAIL = ADMIN_BASE + "/app/version/detail";
+            /** 保存版本 - POST /api/admin/app/version/save */
+            public static final String SAVE = ADMIN_BASE + "/app/version/save";
+            /** 删除版本 - DELETE /api/admin/app/version/remove */
+            public static final String REMOVE = ADMIN_BASE + "/app/version/remove";
+            /** 设为最新版本 - POST /api/admin/app/version/setLatest */
+            public static final String SET_LATEST = ADMIN_BASE + "/app/version/setLatest";
         }
         
         /**

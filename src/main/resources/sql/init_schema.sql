@@ -693,14 +693,44 @@ CREATE TABLE IF NOT EXISTS app_version (
     id SERIAL PRIMARY KEY,
     version_code INTEGER NOT NULL,
     version_name VARCHAR(50) NOT NULL,
+    build_number INTEGER,
     platform VARCHAR(20) NOT NULL,
     download_url VARCHAR(500),
     update_message TEXT,
     force_update BOOLEAN DEFAULT FALSE,
+    is_force_update BOOLEAN DEFAULT FALSE,
+    min_supported_version VARCHAR(50),
+    is_latest BOOLEAN DEFAULT FALSE,
+    release_note_zh TEXT,
+    release_note_ja TEXT,
+    release_note_en TEXT,
+    release_note_internal TEXT,
+    release_percent INTEGER DEFAULT 100,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0
 );
+
+COMMENT ON TABLE app_version IS '客户端应用版本发布与更新检查';
+COMMENT ON COLUMN app_version.id IS '主键';
+COMMENT ON COLUMN app_version.version_code IS '版本号整数，用于版本比较';
+COMMENT ON COLUMN app_version.version_name IS '展示用版本名（如 1.2.3）';
+COMMENT ON COLUMN app_version.build_number IS '构建号，同 platform 下唯一';
+COMMENT ON COLUMN app_version.platform IS '平台，如 ios、android';
+COMMENT ON COLUMN app_version.download_url IS '安装包下载地址';
+COMMENT ON COLUMN app_version.update_message IS '更新说明（兼容旧端短文案）';
+COMMENT ON COLUMN app_version.force_update IS '是否强制更新（历史字段）';
+COMMENT ON COLUMN app_version.is_force_update IS '是否强制更新';
+COMMENT ON COLUMN app_version.min_supported_version IS '最低支持版本（字符串，策略/展示用）';
+COMMENT ON COLUMN app_version.is_latest IS '是否为该平台当前标记的最新版本';
+COMMENT ON COLUMN app_version.release_note_zh IS '更新说明（中文）';
+COMMENT ON COLUMN app_version.release_note_ja IS '更新说明（日文）';
+COMMENT ON COLUMN app_version.release_note_en IS '更新说明（英文）';
+COMMENT ON COLUMN app_version.release_note_internal IS '更新说明（对内）';
+COMMENT ON COLUMN app_version.release_percent IS '放量百分比 0–100，NULL 与 100 视为全量可见';
+COMMENT ON COLUMN app_version.create_time IS '创建时间';
+COMMENT ON COLUMN app_version.update_time IS '更新时间';
+COMMENT ON COLUMN app_version.deleted IS '逻辑删除 0=否 非0=是';
 
 -- Hello Movie 表
 CREATE TABLE IF NOT EXISTS hello_movie (

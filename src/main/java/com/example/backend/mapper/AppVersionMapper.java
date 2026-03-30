@@ -1,8 +1,9 @@
 package com.example.backend.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.backend.entity.Api;
 import com.example.backend.entity.AppVersion;
+import com.example.backend.response.app.AppVersionCheckResponse;
+import org.apache.ibatis.annotations.Param;
 
 /**
 * @author last order
@@ -11,6 +12,7 @@ import com.example.backend.entity.AppVersion;
 * @Entity com.example.backend.entity.TheaterHall.Api
 */
 public interface AppVersionMapper extends BaseMapper<AppVersion> {
+  AppVersionCheckResponse latestForCheck(@Param("platform") String platform, @Param("lang") String lang);
 
 }
 
