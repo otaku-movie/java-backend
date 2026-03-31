@@ -8,11 +8,13 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.query.benefit.BenefitFeedbackListQuery;
 import com.example.backend.query.benefit.BenefitListQuery;
+import com.example.backend.query.benefit.BenefitMovieListQuery;
 import com.example.backend.query.benefit.BenefitStockListQuery;
 import com.example.backend.query.benefit.BenefitStockSaveQuery;
 import com.example.backend.response.benefit.BenefitDetailResponse;
 import com.example.backend.response.benefit.BenefitFeedbackListItemResponse;
 import com.example.backend.response.benefit.BenefitListItemResponse;
+import com.example.backend.response.benefit.BenefitMovieListItemResponse;
 import com.example.backend.response.benefit.BenefitStockListItemResponse;
 import com.example.backend.response.benefit.CinemaBenefitSummaryResponse;
 import com.example.backend.service.BenefitService;
@@ -40,6 +42,15 @@ public class BenefitController {
   public RestBean<List<BenefitListItemResponse>> list(@RequestBody(required = false) BenefitListQuery query) {
     if (query == null) query = new BenefitListQuery();
     IPage<BenefitListItemResponse> page = benefitService.listBenefitForAdmin(query);
+    return RestBean.success(page.getRecords(), query.getPage(), page.getTotal(), query.getPageSize());
+  }
+
+  /** 按电影分组的特典汇总列表（用于运营中心特典管理） */
+  @SaCheckLogin
+  @PostMapping(ApiPaths.Admin.Benefit.MOVIE_LIST)
+  public RestBean<List<BenefitMovieListItemResponse>> movieList(@RequestBody(required = false) BenefitMovieListQuery query) {
+    if (query == null) query = new BenefitMovieListQuery();
+    IPage<BenefitMovieListItemResponse> page = benefitService.listBenefitMoviesForAdmin(query);
     return RestBean.success(page.getRecords(), query.getPage(), page.getTotal(), query.getPageSize());
   }
 

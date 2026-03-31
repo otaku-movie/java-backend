@@ -37,6 +37,18 @@ class MenuSaveQuery {
 }
 
 @Data
+class MenuReorderItem {
+  Integer id;
+  Integer parentId;
+  Integer orderNum;
+}
+
+@Data
+class MenuReorderQuery {
+  List<MenuReorderItem> items;
+}
+
+@Data
 class MenuListQuery {
   private Integer page;
   private Integer pageSize;
@@ -57,11 +69,22 @@ public class MenuController {
 
   @PostMapping(ApiPaths.Admin.Menu.LIST)
   public RestBean<List<Menu>> list(@RequestBody MenuListQuery query)  {
-    QueryWrapper wrapper = new QueryWrapper<>();
+    QueryWrapper<Menu> wrapper = new QueryWrapper<>();
 
-    wrapper.orderByDesc("update_time");
-
-    List list = menuMapper.selectList(wrapper);
+    // 为了兼容旧数据库：order_num 可能尚未落库。
+    // 优先按 (parent_id, order_num) 排序并取 order_num；若字段不存在则回退到 update_time 排序。
+    List list;
+    try {
+      wrapper.select("id", "i18n_key", "name", "show", "path", "path_name", "parent_id", "order_num", "create_time", "update_time")
+          .orderByAsc("parent_id")
+          .orderByAsc("order_num");
+      list = menuMapper.selectList(wrapper);
+    } catch (Exception ignored) {
+      wrapper = new QueryWrapper<>();
+      wrapper.select("id", "i18n_key", "name", "show", "path", "path_name", "parent_id", "create_time", "update_time")
+          .orderByDesc("update_time");
+      list = menuMapper.selectList(wrapper);
+    }
 
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
@@ -137,5 +160,36 @@ public class MenuController {
         return RestBean.error(ResponseCode.REPEAT.getCode(), repeatMessage);
       }
     }
+  }
+
+  @SaCheckLogin
+  @CheckPermission(code = "menu.save")
+  @PostMapping(ApiPaths.Admin.Menu.REORDER)
+  public RestBean<Null> reorder(@RequestBody MenuReorderQuery query) {
+    if (query == null || query.getItems() == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+
+    for (MenuReorderItem item : query.getItems()) {
+      if (item == null || item.getId() == null) continue;
+      try {
+        Menu data = new Menu();
+        data.setParentId(item.getParentId());
+        data.setOrderNum(item.getOrderNum());
+
+        QueryWrapper<Menu> updateWrapper = new QueryWrapper<>();
+        updateWrapper.eq("id", item.getId());
+        menuMapper.update(data, updateWrapper);
+      } catch (Exception ignored) {
+        // 旧库兼容：order_num 列不存在时，至少更新 parent_id 以保证层级拖拽生效
+        Menu data = new Menu();
+        data.setParentId(item.getParentId());
+        QueryWrapper<Menu> updateWrapper = new QueryWrapper<>();
+        updateWrapper.eq("id", item.getId());
+        menuMapper.update(data, updateWrapper);
+      }
+    }
+
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
 }

@@ -191,6 +191,8 @@ public final class ApiPaths {
             public static final String REMOVE = ADMIN_BASE + "/permission/menu/remove";
             /** 保存菜单 - POST /api/admin/permission/menu/save */
             public static final String SAVE = ADMIN_BASE + "/permission/menu/save";
+            /** 菜单拖拽排序 - POST /api/admin/permission/menu/reorder */
+            public static final String REORDER = ADMIN_BASE + "/permission/menu/reorder";
         }
         
         /**
@@ -462,6 +464,8 @@ public final class ApiPaths {
             private Benefit() {}
             /** 阶段列表 - POST /api/admin/benefit/list */
             public static final String LIST = ADMIN_BASE + "/benefit/list";
+            /** 按电影分组的特典汇总列表 - POST /api/admin/benefit/movie/list */
+            public static final String MOVIE_LIST = ADMIN_BASE + "/benefit/movie/list";
             /** 阶段详情 - GET /api/admin/benefit/detail */
             public static final String DETAIL = ADMIN_BASE + "/benefit/detail";
             /** 保存阶段 - POST /api/admin/benefit/save */

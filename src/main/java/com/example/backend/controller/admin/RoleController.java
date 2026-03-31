@@ -119,7 +119,13 @@ public class RoleController {
   public RestBean<List<ButtonResponse>> permission(@RequestParam @Validated @NotNull(message = "{validator.error.get}") Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
 
-    List<ButtonResponse> list = roleMapper.rolePermission(id);
+    List<ButtonResponse> list;
+    try {
+      list = roleMapper.rolePermission(id);
+    } catch (Exception ignored) {
+      // 旧库兼容：menu.order_num 可能尚未落库
+      list = roleMapper.rolePermissionByUpdateTime(id);
+    }
     List<ButtonResponse> filteredList = list.stream()
       .map(ButtonResponseProcessor::filterButtonResponse)
       .collect(Collectors.toList());

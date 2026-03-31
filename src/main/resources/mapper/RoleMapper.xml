@@ -71,8 +71,39 @@
             user_role.role_id = #{roleId} AND
             user_role.deleted = 0
     </select>
-    <!--  获取角色权限  -->
+    <!--  获取角色权限（按 menu.order_num 排序） -->
     <select id="rolePermission" resultMap="permissionList">
+        SELECT
+            menu.id AS menu_id,
+            menu.name AS menu_name,
+            menu.show AS menu_show,
+            menu.path AS menu_path,
+            menu.path_name AS menu_path_name,
+            menu.parent_id AS menu_parent_id,
+            menu.i18n_key AS i18n_key,
+            button.id AS button_id,
+            button.name AS button_name,
+            button.api_code AS api_code,
+            CASE
+                WHEN role_menu.role_id IS NOT NULL THEN true
+                ELSE false
+                END as menu_checked,
+            CASE
+                WHEN role_button.role_id IS NOT NULL THEN true
+                ELSE false
+                END as button_checked
+        FROM "menu"
+                 LEFT JOIN button ON menu.id = button.menu_id
+                 LEFT JOIN role_menu ON menu.id = role_menu.menu_id AND role_menu.role_id = #{id}
+                 LEFT JOIN role_button ON button.id = role_button.button_id AND role_button.role_id = #{id}
+        WHERE
+            role_menu.role_id = #{id} OR
+            role_button.role_id = #{id}
+        ORDER BY menu.parent_id ASC, menu.order_num ASC, menu.update_time DESC
+    </select>
+
+    <!--  旧库兜底：order_num 不存在时按 update_time 排序 -->
+    <select id="rolePermissionByUpdateTime" resultMap="permissionList">
         SELECT
             menu.id AS menu_id,
             menu.name AS menu_name,

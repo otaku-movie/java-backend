@@ -30,6 +30,9 @@ public class Menu {
   @TableField("parent_id")
   Integer parentId;
 
+  @TableField("order_num")
+  Integer orderNum;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

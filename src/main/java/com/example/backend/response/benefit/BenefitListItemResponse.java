@@ -3,6 +3,8 @@ package com.example.backend.response.benefit;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class BenefitListItemResponse {
   private Integer id;
@@ -10,9 +12,14 @@ public class BenefitListItemResponse {
   /** 关联重映计划（为空表示普通上映特典） */
   private Integer reReleaseId;
   private String movieName;
+  /** 电影海报/封面 URL */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private String movieCover;
   private String name;
   private Integer quantity;
   private String description;
+  /** 特典阶段展示图（与详情一致，来自 benefit.image_urls JSON） */
+  private List<String> imageUrls;
   private String startDate;
   /** 结束日期，无则不返回该字段 */
   @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -21,11 +21,13 @@ import com.example.backend.constants.MessageKeys;
 import com.example.backend.utils.MessageUtils;
 import com.example.backend.query.benefit.BenefitFeedbackListQuery;
 import com.example.backend.query.benefit.BenefitListQuery;
+import com.example.backend.query.benefit.BenefitMovieListQuery;
 import com.example.backend.query.benefit.BenefitStockListQuery;
 import com.example.backend.query.benefit.BenefitStockSaveQuery;
 import com.example.backend.response.benefit.BenefitDetailResponse;
 import com.example.backend.response.benefit.BenefitFeedbackListItemResponse;
 import com.example.backend.response.benefit.BenefitListItemResponse;
+import com.example.backend.response.benefit.BenefitMovieListItemResponse;
 import com.example.backend.response.benefit.BenefitStockListItemResponse;
 import com.example.backend.response.benefit.CinemaBenefitItemSummary;
 import com.example.backend.response.benefit.CinemaBenefitSummaryResponse;
@@ -168,9 +170,11 @@ public class BenefitService {
     IPage<Benefit> result = benefitMapper.selectPage(page, wrapper);
     List<Integer> movieIds = result.getRecords().stream().map(Benefit::getMovieId).distinct().toList();
     Map<Integer, String> movieNameMap = new HashMap<>();
+    Map<Integer, String> movieCoverMap = new HashMap<>();
     for (Integer mid : movieIds) {
       Movie m = movieMapper.selectById(mid);
       movieNameMap.put(mid, m != null ? m.getName() : null);
+      movieCoverMap.put(mid, m != null && StringUtils.hasText(m.getCover()) ? m.getCover() : null);
     }
     List<Integer> benefitIds = result.getRecords().stream().map(Benefit::getId).toList();
     Map<Integer, Integer> benefitRemainingMap = new HashMap<>();
@@ -194,9 +198,11 @@ public class BenefitService {
       r.setMovieId(b.getMovieId());
       r.setReReleaseId(b.getReReleaseId());
       r.setMovieName(movieNameMap.get(b.getMovieId()));
+      r.setMovieCover(movieCoverMap.get(b.getMovieId()));
       r.setName(b.getName());
       r.setQuantity(b.getQuantity());
       r.setDescription(b.getDescription());
+      r.setImageUrls(parseStringList(b.getImageUrls()));
       r.setStartDate(b.getStartDate());
       r.setEndDate(StringUtils.hasText(b.getEndDate()) ? b.getEndDate() : null);
       r.setOrderNum(b.getOrderNum());
@@ -210,6 +216,15 @@ public class BenefitService {
     Page<BenefitListItemResponse> out = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
     out.setRecords(list);
     return out;
+  }
+
+  public IPage<BenefitMovieListItemResponse> listBenefitMoviesForAdmin(BenefitMovieListQuery query) {
+    if (query == null) query = new BenefitMovieListQuery();
+    Page<BenefitMovieListItemResponse> page = new Page<>(
+      query.getPage() != null ? query.getPage() : 1,
+      query.getPageSize() != null ? query.getPageSize() : 10
+    );
+    return benefitMapper.listMoviesWithBenefit(page, query);
   }
 
   /** App 端：按电影 ID 获取该电影下所有特典阶段详情（含物料列表） */

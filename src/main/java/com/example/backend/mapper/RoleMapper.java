@@ -16,6 +16,7 @@ import java.util.List;
 public interface RoleMapper extends BaseMapper<Role> {
   List permissionList(Integer id);
   List rolePermission(Integer id);
+  List rolePermissionByUpdateTime(Integer id);
   List<RolePermissionButton> rolePermissionButton(Integer roleId);
 }
 
