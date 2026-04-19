@@ -22,6 +22,10 @@ public class MovieOrder implements Serializable {
   @TableField(value = "movie_show_time_id")
   private Integer movieShowTimeId;
 
+  /** 冗余：场次所属影院，供 RLS */
+  @TableField(value = "cinema_id")
+  private Integer cinemaId;
+
   /**
    * 订单所属用户ID
    */

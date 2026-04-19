@@ -20,6 +20,9 @@ public class MybatisPlusConfiguration {
     @Autowired(required = false)
     private SqlPerformanceInterceptor sqlPerformanceInterceptor;
 
+    @Autowired(required = false)
+    private RlsMybatisInterceptor rlsMybatisInterceptor;
+
     @Bean
     public MybatisConfiguration mybatisConfiguration() {
         MybatisConfiguration configuration = new MybatisConfiguration();
@@ -30,6 +33,8 @@ public class MybatisPlusConfiguration {
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        // SELECT 数据范围改写须在分页插件之前注册（分页会生成 count SQL，同样走 InnerInterceptor 链）
+        interceptor.addInnerInterceptor(new DataScopeSelectInnerInterceptor());
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.POSTGRE_SQL)); // 如果配置多个插件, 切记分页最后添加
         // 如果有多数据源可以不配具体类型, 否则都建议配上具体的 DbType
         return interceptor;
@@ -41,6 +46,9 @@ public class MybatisPlusConfiguration {
     @Bean
     public ConfigurationCustomizer configurationCustomizer() {
         return configuration -> {
+            if (rlsMybatisInterceptor != null) {
+                configuration.addInterceptor(rlsMybatisInterceptor);
+            }
             if (sqlPerformanceInterceptor != null) {
                 configuration.addInterceptor(sqlPerformanceInterceptor);
             }

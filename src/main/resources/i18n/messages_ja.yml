@@ -18,6 +18,14 @@ error:
   emailRepeat: "メールアドレスは既に存在します"
   uploadError: "アップロード失敗"
   get: "{0}は空にできません"
+  admin:
+    user:
+      dataScopeChainBrand: "データ範囲がチェーンの場合はブランドを選択してください"
+      dataScopeChainNoCinema: "データ範囲がチェーンの場合、選択したブランドに1件以上の映画館が必要です"
+      dataScopeCinemaIds: "データ範囲が映画館の場合は1件以上の映画館を選択してください"
+      notFound: "ユーザーが見つかりません"
+      onlyPlatformCanCreateUser: "ユーザーの新規作成はプラットフォーム管理者のみが行えます"
+      nonPlatformEditUserForbidden: "このユーザーを編集できないか、対象がデータ範囲外です"
   comment:
     userRated: "ユーザーは既にこの映画を評価しています。再度評価することはできません"
   order:

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
 import com.example.backend.query.UserListQuery;
+import com.example.backend.response.UserEffectiveButtonResponse;
 import com.example.backend.response.UserListResponse;
 import com.example.backend.response.chart.StatisticsUserCount;
 import org.apache.ibatis.annotations.Mapper;
@@ -18,6 +19,9 @@ import java.util.List;
 public interface UserMapper extends BaseMapper<User> {
   IPage<UserListResponse> userList(UserListQuery query, IPage<UserListResponse> page);
   List<Role> userRole(Integer id);
+
+  /** 用户所有角色合并后的按钮权限（去重），用于权限预览 */
+  List<UserEffectiveButtonResponse> userEffectiveButtons(@Param("userId") Integer userId);
 
   List<StatisticsUserCount> StatisticsOfDailyRegisteredUsers();
   @Select("""

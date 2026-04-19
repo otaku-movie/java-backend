@@ -16,6 +16,12 @@ public class WebConfig implements WebMvcConfigurer {
   @Autowired
   private Interceptor interceptor;
 
+  @Autowired
+  private DataScopeInterceptor dataScopeInterceptor;
+
+  @Autowired
+  private NonAdminRlsInterceptor nonAdminRlsInterceptor;
+
   /**
    * HTTP 请求信息拦截器
    * 用于在 ThreadLocal 中存储请求信息，以便 SQL 拦截器使用
@@ -91,6 +97,15 @@ public class WebConfig implements WebMvcConfigurer {
   public void addInterceptors(InterceptorRegistry registry) {
     // 先添加请求信息拦截器（优先级更高，最先执行）
     registry.addInterceptor(new RequestInfoInterceptor()).order(-1);
+    registry
+        .addInterceptor(nonAdminRlsInterceptor)
+        .addPathPatterns("/api/**")
+        .excludePathPatterns("/api/admin/**")
+        .order(0);
+    registry
+        .addInterceptor(dataScopeInterceptor)
+        .addPathPatterns("/api/admin/**")
+        .order(1);
     // 添加权限拦截器
     registry.addInterceptor(interceptor);
   }

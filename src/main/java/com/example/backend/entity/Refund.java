@@ -18,6 +18,10 @@ public class Refund implements Serializable {
   @TableField("order_number")
   private String orderNumber;
 
+  /** 冗余：订单所属影院，供 RLS */
+  @TableField("cinema_id")
+  private Integer cinemaId;
+
   @TableField("user_id")
   private Integer userId;
 

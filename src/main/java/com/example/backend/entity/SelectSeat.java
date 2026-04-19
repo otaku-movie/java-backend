@@ -23,6 +23,10 @@ public class SelectSeat {
   @TableField("theater_hall_id")
   Integer theaterHallId;
 
+  /** 冗余：场次所属影院，供 RLS */
+  @TableField("cinema_id")
+  Integer cinemaId;
+
   @TableField("x")
   Integer x;
 

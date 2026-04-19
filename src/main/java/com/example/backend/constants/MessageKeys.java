@@ -151,6 +151,23 @@ public final class MessageKeys {
         public static final String BENEFIT_ITEM_REQUIRED = "error.benefit.itemRequired";
         /** 该影院该阶段已分配过库存，请通过编辑修改数量 */
         public static final String BENEFIT_STOCK_DUPLICATE = "error.benefit.stockDuplicate";
+        /** 数据范围为院线时必须选择品牌 */
+        public static final String ADMIN_USER_DATA_SCOPE_CHAIN_BRAND =
+            "error.admin.user.dataScopeChainBrand";
+        /** 数据范围为影院时必须绑定至少一个影院 */
+        public static final String ADMIN_USER_DATA_SCOPE_CINEMA_IDS =
+            "error.admin.user.dataScopeCinemaIds";
+        /** 数据范围为院线时该品牌下须至少有一家影院 */
+        public static final String ADMIN_USER_DATA_SCOPE_CHAIN_NO_CINEMA =
+            "error.admin.user.dataScopeChainNoCinema";
+        /** 后台用户不存在 */
+        public static final String ADMIN_USER_NOT_FOUND = "error.admin.user.notFound";
+        /** 仅平台管理员可新建用户（含设置数据范围） */
+        public static final String ADMIN_USER_ONLY_PLATFORM_CAN_CREATE_USER =
+            "error.admin.user.onlyPlatformCanCreateUser";
+        /** 非平台管理员无权编辑该用户或目标不在其数据范围内 */
+        public static final String ADMIN_USER_NON_PLATFORM_EDIT_USER_FORBIDDEN =
+            "error.admin.user.nonPlatformEditUserForbidden";
     }
     
     /**
@@ -290,6 +307,7 @@ public final class MessageKeys {
          *   <li>POST /api/admin/user/list</li>
          *   <li>POST /api/admin/user/save</li>
          *   <li>DELETE /api/admin/user/remove</li>
+         *   <li>GET /api/admin/user/permissionPreview</li>
          * </ul>
          */
         public static final class User {

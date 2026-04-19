@@ -74,6 +74,9 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
     theaterHall.setSeatNamingRules(query.getSeatNamingRules());
     theaterHallMapper.updateById(theaterHall);
 
+    TheaterHall hallRow = theaterHallMapper.selectById(query.getTheaterHallId());
+    Integer cinemaIdForSeats = hallRow != null ? hallRow.getCinemaId() : null;
+
     List<SeatArea> seatAreaList = query.getArea().stream().map(item -> {
       SeatArea seatArea = new SeatArea();
 //      seatArea.setId(item.getId());
@@ -111,6 +114,7 @@ public class SeatService extends ServiceImpl<SeatMapper, Seat> {
       seat.setDisabled(item.getDisabled());
       seat.setWheelChair(item.getWheelChair());
       seat.setTheaterHallId(query.getTheaterHallId());
+      seat.setCinemaId(cinemaIdForSeats);
       seat.setSeatName(item.getSeatName());
       seat.setRowName(item.getRowName());
 

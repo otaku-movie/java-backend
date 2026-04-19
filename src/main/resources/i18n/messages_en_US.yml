@@ -18,6 +18,14 @@ error:
   emailRepeat: "Email already exists"
   uploadError: "Upload failed"
   get: "{0} cannot be empty"
+  admin:
+    user:
+      dataScopeChainBrand: "When data scope is chain, brand is required"
+      dataScopeChainNoCinema: "When data scope is chain, the brand must have at least one cinema"
+      dataScopeCinemaIds: "When data scope is cinema, select at least one cinema"
+      notFound: "User not found"
+      onlyPlatformCanCreateUser: "Only platform admins can create users"
+      nonPlatformEditUserForbidden: "You cannot edit this user or the user is outside your data scope"
   comment:
     userRated: "User has already rated this movie, cannot rate again"
   order:

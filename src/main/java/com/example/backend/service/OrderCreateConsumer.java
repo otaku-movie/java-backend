@@ -12,6 +12,7 @@ import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.MovieOrderMapper;
+import com.example.backend.utils.RlsContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -56,6 +57,7 @@ public class OrderCreateConsumer {
     log.info("收到订单创建消息: orderNumber={}, userId={}, movieShowTimeId={}", 
         message.getOrderNumber(), message.getUserId(), message.getMovieShowTimeId());
 
+    RlsContextUtil.applyPlatformScope();
     try {
       // 1. 创建订单
       MovieOrder movieOrder = new MovieOrder();
@@ -65,7 +67,8 @@ public class OrderCreateConsumer {
       movieOrder.setOrderState(OrderState.order_created.getCode());
       movieOrder.setOrderTotal(message.getOrderTotal());
       movieOrder.setPayState(PayState.waiting_for_payment.getCode());
-      
+      movieOrder.setCinemaId(message.getCinemaId());
+
       movieOrderMapper.insert(movieOrder);
       log.info("订单创建成功: orderId={}, orderNumber={}", movieOrder.getId(), message.getOrderNumber());
 
@@ -88,6 +91,7 @@ public class OrderCreateConsumer {
         seat.setMovieTicketTypeId(seatInfo.getMovieTicketTypeId());
         seat.setMovieOrderId(movieOrder.getId());
         seat.setSelectSeatState(SeatState.locked.getCode());
+        seat.setCinemaId(message.getCinemaId());
         return seat;
       }).collect(Collectors.toList());
 
@@ -130,7 +134,9 @@ public class OrderCreateConsumer {
 
     } catch (Exception e) {
       log.error("处理订单创建消息失败: orderNumber={}, error={}", message.getOrderNumber(), e.getMessage(), e);
-      throw new BusinessException(ResponseCode.ORDER_CREATE_FAILED, MessageKeys.Error.ORDER_CREATE_FAILED, e);
+      throw new BusinessException(ResponseCode.ORDER_CREATE_FAILED, MessageKeys.Error.ORDER_CREATE_FAILED);
+    } finally {
+      RlsContextUtil.clearRls();
     }
   }
 }

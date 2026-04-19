@@ -4,12 +4,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.entity.MovieOrder;
+import com.example.backend.entity.MovieShowTime;
 import com.example.backend.entity.Refund;
 import com.example.backend.enumerate.OrderState;
 import com.example.backend.enumerate.RefundApplyStatus;
 import com.example.backend.enumerate.RefundState;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.MovieOrderMapper;
+import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.mapper.RefundMapper;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.query.refund.RefundListQuery;
@@ -37,7 +39,24 @@ public class RefundService extends ServiceImpl<RefundMapper, Refund> {
   private MovieOrderMapper movieOrderMapper;
 
   @Autowired
+  private MovieShowTimeMapper movieShowTimeMapper;
+
+  @Autowired
   private PaymentService paymentService;
+
+  private Integer resolveCinemaIdForOrder(MovieOrder order) {
+    if (order == null) {
+      return null;
+    }
+    if (order.getCinemaId() != null) {
+      return order.getCinemaId();
+    }
+    if (order.getMovieShowTimeId() == null) {
+      return null;
+    }
+    MovieShowTime st = movieShowTimeMapper.selectById(order.getMovieShowTimeId());
+    return st != null ? st.getCinemaId() : null;
+  }
 
   /**
    * 按订单号查询退款列表
@@ -102,6 +121,7 @@ public class RefundService extends ServiceImpl<RefundMapper, Refund> {
     Refund refund = new Refund();
     refund.setOrderNumber(orderNumber);
     refund.setUserId(userId);
+    refund.setCinemaId(resolveCinemaIdForOrder(order));
     refund.setAmount(amount);
     refund.setReason(reason);
     refund.setApplyStatus(RefundApplyStatus.applied.getCode());

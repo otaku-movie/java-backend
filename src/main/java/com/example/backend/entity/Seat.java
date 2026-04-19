@@ -15,6 +15,10 @@ public class Seat {
   @TableField(value = "theater_hall_id")
   Integer theaterHallId;
 
+  /** 冗余：影厅所属影院，供 RLS */
+  @TableField(value = "cinema_id")
+  Integer cinemaId;
+
   @TableField("row_name")
   String rowName;
 

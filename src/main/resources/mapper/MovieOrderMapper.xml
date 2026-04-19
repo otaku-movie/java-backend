@@ -82,7 +82,10 @@
             movie_order.pay_state,
             (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
             (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
-            movie_order.pay_total,
+            COALESCE(
+                movie_order.pay_total,
+                CASE WHEN movie_order.pay_state = 3 THEN movie_order.order_total ELSE NULL END
+            ) AS pay_total,
             movie_order.pay_time,
             movie_order.pay_number,
             movie_order.create_time AS order_time,
@@ -100,7 +103,8 @@
             movie_show_time.id as movie_show_time_id,
             movie_show_time.theater_hall_id,
             movie_show_time.dimension_type AS dimension_type,
-            (SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id)) FROM cinema_spec cs WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0) AS spec_name
+            (SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id)) FROM cinema_spec cs WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0) AS spec_name,
+            payment_methods.name AS pay_method
         FROM movie_order
             LEFT JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
             LEFT JOIN movie ON movie_show_time.movie_id = movie.id
@@ -118,8 +122,8 @@
             <if test="query.theaterHallId != null and !query.theaterHallId.equals('')">
                 AND theater_hall.id = #{query.theaterHallId}
             </if>
-            <if test="query.id != null and !query.id.equals('')">
-                AND movie_order.id = #{query.id}
+            <if test="query.orderNumber != null and query.orderNumber != ''">
+                AND movie_order.order_number = TRIM(#{query.orderNumber})
             </if>
             <if test="query.orderState != null and !query.orderState.equals('')">
                 AND movie_order.order_state = #{query.orderState}
@@ -137,6 +141,18 @@
                 AND movie_order.create_time &lt;= TO_TIMESTAMP(#{query.orderEndTime}, 'YYYY-MM-DD HH24:MI:SS')
             </if>
         </where>
+        ORDER BY
+        <choose>
+            <when test="query.sortField == 'orderTotal'">movie_order.order_total</when>
+            <when test="query.sortField == 'payTotal'">movie_order.pay_total</when>
+            <when test="query.sortField == 'payTime'">movie_order.pay_time</when>
+            <when test="query.sortField == 'startTime'">movie_show_time.start_time</when>
+            <otherwise>movie_order.create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="query.sortOrder != null and 'desc'.equalsIgnoreCase(query.sortOrder)">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
     </select>
     <select id="orderDetail" resultMap="orderList">
         SELECT
@@ -147,7 +163,10 @@
         movie_order.pay_state,
         (SELECT r.refund_state FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_state,
         (SELECT r.apply_status FROM refund r WHERE r.order_number = movie_order.order_number AND r.deleted = 0 ORDER BY r.id DESC LIMIT 1) AS refund_apply_status,
-        movie_order.pay_total,
+        COALESCE(
+            movie_order.pay_total,
+            CASE WHEN movie_order.pay_state = 3 THEN movie_order.order_total ELSE NULL END
+        ) AS pay_total,
         movie_order.pay_time,
         movie_order.pay_number,
         movie_order.create_time AS order_time,
@@ -256,6 +275,7 @@
             AND movie_order_id IS NOT NULL
         )
         AND movie_order.deleted = 0
+        ORDER BY movie_order.create_time DESC
     </select>
     <resultMap id="DailyTransactionAmount" type="com.example.backend.response.chart.DailyTransactionAmount">
         <result property="date" column="date"></result>
@@ -363,7 +383,7 @@
         AND movie_show_time.status = 1   -- 未开始
         AND movie_order.deleted = 0
         AND movie_show_time.deleted = 0
-        ORDER BY movie_show_time.start_time ASC
+        ORDER BY movie_order.create_time DESC
     </select>
 
     <select id="getMyTicketsPage" resultMap="myTicketsResult">
@@ -416,14 +436,14 @@
         <if test="query.cinemaName != null and query.cinemaName != ''">
             AND cinema.name LIKE CONCAT('%', #{query.cinemaName}, '%')
         </if>
-        ORDER BY movie_show_time.start_time ASC
+        ORDER BY movie_order.create_time DESC
     </select>
 
     <!-- 拆分后的查询方法 -->
     
     <!-- 第一步：获取用户的有效订单ID列表 -->
     <select id="getUserValidOrderIds" resultType="java.lang.Integer">
-        SELECT DISTINCT movie_order.id
+        SELECT movie_order.id
         FROM movie_order
         INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
         INNER JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
@@ -434,12 +454,13 @@
         AND movie_show_time.status = 1    -- 未开始
         AND movie_order.deleted = 0
         AND movie_show_time.deleted = 0
-        ORDER BY movie_show_time.start_time ASC
+        GROUP BY movie_order.id
+        ORDER BY MIN(movie_order.create_time) DESC
     </select>
 
     <!-- 第一步（分页）：获取用户的有效订单ID列表（带分页） -->
     <select id="getUserValidOrderIdsPage" resultType="java.lang.Integer">
-        SELECT DISTINCT movie_order.id
+        SELECT movie_order.id
         FROM movie_order
         INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
         INNER JOIN movie_show_time ON movie_order.movie_show_time_id = movie_show_time.id
@@ -458,6 +479,8 @@
         <if test="query.cinemaName != null and query.cinemaName != ''">
             AND cinema.name LIKE CONCAT('%', #{query.cinemaName}, '%')
         </if>
+        GROUP BY movie_order.id
+        ORDER BY MIN(movie_order.create_time) DESC
     </select>
 
     <!-- 第二步：根据订单ID列表批量获取订单详细信息 -->
@@ -501,6 +524,6 @@
         <foreach collection="orderIds" item="orderId" open="(" separator="," close=")">
             #{orderId}
         </foreach>
-        ORDER BY movie_show_time.start_time ASC
+        ORDER BY movie_order.create_time DESC
     </select>
 </mapper>

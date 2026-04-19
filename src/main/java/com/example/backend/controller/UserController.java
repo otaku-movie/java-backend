@@ -18,7 +18,7 @@ import com.example.backend.mapper.UserMapper;
 import com.example.backend.query.PaginationQuery;
 import com.example.backend.query.UserSaveQuery;
 import com.example.backend.query.order.MovieOrderListQuery;
-import com.example.backend.response.LoginResponse;
+import com.example.backend.response.AppLoginResponse;
 import com.example.backend.response.order.OrderListResponse;
 import com.example.backend.utils.MessageUtils;
 import jakarta.annotation.Resource;
@@ -33,7 +33,6 @@ import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import com.example.backend.enumerate.RedisType;
 
 import java.util.List;
 
@@ -81,18 +80,18 @@ public class UserController {
   RedisTemplate redisTemplate;
 
   @PostMapping(ApiPaths.Common.User.LOGIN)
-  public RestBean<LoginResponse> login(@RequestBody @Validated UserLoginQuery query) {
+  public RestBean<AppLoginResponse> login(@RequestBody @Validated UserLoginQuery query) {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("email", query.getEmail());
 
     queryWrapper.eq("password", SaSecureUtil.md5(query.getPassword()));
     queryWrapper.select("id", "cover", "name", "email", "create_time");
 
-    LoginResponse loginResponse = new LoginResponse();
     User result = userMapper.selectOne(queryWrapper);
 
     if (result != null) {
       StpUtil.login(result.getId());
+      AppLoginResponse loginResponse = new AppLoginResponse();
       loginResponse.setId(result.getId());
       loginResponse.setName(result.getName());
       loginResponse.setEmail(result.getEmail());
@@ -119,7 +118,7 @@ public class UserController {
   }
 
   @PostMapping(ApiPaths.Common.User.REGISTER)
-  public RestBean<LoginResponse> save(@RequestBody @Validated UserSaveQuery query) {
+  public RestBean<AppLoginResponse> save(@RequestBody @Validated UserSaveQuery query) {
     User user = new User();
 
     user.setCover(query.getCover());
@@ -152,7 +151,7 @@ public class UserController {
     if (count == 0) {
       userMapper.insert(user);
       // 登录完成后查询并返回用户信息直接登录
-      LoginResponse loginResponse = new LoginResponse();
+      AppLoginResponse loginResponse = new AppLoginResponse();
       QueryWrapper<User> queryWrapper = new QueryWrapper<>();
       queryWrapper.eq("email", query.getEmail());
 

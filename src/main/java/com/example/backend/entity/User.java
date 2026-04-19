@@ -27,6 +27,14 @@ public class User {
   @TableField("email")
   String email;
 
+  /** platform / chain / cinema，见 {@link com.example.backend.enumerate.DataScope} */
+  @TableField("data_scope")
+  String dataScope;
+
+  /** data_scope=chain 时所属品牌 */
+  @TableField("brand_id")
+  Integer brandId;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

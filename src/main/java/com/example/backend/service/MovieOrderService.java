@@ -273,6 +273,29 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     }
   }
 
+  /** 订单所属影院：优先 movie_order.cinema_id，否则由场次解析 */
+  private Integer resolveOrderCinemaId(MovieOrder order) {
+    if (order == null) {
+      return null;
+    }
+    if (order.getCinemaId() != null) {
+      return order.getCinemaId();
+    }
+    MovieOrder full = order.getId() != null ? movieOrderMapper.selectById(order.getId()) : null;
+    if (full != null && full.getCinemaId() != null) {
+      return full.getCinemaId();
+    }
+    Integer mstId =
+        order.getMovieShowTimeId() != null
+            ? order.getMovieShowTimeId()
+            : (full != null ? full.getMovieShowTimeId() : null);
+    if (mstId == null) {
+      return null;
+    }
+    MovieShowTime st = movieShowTimeMapper.selectById(mstId);
+    return st != null ? st.getCinemaId() : null;
+  }
+
   /**
    * 支付失败时调用退款（释放/回滚已授权的资金），写入 refund 表
    */
@@ -291,6 +314,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
       Refund refund = new Refund();
       refund.setOrderNumber(orderNumber);
       refund.setUserId(order.getUserId());
+      refund.setCinemaId(resolveOrderCinemaId(order));
       refund.setAmount(amount);
       refund.setReason(reason);
       refund.setApplyStatus(RefundApplyStatus.approved.getCode());
@@ -316,6 +340,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
           Refund refund = new Refund();
           refund.setOrderNumber(orderNumber);
           refund.setUserId(order.getUserId());
+          refund.setCinemaId(resolveOrderCinemaId(order));
           refund.setAmount(order.getOrderTotal() != null ? order.getOrderTotal() : BigDecimal.ZERO);
           refund.setReason(reason);
           refund.setApplyStatus(RefundApplyStatus.approved.getCode());
@@ -735,6 +760,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     movieOrder.setOrderNumber(orderNumber);
     movieOrder.setOrderTotal(total);
     movieOrder.setMovieShowTimeId(movieShowTimeId);
+    movieOrder.setCinemaId(cinemaId);
     // 计算支付截止时间（订单创建时间 + 支付超时时间），用于前端倒计时显示
     Date now = new Date();
     Date payDeadline = new Date(now.getTime() + paymentTimeoutSeconds * 1000L);
@@ -937,18 +963,26 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
           Map.of("reason", reason));
     }
 
-    // 先存数据库：更新订单为支付成功
+    // 先存数据库：更新订单为支付成功（实付金额与订单总价一致，便于列表与统计展示）
     movieOrder.setOrderState(OrderState.order_succeed.getCode());
     movieOrder.setPayState(PayState.payment_successful.getCode());
     movieOrder.setPayTime(new Date());
+    MovieOrder amountSource = movieOrderMapper.selectById(orderId);
+    BigDecimal payAmount = (amountSource != null && amountSource.getOrderTotal() != null)
+        ? amountSource.getOrderTotal()
+        : order.getOrderTotal();
+    movieOrder.setPayTotal(payAmount);
     movieOrderMapper.updateById(movieOrder);
 
+    Integer resolvedCinemaId = resolveOrderCinemaId(movieOrderMapper.selectById(orderId));
     // 创建 sold 状态座位并写 DB
     List<SelectSeat> soldSeats = validLockedSeats.stream().map(lockedSeat -> {
       SelectSeat soldSeat = new SelectSeat();
       soldSeat.setUserId(lockedSeat.getUserId());
       soldSeat.setMovieShowTimeId(lockedSeat.getMovieShowTimeId());
       soldSeat.setTheaterHallId(lockedSeat.getTheaterHallId());
+      soldSeat.setCinemaId(
+          resolvedCinemaId != null ? resolvedCinemaId : lockedSeat.getCinemaId());
       soldSeat.setX(lockedSeat.getX());
       soldSeat.setY(lockedSeat.getY());
       soldSeat.setSeatId(lockedSeat.getSeatId());

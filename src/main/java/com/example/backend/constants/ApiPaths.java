@@ -155,6 +155,15 @@ public final class ApiPaths {
             public static final String CONFIG_ROLE = ADMIN_BASE + "/user/configRole";
             /** 获取用户角色 - GET /api/admin/user/role */
             public static final String ROLE = ADMIN_BASE + "/user/role";
+            /** 用户权限预览（角色合并后的按钮，只读）- GET /api/admin/user/permissionPreview */
+            public static final String PERMISSION_PREVIEW =
+                ADMIN_BASE + "/user/permissionPreview";
+            /** 管理后台登录 - POST /api/admin/user/login */
+            public static final String LOGIN = ADMIN_BASE + "/user/login";
+            /** 后台用户详情（编辑用）- GET /api/admin/user/detail */
+            public static final String DETAIL = ADMIN_BASE + "/user/detail";
+            /** 当前登录后台用户详情（顶栏数据范围等，仅需登录）- GET /api/admin/user/current */
+            public static final String CURRENT = ADMIN_BASE + "/user/current";
         }
         
         /**

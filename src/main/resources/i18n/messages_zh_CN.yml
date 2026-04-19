@@ -35,6 +35,14 @@ error:
   payment:
     rateLimit: "支付请求过于频繁，请稍后再试"
     inProgress: "订单正在支付中，请勿重复提交"
+  admin:
+    user:
+      dataScopeChainBrand: "数据范围为「院线」时必须选择品牌"
+      dataScopeChainNoCinema: "数据范围为「院线」时，所选品牌下须至少有一家影院"
+      dataScopeCinemaIds: "数据范围为「影院」时必须选择至少一个影院"
+      notFound: "用户不存在"
+      onlyPlatformCanCreateUser: "仅平台管理员可新建用户"
+      nonPlatformEditUserForbidden: "无权编辑该用户或目标不在您的数据范围内"
   benefit:
     dateInvalid: "日期格式无效，应为 yyyy-MM-dd"
     noItem: "该阶段下暂无物料，请先在阶段详情中添加物料"

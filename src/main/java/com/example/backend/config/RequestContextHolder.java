@@ -3,6 +3,9 @@ package com.example.backend.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 请求上下文持有者
  * 用于在线程中存储 HTTP 请求信息，以便在 SQL 拦截器等地方使用
@@ -10,6 +13,7 @@ import lombok.Setter;
 public class RequestContextHolder {
     
     private static final ThreadLocal<RequestInfo> REQUEST_INFO = new ThreadLocal<>();
+    private static final ThreadLocal<Map<String, String>> RLS_CONTEXT = new ThreadLocal<>();
 
     @Getter
     @Setter
@@ -47,5 +51,25 @@ public class RequestContextHolder {
      */
     public static void clear() {
         REQUEST_INFO.remove();
+        RLS_CONTEXT.remove();
+    }
+
+    /** RLS 会话变量上下文（仅 Admin 请求由 {@link DataScopeInterceptor} 写入） */
+    public static void setRls(String key, String value) {
+        Map<String, String> map = RLS_CONTEXT.get();
+        if (map == null) {
+            map = new HashMap<>();
+            RLS_CONTEXT.set(map);
+        }
+        map.put(key, value);
+    }
+
+    public static String getRls(String key) {
+        Map<String, String> map = RLS_CONTEXT.get();
+        return map != null ? map.get(key) : null;
+    }
+
+    public static void clearRls() {
+        RLS_CONTEXT.remove();
     }
 }

@@ -7,6 +7,7 @@ import com.example.backend.service.MovieOrderService;
 import com.example.backend.service.MovieService;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.RlsContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,8 +41,13 @@ public class ScheduledTasksController {
   @Scheduled(cron = "0 0 0 * * ?")
   public RestBean<Object> updateMovieState() {
     log.info("Updating movie state...");
-    movieService.updateMovieReleaseState();
-    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
+    RlsContextUtil.applyPlatformScope();
+    try {
+      movieService.updateMovieReleaseState();
+      return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
+    } finally {
+      RlsContextUtil.clearRls();
+    }
   }
 
   /**
@@ -52,8 +58,13 @@ public class ScheduledTasksController {
   @Scheduled(cron = "0 * * * * ?")
   public RestBean<Object> updateMovieScreeningState() {
     log.info("Updating movie screening state...");
-    movieShowTimeService.updateScreeningState();
-    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
+    RlsContextUtil.applyPlatformScope();
+    try {
+      movieShowTimeService.updateScreeningState();
+      return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
+    } finally {
+      RlsContextUtil.clearRls();
+    }
   }
 
   /**
@@ -64,8 +75,13 @@ public class ScheduledTasksController {
   @Scheduled(cron = "0 * * * * ?")
   public RestBean<Object> updateShowTimePublishState() {
     log.info("Updating showtime publish/sale state...");
-    movieShowTimeService.updatePublishAndCanSaleState();
-    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
+    RlsContextUtil.applyPlatformScope();
+    try {
+      movieShowTimeService.updatePublishAndCanSaleState();
+      return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Success.GENERAL));
+    } finally {
+      RlsContextUtil.clearRls();
+    }
   }
 
   /**
@@ -85,9 +101,14 @@ public class ScheduledTasksController {
   @Scheduled(cron = "0 * * * * ?")
   public void updateMovieOrderState() {
     log.debug("Updating movie order state (fallback for timeout)...");
-    int processed = movieOrderService.processExpiredOrdersFallback(orderPaymentTimeoutSeconds);
-    if (processed > 0) {
-      log.info("订单超时兜底任务处理数量: {}", processed);
+    RlsContextUtil.applyPlatformScope();
+    try {
+      int processed = movieOrderService.processExpiredOrdersFallback(orderPaymentTimeoutSeconds);
+      if (processed > 0) {
+        log.info("订单超时兜底任务处理数量: {}", processed);
+      }
+    } finally {
+      RlsContextUtil.clearRls();
     }
   }
 }

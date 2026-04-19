@@ -5,14 +5,16 @@
 <mapper namespace="com.example.backend.mapper.UserMapper">
     <resultMap id="userList" type="com.example.backend.response.UserListResponse">
         <id property="id" column="id"></id>
-        <result property="id" column="id"></result>
         <result property="cover" column="cover"></result>
         <result property="name" column="name"></result>
-        <result property="cover" column="endTime"></result>
         <result property="email" column="email"></result>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
-        <collection property="roles" ofType="com.example.backend.response.Role">
+        <result property="dataScope" column="data_scope"/>
+        <result property="brandId" column="brand_id"/>
+        <result property="cinemaIdsCsv" column="cinema_ids_csv"/>
+        <result property="cinemaNamesJson" column="cinema_names_json"/>
+        <collection property="roles" ofType="com.example.backend.response.UserListResponse$Role">
             <result property="id" column="role_id"></result>
             <result property="name" column="role_name"></result>
         </collection>
@@ -25,6 +27,14 @@
             users.email as email,
             users.create_time as create_time,
             users.update_time as update_time,
+            users.data_scope as data_scope,
+            users.brand_id as brand_id,
+            (SELECT string_agg(uc.cinema_id::text, ',' ORDER BY uc.cinema_id)
+             FROM user_cinema uc WHERE uc.user_id = users.id) AS cinema_ids_csv,
+            (SELECT json_agg(coalesce(c.name, '#' || uc.cinema_id::text) ORDER BY uc.cinema_id)
+             FROM user_cinema uc
+             LEFT JOIN cinema c ON c.id = uc.cinema_id
+             WHERE uc.user_id = users.id) AS cinema_names_json,
             role.id as role_id,
             role.name as role_name
         FROM users
@@ -39,7 +49,7 @@
                 AND users.name LIKE concat('%', #{query.name}, '%')
             </if>
             <if test="query.email != null and !query.email.equals('')">
-                AND users.email = #{email}
+                AND users.email = #{query.email}
             </if>
         </where>
 
@@ -52,6 +62,19 @@
         FROM role
             INNER JOIN user_role ON role.id = user_role.role_id
         WHERE user_role.user_id = #{id}
+    </select>
+    <!-- 用户所有角色合并后的按钮（去重），供「权限预览」只读展示 -->
+    <select id="userEffectiveButtons" resultType="com.example.backend.response.UserEffectiveButtonResponse">
+        SELECT DISTINCT
+            b.id,
+            b.name,
+            b.i18n_key,
+            b.api_code
+        FROM user_role ur
+            INNER JOIN role_button rb ON ur.role_id = rb.role_id
+            INNER JOIN button b ON rb.button_id = b.id
+        WHERE ur.user_id = #{userId}
+        ORDER BY b.api_code ASC NULLS LAST, b.id ASC
     </select>
     <resultMap id="StatisticsOfDailyRegisteredUsers" type="com.example.backend.response.chart.StatisticsUserCount">
         <result property="createDate" column="create_date"></result>

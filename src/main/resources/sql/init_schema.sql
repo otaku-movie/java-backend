@@ -16,9 +16,12 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(255),
+    data_scope VARCHAR(20) NOT NULL DEFAULT 'platform',
+    brand_id INTEGER,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted INTEGER DEFAULT 0
+    deleted INTEGER DEFAULT 0,
+    CONSTRAINT users_data_scope_check CHECK (data_scope IN ('platform', 'chain', 'cinema'))
 );
 
 -- 角色表
@@ -383,6 +386,13 @@ CREATE TABLE IF NOT EXISTS cinema (
     FOREIGN KEY (brand_id) REFERENCES brand(id) ON DELETE SET NULL
 );
 
+-- 后台用户与影院多对多（data_scope=cinema 时使用）
+CREATE TABLE IF NOT EXISTS user_cinema (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    cinema_id INTEGER NOT NULL REFERENCES cinema(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, cinema_id)
+);
+
 -- 影院规格表
 CREATE TABLE IF NOT EXISTS cinema_spec (
     cinema_id INTEGER NOT NULL,
@@ -407,11 +417,17 @@ CREATE TABLE IF NOT EXISTS cinema_price_config (
 );
 COMMENT ON TABLE cinema_price_config IS '放映类型加价：仅 3D 需配置';
 
--- 影院规格关联表（多对多）
+-- 影院规格加价（与 CinemaSpecSpec 实体一致）
 CREATE TABLE IF NOT EXISTS cinema_spec_spec (
-    cinema_spec_id INTEGER NOT NULL,
+    cinema_id INTEGER NOT NULL,
     spec_id INTEGER NOT NULL,
-    PRIMARY KEY (cinema_spec_id, spec_id)
+    plus_price INTEGER DEFAULT 0,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0,
+    PRIMARY KEY (cinema_id, spec_id),
+    FOREIGN KEY (cinema_id) REFERENCES cinema(id) ON DELETE CASCADE,
+    FOREIGN KEY (spec_id) REFERENCES movie_spec(id) ON DELETE CASCADE
 );
 
 -- 影厅表
@@ -442,6 +458,7 @@ CREATE TABLE IF NOT EXISTS seat_area (
 CREATE TABLE IF NOT EXISTS seat (
     id SERIAL PRIMARY KEY,
     theater_hall_id INTEGER NOT NULL,
+    cinema_id INTEGER,
     row_name VARCHAR(10),
     seat_name VARCHAR(10) NOT NULL,
     x_axis INTEGER,
@@ -477,6 +494,7 @@ CREATE TABLE IF NOT EXISTS seat_aisle (
 CREATE TABLE IF NOT EXISTS movie_order (
     id SERIAL PRIMARY KEY,
     movie_show_time_id INTEGER NOT NULL,
+    cinema_id INTEGER,
     user_id INTEGER,
     order_number VARCHAR(32) UNIQUE NOT NULL,
     order_total DECIMAL(10,2) DEFAULT 0,
@@ -495,6 +513,7 @@ CREATE TABLE IF NOT EXISTS movie_order (
 CREATE TABLE IF NOT EXISTS refund (
     id SERIAL PRIMARY KEY,
     order_number VARCHAR(32) NOT NULL,
+    cinema_id INTEGER,
     user_id INTEGER NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     reason VARCHAR(500),
@@ -529,6 +548,7 @@ CREATE TABLE IF NOT EXISTS select_seat (
     movie_ticket_type_id INTEGER,
     movie_show_time_id INTEGER NOT NULL,
     theater_hall_id INTEGER NOT NULL,
+    cinema_id INTEGER,
     x INTEGER,
     y INTEGER,
     select_seat_state INTEGER DEFAULT 0,
@@ -555,12 +575,21 @@ CREATE TABLE IF NOT EXISTS payment_method (
     deleted INTEGER DEFAULT 0
 );
 
--- 电影票类型表
+-- 电影票类型表（按影院配置，与 MovieTicketType 实体一致）
 CREATE TABLE IF NOT EXISTS movie_ticket_type (
     id SERIAL PRIMARY KEY,
+    cinema_id INTEGER REFERENCES cinema(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     description TEXT,
+    enabled BOOLEAN DEFAULT TRUE,
+    schedule_type INTEGER,
+    applicable_weekdays INTEGER[],
+    applicable_month_days INTEGER[],
+    applicable_dates TEXT[],
+    daily_start_time VARCHAR(10),
+    daily_end_time VARCHAR(10),
+    order_num INTEGER DEFAULT 0,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0
