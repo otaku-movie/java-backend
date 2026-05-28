@@ -25,7 +25,6 @@ import com.example.backend.response.order.MovieOrderSeat;
 import com.example.backend.response.order.MyTicketsResponse;
 import com.example.backend.response.order.OrderListResponse;
 import com.example.backend.service.MovieOrderService;
-import com.example.backend.query.CreditCardPayQuery;
 import com.example.backend.service.PaymentService;
 import com.example.backend.utils.MessageUtils;
 import lombok.Data;
@@ -88,7 +87,7 @@ public class MovieOrderController {
     QueryWrapper<MovieOrder> qw = new QueryWrapper<>();
     qw.eq("order_number", orderNumber).last("LIMIT 1");
     MovieOrder mo = movieOrderMapper.selectOne(qw);
-    Integer orderId = mo.getId();
+    Long orderId = mo.getId();
     movieOrderService.verifyOrderAccess(orderId, StpUtil.getLoginIdAsInt());
     OrderListResponse order = movieOrderMapper.orderDetail(orderId);
 
@@ -176,12 +175,12 @@ public class MovieOrderController {
     IPage<OrderListResponse> list = movieOrderMapper.orderList(query, page);
 
     // 提取订单 ID 列表
-    List<Integer> orderIds = list.getRecords().stream()
+    List<Long> orderIds = list.getRecords().stream()
       .map(OrderListResponse::getId)
       .toList();
 
     // 批量查询所有订单对应的座位信息，按订单 ID 分组并按座位去重
-    Map<Integer, List<MovieOrderSeat>> seatMap = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds).stream()
+    Map<Long, List<MovieOrderSeat>> seatMap = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds).stream()
       .collect(Collectors.groupingBy(MovieOrderSeat::getMovieOrderId, Collectors.collectingAndThen(Collectors.toList(), MovieOrderService::dedupeSeatsBySeat)));
 
     // 设置座位信息和支付截止时间（从 Redis 获取座位状态）
@@ -233,7 +232,7 @@ public class MovieOrderController {
   @SaCheckLogin
   @CheckPermission(code ="movieOrder.remove")
   @DeleteMapping(ApiPaths.Admin.Order.REMOVE)
-  public RestBean<Null> removeOrder(@RequestParam("id") Integer id) {
+  public RestBean<Null> removeOrder(@RequestParam("id") Long id) {
     movieOrderMapper.deleteById(id);
 
     return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));

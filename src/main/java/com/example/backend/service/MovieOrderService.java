@@ -185,7 +185,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
    * @return 是否执行了超时处理（订单存在且原状态为 order_created 时返回 true）
    */
   @Transactional(rollbackFor = Exception.class)
-  public boolean processOrderTimeout(Integer orderId) {
+  public boolean processOrderTimeout(Long orderId) {
     if (orderId == null) {
       return false;
     }
@@ -250,7 +250,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   /**
    * 清理订单关联的 Redis locked 座位
    */
-  private void clearLockedSeatsFromRedis(Integer orderId, Integer movieShowTimeId) {
+  private void clearLockedSeatsFromRedis(Long orderId, Integer movieShowTimeId) {
     if (movieShowTimeId == null) {
       return;
     }
@@ -299,7 +299,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   /**
    * 支付失败时调用退款（释放/回滚已授权的资金），写入 refund 表
    */
-  private void refundOnPaymentFailure(Integer orderId, MovieOrder order, String reason) {
+  private void refundOnPaymentFailure(Long orderId, MovieOrder order, String reason) {
     String orderNumber = order.getOrderNumber();
     if (orderNumber == null) {
       log.warn("订单无订单号，跳过退款: orderId={}", orderId);
@@ -358,7 +358,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
   /**
    * 校验当前用户是否有权访问订单（用于订单详情等）
    */
-  public void verifyOrderAccess(Integer orderId, Integer currentUserId) {
+  public void verifyOrderAccess(Long orderId, Integer currentUserId) {
     MovieOrder order = movieOrderMapper.selectById(orderId);
     if (order == null) {
       throw new BusinessException(ResponseCode.ORDER_NOT_FOUND, MessageKeys.Error.ORDER_NOT_FOUND);
@@ -465,7 +465,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     if (lockedSeats != null && !lockedSeats.isEmpty() && 
         lockedSeats.size() == requestSeatIds.size()) {
       // 从 locked 座位中获取 movieOrderId（如果有）
-      Integer existingOrderId = null;
+      Long existingOrderId = null;
       for (SelectSeat seat : lockedSeats) {
         if (seat.getMovieOrderId() != null) {
           existingOrderId = seat.getMovieOrderId();
@@ -801,7 +801,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     // 3. 订单归属校验
     verifyOrderOwnership(order, userId);
 
-    Integer orderId = order.getId();
+    Long orderId = order.getId();
 
     // 4. 防止重复支付：已支付订单直接返回成功（幂等）
     if (Objects.equals(order.getOrderState(), OrderState.order_succeed.getCode())
@@ -853,7 +853,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
    * 执行支付逻辑。调用方需已获取支付分布式锁。
    * 支付流程严格遵循：先存数据库，再存 Redis。
    */
-  private void doPay(String orderNumber, Integer payId, MovieOrder order, Integer orderId) {
+  private void doPay(String orderNumber, Integer payId, MovieOrder order, Long orderId) {
     // 双重检查：订单正在支付中则拒绝（防止异步处理期间重复请求）
     MovieOrder latestOrder = movieOrderMapper.selectById(orderId);
     if (latestOrder != null && Objects.equals(latestOrder.getPayState(), PayState.paying.getCode())) {
@@ -1014,7 +1014,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     verifyOrderOwnership(movieOrder, currentUserId);
     verifyOrderStateFromCreated(movieOrder);
 
-    Integer orderId = movieOrder.getId();
+    Long orderId = movieOrder.getId();
     Integer theaterHallId = null;
     if (movieOrder.getMovieShowTimeId() != null) {
       MovieShowTime st = movieShowTimeMapper.selectById(movieOrder.getMovieShowTimeId());
@@ -1086,7 +1086,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
 
   public List<MyTicketsResponse> getMyTickets(Integer userId) {
     // 第一步：获取用户的有效订单ID列表
-    List<Integer> orderIds = movieOrderMapper.getUserValidOrderIds(userId);
+    List<Long> orderIds = movieOrderMapper.getUserValidOrderIds(userId);
     
     if (orderIds == null || orderIds.isEmpty()) {
       return Collections.emptyList();
@@ -1096,7 +1096,7 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     List<MyTicketsResponse> tickets = movieOrderMapper.getMyTicketsByIds(orderIds);
     
     // 第三步：批量获取座位信息（按订单分组并去重，防止重复插入导致同一座位多条记录）
-    Map<Integer, List<MovieOrderSeat>> seatMap = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds).stream()
+    Map<Long, List<MovieOrderSeat>> seatMap = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds).stream()
       .collect(Collectors.groupingBy(MovieOrderSeat::getMovieOrderId, Collectors.collectingAndThen(Collectors.toList(), MovieOrderService::dedupeSeatsBySeat)));
     
     // 第四步：设置座位信息到对应的订单（从 Redis 获取座位状态），并填充 specNames、dimensionType
@@ -1151,8 +1151,8 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
     query.setUserId(StpUtil.getLoginIdAsInt());
     
     // 第一步：获取用户的有效订单ID列表（带分页）
-    Page<Integer> orderIdPage = new Page<>(query.getPage(), query.getPageSize());
-    IPage<Integer> orderIdResult = movieOrderMapper.getUserValidOrderIdsPage(query, orderIdPage);
+    Page<Long> orderIdPage = new Page<>(query.getPage(), query.getPageSize());
+    IPage<Long> orderIdResult = movieOrderMapper.getUserValidOrderIdsPage(query, orderIdPage);
     
     if (orderIdResult.getRecords() == null || orderIdResult.getRecords().isEmpty()) {
       // 返回空的分页结果
@@ -1161,13 +1161,13 @@ public class MovieOrderService extends ServiceImpl<MovieOrderMapper, MovieOrder>
       return emptyPage;
     }
     
-    List<Integer> orderIds = orderIdResult.getRecords();
+    List<Long> orderIds = orderIdResult.getRecords();
     
     // 第二步：批量获取订单基本信息
     List<MyTicketsResponse> tickets = movieOrderMapper.getMyTicketsByIds(orderIds);
     
     // 第三步：批量获取座位信息（按订单分组并去重，防止重复插入导致同一座位多条记录）
-    Map<Integer, List<MovieOrderSeat>> seatMap = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds).stream()
+    Map<Long, List<MovieOrderSeat>> seatMap = movieOrderMapper.getMovieOrderSeatListByOrderIds(orderIds).stream()
       .collect(Collectors.groupingBy(MovieOrderSeat::getMovieOrderId, Collectors.collectingAndThen(Collectors.toList(), MovieOrderService::dedupeSeatsBySeat)));
     
     // 第四步：设置座位信息到对应的订单（从 Redis 获取座位状态），并填充 specNames、dimensionType

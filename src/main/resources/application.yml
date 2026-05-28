@@ -26,6 +26,18 @@ spring:
     port: 5672
     username: guest
     password: guest
+  # 数据库迁移（Flyway）：脚本位于 src/main/resources/db/migration/
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # 已有库首次接入时把当前状态当作基线，跳过 V1 之前的脚本
+    baseline-on-migrate: true
+    baseline-version: 0
+    # init_schema 使用了 DO $$...$$，关闭占位符替换避免误识别
+    placeholder-replacement: false
+    # 启动失败时不要让 Flyway 自动 repair；如需修复请显式执行
+    validate-on-migrate: true
+    table: flyway_schema_history
 
 # SpringDoc OpenAPI 配置
 springdoc:

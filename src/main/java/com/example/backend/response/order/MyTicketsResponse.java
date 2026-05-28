@@ -10,7 +10,7 @@ import java.util.List;
 
 @Data
 public class MyTicketsResponse {
-  Integer id;
+  Long id;
   /** 订单号（用于跳转订单详情等） */
   String orderNumber;
   BigDecimal orderTotal;

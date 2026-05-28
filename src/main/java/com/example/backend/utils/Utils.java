@@ -1,23 +1,13 @@
 package com.example.backend.utils;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.example.backend.config.MinIOConfig;
-import io.minio.PutObjectArgs;
-import io.minio.errors.*;
-import org.springframework.cglib.core.Local;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -61,20 +51,7 @@ public class Utils {
 
         return file;
     }
-    public static void upload (InputStream stream, String path, String mime) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        MinIOConfig minIOConfig = new MinIOConfig();
-
-
-        minIOConfig.getMinioClient()
-            .putObject(
-              PutObjectArgs.builder()
-                .bucket(minIOConfig.bucket)
-                .object(path)
-                .stream(stream, stream.available(), -1)
-                .contentType(mime)
-                .build()
-            );
-    }
+    // 旧 MinIO 上传工具已废弃：统一通过 UploadController + ObjectStorageService 上传
     public static <T> List<String> excludeKeys(Class<T> entityClass, List<String> excludeFields)  {
         // 获取实体类的所有字段
         Field[] fields = entityClass.getDeclaredFields();

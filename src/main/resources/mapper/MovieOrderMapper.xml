@@ -442,7 +442,7 @@
     <!-- 拆分后的查询方法 -->
     
     <!-- 第一步：获取用户的有效订单ID列表 -->
-    <select id="getUserValidOrderIds" resultType="java.lang.Integer">
+    <select id="getUserValidOrderIds" resultType="java.lang.Long">
         SELECT movie_order.id
         FROM movie_order
         INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id
@@ -459,7 +459,7 @@
     </select>
 
     <!-- 第一步（分页）：获取用户的有效订单ID列表（带分页） -->
-    <select id="getUserValidOrderIdsPage" resultType="java.lang.Integer">
+    <select id="getUserValidOrderIdsPage" resultType="java.lang.Long">
         SELECT movie_order.id
         FROM movie_order
         INNER JOIN select_seat ON movie_order.id = select_seat.movie_order_id

@@ -669,7 +669,7 @@ public class SelectSeatService extends ServiceImpl<SelectSeatMapper, SelectSeat>
   public List<SelectSeat> getLockedSeatsByOrderIdFromRedis(
       Integer movieShowTimeId,
       Integer theaterHallId,
-      Integer movieOrderId) {
+      Long movieOrderId) {
     List<SelectSeat> result = new ArrayList<>();
     if (movieShowTimeId == null || theaterHallId == null || movieOrderId == null) {
       return result;

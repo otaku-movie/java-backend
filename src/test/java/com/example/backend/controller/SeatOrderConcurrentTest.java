@@ -439,7 +439,7 @@ public class SeatOrderConcurrentTest {
 
         long startTime = System.currentTimeMillis();
 
-        Integer orderId = 1; // 使用同一个订单ID，测试重复支付检测
+        Long orderId = 1L; // 使用同一个订单ID，测试重复支付检测
 
         for (int i = 0; i < THREAD_COUNT; i++) {
             executor.submit(() -> {

@@ -71,7 +71,7 @@ public class PaymentService extends ServiceImpl<PaymentMethodMapper, PaymentMeth
    * @param reason 退款原因
    * @return 是否成功
    */
-  public boolean refund(Integer orderId, BigDecimal amount, String reason) {
+  public boolean refund(Long orderId, BigDecimal amount, String reason) {
     log.info("退款: orderId={}, amount={}, reason={}", orderId, amount, reason);
     // 此处可集成真实支付网关的退款 API
     return true;

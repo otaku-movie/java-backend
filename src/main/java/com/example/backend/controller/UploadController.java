@@ -1,21 +1,18 @@
 package com.example.backend.controller;
 
-
-import com.amazonaws.services.s3.internal.eventstreaming.Message;
-import com.example.backend.config.MinioConfiguration;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
+import com.example.backend.service.storage.ObjectStorageService;
+import com.example.backend.service.storage.UploadResult;
 import com.example.backend.utils.MessageUtils;
 import com.example.backend.utils.Utils;
 import com.fasterxml.uuid.Generators;
-import io.minio.MinioClient;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Null;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,25 +20,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.UUID;
-import java.util.function.Consumer;
 
 @Data
 class UploadResponse {
@@ -53,63 +36,36 @@ class UploadResponse {
 @RestController
 public class UploadController {
 
-  @Autowired
-  private MinioConfiguration minioConfiguration;
+  private final ObjectStorageService storage;
 
-  private static ByteBuffer getRandomByteBuffer(int size) throws IOException {
-    byte[] b = new byte[size];
-    new Random().nextBytes(b);
-    return ByteBuffer.wrap(b);
+  public UploadController(ObjectStorageService storage) {
+    this.storage = storage;
   }
+
   @PostMapping(value = ApiPaths.Upload.UPLOAD, consumes = "multipart/form-data")
   public RestBean<UploadResponse> upload(MultipartFile file) throws IOException {
-    if (minioConfiguration == null || !StringUtils.hasText(minioConfiguration.getEndpoint())) {
-      log.warn("MinIO 未配置或 endpoint 为空，无法上传");
-      return RestBean.error(ResponseCode.ERROR.getCode(),
-        MessageUtils.getMessage(MessageKeys.Upload.ERROR));
-    }
-    log.debug("MinIO配置: endpoint={}", minioConfiguration.getEndpoint());
-
-    S3Client s3Client = S3Client.builder()
-      .region(Region.US_EAST_1)  // 指定区域
-      .endpointOverride(URI.create(minioConfiguration.getEndpoint()))
-      .credentialsProvider(StaticCredentialsProvider.create(
-        AwsBasicCredentials.create(
-          minioConfiguration.getAccessKey(),
-          minioConfiguration.getSecretKey()
-        )
-      ))
-      .build();
     try {
-//      Magic magic = new Magic();
-//      MagicMatch match = magic.getMagicMatch(f, false);
       String uuid = Generators.timeBasedEpochGenerator().generate().toString().replace("-", "");
       SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
       File f = Utils.MultipartToFile(file);
       String filename = f.getName();
       String date = format.format(new Date());
       String ext = filename.substring(filename.lastIndexOf("."));
-      String path = date + "/image/" + uuid + ext;
-      PutObjectRequest objectRequest = PutObjectRequest.builder()
-        .bucket(minioConfiguration.getBucket())
-//        .contentType()
-        .key(path)
-        .build();
-      s3Client.putObject(objectRequest, RequestBody.fromFile(f));
+      String key = date + "/image/" + uuid + ext;
 
-      String url = new StringBuilder()
-//        .append(minioConfiguration.getPreviewURL())
-//        .append(minioConfiguration.getBucket())
-        .append("/") + path;
+      UploadResult result = storage.uploadFile(f, key, file.getContentType());
 
       UploadResponse map = new UploadResponse();
 
-      map.setPath(path);
-      map.setUrl(url);
+      map.setPath(result.getKey());
+      map.setUrl(result.getUrl());
 
       return RestBean.success(map, MessageUtils.getMessage(MessageKeys.Upload.SUCCESS));
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("Upload failed", e);
+      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Upload.ERROR));
+    } catch (Exception e) {
+      log.error("Upload failed", e);
       return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Upload.ERROR));
     }
   }
@@ -117,28 +73,10 @@ public class UploadController {
 
   @DeleteMapping(ApiPaths.Upload.DELETE)
   public RestBean<Null> delete(@Validated @RequestParam @NotEmpty(message = "path 不能为空") String path ) {
-    if (minioConfiguration == null || !StringUtils.hasText(minioConfiguration.getEndpoint())) {
-      log.warn("MinIO 未配置或 endpoint 为空，无法删除");
-      return RestBean.error(ResponseCode.ERROR.getCode(),
-        MessageUtils.getMessage(MessageKeys.Upload.ERROR));
+    if (!StringUtils.hasText(path)) {
+      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Upload.ERROR));
     }
-    S3Client s3Client = S3Client.builder()
-      .region(Region.US_EAST_1)  // 指定区域
-      .endpointOverride(URI.create(minioConfiguration.getEndpoint()))
-      .credentialsProvider(StaticCredentialsProvider.create(
-        AwsBasicCredentials.create(
-          minioConfiguration.getAccessKey(),
-          minioConfiguration.getSecretKey()
-        )
-      ))
-      .build();
-
-    DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-      .bucket(minioConfiguration.getBucket())
-      .key(path)
-      .build();
-
-    s3Client.deleteObject(deleteObjectRequest);
+    storage.delete(path);
 
     return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.Movie.REMOVE_SUCCESS));
   }

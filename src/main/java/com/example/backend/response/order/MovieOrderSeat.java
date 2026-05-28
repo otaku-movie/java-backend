@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class MovieOrderSeat {
-  Integer movieOrderId;
+  Long movieOrderId;
   Integer seatX;
   Integer seatY;
   String seatName;

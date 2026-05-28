@@ -35,3 +35,7 @@ build/
 
 # JVM crash logs
 hs_err_pid*.log
+
+# 数据库备份文件与本机备份环境变量
+backups/
+.env.backup

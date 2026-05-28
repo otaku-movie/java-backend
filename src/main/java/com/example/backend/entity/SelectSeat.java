@@ -12,7 +12,7 @@ public class SelectSeat {
   Integer userId;
 
   @TableField("movie_order_id")
-  Integer movieOrderId;
+  Long movieOrderId;
 
   @TableField("movie_ticket_type_id")
   Integer movieTicketTypeId;

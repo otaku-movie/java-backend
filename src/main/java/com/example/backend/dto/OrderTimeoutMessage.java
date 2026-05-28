@@ -15,5 +15,5 @@ public class OrderTimeoutMessage implements Serializable {
   private String orderNumber;
   
   /** 订单ID */
-  private Integer orderId;
+  private Long orderId;
 }

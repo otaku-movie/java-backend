@@ -19,11 +19,11 @@ import java.util.List;
 @Mapper
 public interface MovieOrderMapper extends BaseMapper<MovieOrder> {
   // 查询多个订单的座位信息
-  List<MovieOrderSeat> getMovieOrderSeatListByOrderIds(List<Integer> orderIds);
+  List<MovieOrderSeat> getMovieOrderSeatListByOrderIds(List<Long> orderIds);
   // 查询单个订单的座位信息
-  List<MovieOrderSeat> getMovieOrderSeatList(Integer orderId);
+  List<MovieOrderSeat> getMovieOrderSeatList(Long orderId);
   IPage<OrderListResponse> orderList(MovieOrderListQuery query, Page<OrderListResponse> page);
-  OrderListResponse orderDetail(Integer orderId);
+  OrderListResponse orderDetail(Long orderId);
   IPage<OrderListResponse>  userOrderList(Integer userId,  Page<OrderListResponse> page);
   List<DailyOrderStatistics> DailyOrderStatistics();
   List<DailyTransactionAmount> DailyTransactionAmount(Integer orderState, Integer payState);
@@ -31,7 +31,7 @@ public interface MovieOrderMapper extends BaseMapper<MovieOrder> {
   IPage<MyTicketsResponse> getMyTicketsPage(MyTicketsQuery query, Page<MyTicketsResponse> page);
   
   // 拆分后的查询方法
-  List<Integer> getUserValidOrderIds(Integer userId);
-  IPage<Integer> getUserValidOrderIdsPage(MyTicketsQuery query, Page<Integer> page);
-  List<MyTicketsResponse> getMyTicketsByIds(List<Integer> orderIds);
+  List<Long> getUserValidOrderIds(Integer userId);
+  IPage<Long> getUserValidOrderIdsPage(MyTicketsQuery query, Page<Long> page);
+  List<MyTicketsResponse> getMyTicketsByIds(List<Long> orderIds);
 }

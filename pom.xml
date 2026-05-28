@@ -156,6 +156,11 @@
 			<version>42.7.3</version>
 <!--			<scope>runtime</scope>-->
 		</dependency>
+		<!-- 数据库迁移：Flyway 9.x（Spring Boot 3.2 默认版本，已内置 PostgreSQL 支持） -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
 <!--		jwt -->
 		<dependency>
 			<groupId>cn.dev33</groupId>

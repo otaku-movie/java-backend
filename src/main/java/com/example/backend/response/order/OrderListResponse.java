@@ -10,7 +10,7 @@ import java.util.List;
 
 @Data
 public class OrderListResponse {
-  Integer id;
+  Long id;
   String orderNumber;
   BigDecimal orderTotal;
   Integer orderState;

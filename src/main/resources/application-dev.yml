@@ -31,12 +31,30 @@ spring:
       max-http-form-post-size: -1
     port: 8080
     address: 0.0.0.0
+# 旧 minio.* 已迁移到 storage.*；保留 block 仅为兼容历史 MinioConfiguration bean，
+# 同源从 storage.* 注入；凭证仅通过环境变量注入
 minio:
-  accessKey: RQXIcweef6ZzjFWFsDrj
-  secretKey: pfASmYyXgqQnR81CHTLyIIaHTt1SoxUcTgYaeR2p
-  endpoint: http://43.154.172.94:9000/
-  previewURL: https://drive.bangumi.xyz/
-  bucket: test-movie
+  endpoint: ${STORAGE_ENDPOINT:}
+  accessKey: ${STORAGE_ACCESS_KEY:}
+  secretKey: ${STORAGE_SECRET_KEY:}
+  bucket: ${STORAGE_BUCKET:test-movie}
+  previewURL: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
+
+# Cloudflare R2（S3 兼容）配置
+# - endpoint：R2 控制台的「S3 API」终结点（默认已填）
+# - bucket：R2 控制台的 bucket 名（默认 test-movie）
+# - region：R2 必须使用 auto
+# - path-style-access：R2 推荐 false（virtual-host 风格）
+# - public-url：r2.dev 公开域名 或 自定义域名（需在 R2 控制台单独开启 / 绑定）
+# - access-key / secret-key：仅通过环境变量传入，不写入文件
+storage:
+  endpoint: ${STORAGE_ENDPOINT:https://fc57c8ebc7f4ac0ad80e7f84cb52fd1d.r2.cloudflarestorage.com}
+  access-key: ${STORAGE_ACCESS_KEY:}
+  secret-key: ${STORAGE_SECRET_KEY:}
+  region: ${STORAGE_REGION:auto}
+  bucket: ${STORAGE_BUCKET:test-movie}
+  public-url: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
+  path-style-access: ${STORAGE_PATH_STYLE:false}
 logging:
   level:
     root: INFO

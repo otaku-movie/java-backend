@@ -1,0 +1,47 @@
+# PostgreSQL 备份服务 overlay
+#
+# 用法：叠加到任意一份主 compose 文件后启动 pg-backup 服务
+#
+#   完整栈（PG 跑容器，hostname=postgres）：
+#     docker compose --env-file .env.backup \
+#       -f docker-compose.yml -f docker-compose.backup.yml up -d pg-backup
+#
+#   仅基础设施（PG 在宿主机，需 PGBACKUP_HOST=host.docker.internal）：
+#     docker compose --env-file .env.backup \
+#       -f docker-compose.dev.yml -f docker-compose.backup.yml up -d pg-backup
+#
+#   生产：
+#     docker compose --env-file .env.backup \
+#       -f docker-compose.prod.yml -f docker-compose.backup.yml up -d pg-backup
+#
+# 默认每天凌晨 3 点（容器时区 Asia/Tokyo）执行 pg_dump --format=custom，
+# 保留本地 30 天历史；如配置 S3_* 则同时上传到 S3/MinIO。
+
+services:
+  pg-backup:
+    build:
+      context: ./infra/pg-backup
+    image: movie/pg-backup:latest
+    container_name: movie-pg-backup
+    restart: unless-stopped
+    environment:
+      PGHOST: ${PGBACKUP_HOST:-postgres}
+      PGPORT: ${PGBACKUP_PORT:-5432}
+      PGUSER: ${PGBACKUP_USER:-postgres}
+      PGPASSWORD: ${PGBACKUP_PASSWORD:-postgre}
+      PGDATABASE: ${PGBACKUP_DATABASE:-test_movie}
+      BACKUP_CRON: ${PGBACKUP_CRON:-0 3 * * *}
+      BACKUP_RETENTION_DAYS: ${PGBACKUP_RETENTION_DAYS:-30}
+      BACKUP_RUN_ON_START: ${PGBACKUP_RUN_ON_START:-false}
+      S3_ENDPOINT: ${PGBACKUP_S3_ENDPOINT:-}
+      S3_BUCKET: ${PGBACKUP_S3_BUCKET:-}
+      S3_PREFIX: ${PGBACKUP_S3_PREFIX:-pg-backup}
+      S3_ACCESS_KEY: ${PGBACKUP_S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${PGBACKUP_S3_SECRET_KEY:-}
+    # 允许 PGBACKUP_HOST 设置为 host.docker.internal 时连宿主机的 PG
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./backups/pg:/backups
+    networks:
+      - movie-network
