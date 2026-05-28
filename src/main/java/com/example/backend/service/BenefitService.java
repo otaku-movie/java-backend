@@ -19,11 +19,14 @@ import com.example.backend.mapper.MovieMapper;
 import com.example.backend.mapper.SpecMapper;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.query.benefit.BenefitCinemaAvailabilityQuery;
 import com.example.backend.query.benefit.BenefitFeedbackListQuery;
 import com.example.backend.query.benefit.BenefitListQuery;
 import com.example.backend.query.benefit.BenefitMovieListQuery;
 import com.example.backend.query.benefit.BenefitStockListQuery;
 import com.example.backend.query.benefit.BenefitStockSaveQuery;
+import com.example.backend.response.benefit.BenefitCinemaAvailabilityItemResponse;
+import com.example.backend.response.benefit.BenefitCinemaAvailabilityRow;
 import com.example.backend.response.benefit.BenefitDetailResponse;
 import com.example.backend.response.benefit.BenefitFeedbackListItemResponse;
 import com.example.backend.response.benefit.BenefitListItemResponse;
@@ -32,6 +35,7 @@ import com.example.backend.response.benefit.BenefitStockListItemResponse;
 import com.example.backend.response.benefit.CinemaBenefitItemSummary;
 import com.example.backend.response.benefit.CinemaBenefitSummaryResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -60,6 +64,13 @@ public class BenefitService {
   private CinemaMapper cinemaMapper;
   @Autowired
   private SpecMapper specMapper;
+  @Autowired
+  private BenefitFeedbackRedisService benefitFeedbackRedisService;
+  @Autowired
+  private BenefitFeedbackArchiver benefitFeedbackArchiver;
+
+  @Value("${benefit.feedback.window-hours:24}")
+  private int benefitFeedbackWindowHours;
 
   /**
    * 某电影在指定日期是否有有效特典（存在有效阶段）。
@@ -271,7 +282,134 @@ public class BenefitService {
     r.setRemaining(b.getRemaining());
     r.setOrderNum(b.getOrderNum());
     r.setStatus(b.getPhaseStatus() != null ? b.getPhaseStatus() : computePhaseStatus(b.getStartDate(), b.getEndDate()));
+    r.setAvailableCinemaCount(benefitTheaterStockMapper.countAvailableCinemasForBenefit(b.getId()));
     return r;
+  }
+
+  /**
+   * App：按特典分页查询影院库存与反馈聚合。
+   */
+  public IPage<BenefitCinemaAvailabilityItemResponse> pageCinemasForBenefitApp(
+    Integer benefitId,
+    Integer reReleaseId,
+    Integer regionId,
+    Integer prefectureId,
+    String keyword,
+    String sort,
+    Double latitude,
+    Double longitude,
+    int page,
+    int pageSize,
+    Integer currentUserId
+  ) {
+    if (benefitId == null) {
+      throw new BusinessException(ResponseCode.PARAMETER_ERROR, MessageKeys.Admin.PARAMETER_ERROR);
+    }
+    Benefit b = benefitMapper.selectById(benefitId);
+    if (b == null) {
+      throw new BusinessException(ResponseCode.PARAMETER_ERROR, MessageKeys.Admin.PARAMETER_ERROR);
+    }
+    if (b.getReReleaseId() == null) {
+      if (reReleaseId != null) {
+        throw new BusinessException(ResponseCode.PARAMETER_ERROR, MessageKeys.Admin.PARAMETER_ERROR);
+      }
+    } else {
+      if (!Objects.equals(reReleaseId, b.getReReleaseId())) {
+        throw new BusinessException(ResponseCode.PARAMETER_ERROR, MessageKeys.Admin.PARAMETER_ERROR);
+      }
+    }
+
+    String sortNorm = StringUtils.hasText(sort) ? sort.trim() : "remainingDesc";
+    if ("distance".equalsIgnoreCase(sortNorm) && (latitude == null || longitude == null)) {
+      throw new BusinessException(ResponseCode.PARAMETER_ERROR, MessageKeys.Admin.PARAMETER_ERROR);
+    }
+
+    BenefitCinemaAvailabilityQuery q = new BenefitCinemaAvailabilityQuery();
+    q.setBenefitId(benefitId);
+    q.setMovieId(b.getMovieId());
+    q.setReReleaseId(b.getReReleaseId());
+    q.setRegionId(regionId);
+    q.setPrefectureId(prefectureId);
+    q.setKeyword(StringUtils.hasText(keyword) ? keyword.trim() : null);
+    q.setSort(sortNorm);
+    q.setLatitude(latitude);
+    q.setLongitude(longitude);
+
+    int limitType = b.getCinemaLimitType() != null ? b.getCinemaLimitType() : 0;
+    List<Integer> whitelist = parseIntegerList(b.getCinemaIds());
+    if (limitType == 1) {
+      q.setWhitelistEnabled(true);
+      q.setWhitelistIds(whitelist);
+      if (whitelist.isEmpty()) {
+        Page<BenefitCinemaAvailabilityItemResponse> empty = new Page<>(page, pageSize);
+        empty.setTotal(0);
+        empty.setRecords(Collections.emptyList());
+        return empty;
+      }
+    } else {
+      q.setWhitelistEnabled(false);
+      q.setWhitelistIds(null);
+    }
+
+    long total = benefitTheaterStockMapper.countAvailability(q);
+    long offset = (long) (page - 1) * pageSize;
+    List<BenefitCinemaAvailabilityRow> rows = benefitTheaterStockMapper.listAvailability(q, pageSize, offset);
+
+    List<BenefitCinemaAvailabilityItemResponse> items = new ArrayList<>();
+    for (BenefitCinemaAvailabilityRow row : rows) {
+      BenefitCinemaAvailabilityItemResponse it = new BenefitCinemaAvailabilityItemResponse();
+      it.setCinemaId(row.getCinemaId());
+      it.setCinemaName(row.getCinemaName());
+      it.setBrandName(row.getBrandName());
+      it.setFullAddress(row.getFullAddress());
+      it.setRegionId(row.getRegionId());
+      it.setPrefectureId(row.getPrefectureId());
+      it.setLatitude(row.getLatitude());
+      it.setLongitude(row.getLongitude());
+      it.setQuota(row.getQuota());
+      it.setRemaining(row.getRemaining());
+      if (row.getDistanceMeters() != null) {
+        it.setDistanceKm(row.getDistanceMeters() / 1000.0);
+      }
+      int cid = row.getCinemaId() != null ? row.getCinemaId() : 0;
+      boolean soldFb = benefitFeedbackRedisService.isSoldOutByFeedback(benefitId, cid);
+      int fbCount = benefitFeedbackRedisService.getFeedbackCount(benefitId, cid);
+      int manual = row.getManualSoldOut() != null ? row.getManualSoldOut() : 0;
+      it.setStockStatus(computeBenefitStockDisplayStatus(manual, row.getRemaining(), row.getQuota(), soldFb));
+      it.setFeedbackCount(fbCount);
+      it.setFeedbackWindowHours(benefitFeedbackWindowHours);
+      if (currentUserId != null && cid > 0) {
+        it.setCurrentUserFeedbackSubmitted(hasUserSubmittedFeedback(currentUserId, cid, benefitId));
+      } else {
+        it.setCurrentUserFeedbackSubmitted(false);
+      }
+      it.setShowTimeCount(row.getShowTimeCount());
+      it.setNearestShowTime(row.getNearestShowTime());
+      items.add(it);
+    }
+
+    Page<BenefitCinemaAvailabilityItemResponse> out = new Page<>(page, pageSize, total);
+    out.setRecords(items);
+    return out;
+  }
+
+  public void resetBenefitFeedbackCache(Integer benefitId, Integer cinemaId) {
+    if (benefitId == null || cinemaId == null) return;
+    benefitFeedbackRedisService.resetKeys(benefitId, cinemaId);
+  }
+
+  /** 字典 benefitStockStatus：1充足 2少量 3极少 4已领完 5未知 6用户反馈领完 */
+  private static int computeBenefitStockDisplayStatus(int manualSoldOut, Integer remaining, Integer quota, boolean soldOutByFeedback) {
+    if (manualSoldOut == 1) return 4;
+    if (soldOutByFeedback) return 6;
+    if (remaining == null) return 5;
+    if (remaining <= 0) return 4;
+    int q = quota != null && quota > 0 ? quota : 0;
+    if (q <= 0) return 1;
+    double ratio = remaining / (double) q;
+    if (ratio >= 0.3) return 1;
+    if (ratio >= 0.1) return 2;
+    return 3;
   }
 
   /** 按开始/结束日期计算阶段状态：1=之前 2=进行中 3=已结束（字典 benefitPhaseStatus） */
@@ -385,6 +523,7 @@ public class BenefitService {
       r.setBenefitName(benefit != null ? benefit.getName() : null);
       r.setQuota(stock.getQuota());
       r.setRemaining(stock.getRemaining());
+      r.setManualSoldOut(stock.getManualSoldOut() != null ? stock.getManualSoldOut() : 0);
       return r;
     }).toList();
     Page<BenefitStockListItemResponse> out = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
@@ -397,9 +536,15 @@ public class BenefitService {
     BenefitTheaterStock stock;
     if (query.getId() != null) {
       stock = benefitTheaterStockMapper.selectById(query.getId());
+      if (stock == null) {
+        throw new IllegalArgumentException(MessageUtils.getMessage(MessageKeys.Error.BENEFIT_STOCK_NOT_FOUND));
+      }
     } else {
       if (query.getBenefitId() == null) {
         throw new IllegalArgumentException(MessageUtils.getMessage(MessageKeys.Error.BENEFIT_ITEM_REQUIRED));
+      }
+      if (query.getCinemaId() == null) {
+        throw new IllegalArgumentException(MessageUtils.getMessage(MessageKeys.Validator.BenefitStock.CINEMA_ID_REQUIRED));
       }
       stock = benefitTheaterStockMapper.selectOne(
         new LambdaQueryWrapper<BenefitTheaterStock>()
@@ -415,10 +560,12 @@ public class BenefitService {
       stock.setBenefitId(query.getBenefitId());
       stock.setQuota(query.getQuota());
       stock.setRemaining(query.getRemaining() != null ? query.getRemaining() : query.getQuota());
+      stock.setManualSoldOut(query.getManualSoldOut() != null ? query.getManualSoldOut() : 0);
       benefitTheaterStockMapper.insert(stock);
     } else {
       if (query.getQuota() != null) stock.setQuota(query.getQuota());
       if (query.getRemaining() != null) stock.setRemaining(query.getRemaining());
+      if (query.getManualSoldOut() != null) stock.setManualSoldOut(query.getManualSoldOut());
       benefitTheaterStockMapper.updateById(stock);
     }
   }
@@ -489,6 +636,7 @@ public class BenefitService {
    */
   public boolean hasUserSubmittedFeedback(Integer userId, Integer cinemaId, Integer benefitId) {
     if (userId == null || cinemaId == null || benefitId == null) return false;
+    if (benefitFeedbackRedisService.hasUserSubmitted(benefitId, cinemaId, userId)) return true;
     long count = benefitUserFeedbackMapper.selectCount(
       new LambdaQueryWrapper<BenefitUserFeedback>()
         .eq(BenefitUserFeedback::getUserId, userId)
@@ -509,16 +657,17 @@ public class BenefitService {
   /**
    * 用户提交特典反馈（如：该影院该阶段已领完）。需登录，userId 由调用方传入。
    */
-  @Transactional(rollbackFor = Exception.class)
   public void submitFeedback(Integer userId, Integer cinemaId, Integer benefitId, Integer feedbackType) {
     if (cinemaId == null || benefitId == null) return;
     if (feedbackType == null) feedbackType = 1;
+    int uid = userId != null ? userId : 0;
+    benefitFeedbackRedisService.recordFeedback(benefitId, cinemaId, uid);
     BenefitUserFeedback f = new BenefitUserFeedback();
-    f.setUserId(userId != null ? userId : 0);
+    f.setUserId(uid);
     f.setCinemaId(cinemaId);
     f.setBenefitId(benefitId);
     f.setFeedbackType(feedbackType);
-    benefitUserFeedbackMapper.insert(f);
+    benefitFeedbackArchiver.archive(f);
   }
 
   public IPage<BenefitFeedbackListItemResponse> listFeedbackForAdmin(BenefitFeedbackListQuery query) {

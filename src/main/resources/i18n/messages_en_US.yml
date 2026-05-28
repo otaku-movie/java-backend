@@ -47,6 +47,7 @@ error:
     noItem: "No item under this phase, please add one in phase detail first"
     itemRequired: "Please select a benefit phase"
     stockDuplicate: "Stock already allocated for this cinema and phase, please edit the existing row to change quantity"
+    stockNotFound: "Benefit stock record does not exist or has been deleted"
   showtime:
     notFound: "Showtime does not exist or has been deleted"
   seat:

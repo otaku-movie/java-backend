@@ -38,4 +38,6 @@ public class BenefitDetailResponse {
   private Integer orderNum;
   /** 阶段状态：字典 benefitPhaseStatus 1=之前 2=进行中 3=已结束 */
   private Integer status;
+  /** 当前仍有有效库存记录的影院数（不含 manual_sold_out 且 remaining 未为 0） */
+  private Integer availableCinemaCount;
 }

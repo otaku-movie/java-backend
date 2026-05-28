@@ -7,6 +7,7 @@ import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.query.benefit.BenefitFeedbackListQuery;
+import com.example.backend.query.benefit.BenefitFeedbackResetQuery;
 import com.example.backend.query.benefit.BenefitListQuery;
 import com.example.backend.query.benefit.BenefitMovieListQuery;
 import com.example.backend.query.benefit.BenefitStockListQuery;
@@ -120,5 +121,13 @@ public class BenefitController {
     }
     List<CinemaBenefitSummaryResponse> list = benefitService.listCinemaBenefitSummaryByMovie(movieId);
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+  }
+
+  @SaCheckLogin
+  @CheckPermission(code = "benefit.stock.save")
+  @PostMapping(ApiPaths.Admin.Benefit.FEEDBACK_CACHE_RESET)
+  public RestBean<String> resetFeedbackCache(@Valid @RequestBody BenefitFeedbackResetQuery body) {
+    benefitService.resetBenefitFeedbackCache(body.getBenefitId(), body.getCinemaId());
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
 }

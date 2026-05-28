@@ -48,6 +48,7 @@ error:
     noItem: "该阶段下暂无物料，请先在阶段详情中添加物料"
     itemRequired: "请选择特典阶段"
     stockDuplicate: "该影院该阶段已分配过库存，请通过编辑修改数量"
+    stockNotFound: "特典库存记录不存在或已删除"
   showtime:
     notFound: "场次不存在或已被删除"
   seat:

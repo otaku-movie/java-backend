@@ -1,10 +1,13 @@
 package com.example.backend.controller.app;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.query.benefit.BenefitFeedbackSubmitQuery;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.example.backend.response.benefit.BenefitCinemaAvailabilityItemResponse;
 import com.example.backend.response.benefit.BenefitDetailResponse;
 import com.example.backend.service.BenefitService;
 import com.example.backend.utils.MessageUtils;
@@ -35,11 +38,33 @@ public class AppBenefitController {
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 
+  /** 按特典分页查询可领影院（匿名） */
+  @GetMapping(ApiPaths.App.Benefit.CINEMA_AVAILABILITY)
+  public RestBean<List<BenefitCinemaAvailabilityItemResponse>> cinemaAvailability(
+    @PathVariable("benefitId") Integer benefitId,
+    @RequestParam(required = false) Integer reReleaseId,
+    @RequestParam(required = false) Integer regionId,
+    @RequestParam(required = false) Integer prefectureId,
+    @RequestParam(required = false) String keyword,
+    @RequestParam(required = false, defaultValue = "remainingDesc") String sort,
+    @RequestParam(required = false) Double latitude,
+    @RequestParam(required = false) Double longitude,
+    @RequestParam(required = false, defaultValue = "1") Integer page,
+    @RequestParam(required = false, defaultValue = "20") Integer pageSize
+  ) {
+    int p = page != null && page > 0 ? page : 1;
+    int ps = pageSize != null && pageSize > 0 ? Math.min(pageSize, 100) : 20;
+    Integer currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+    IPage<BenefitCinemaAvailabilityItemResponse> result = benefitService.pageCinemasForBenefitApp(
+      benefitId, reReleaseId, regionId, prefectureId, keyword, sort, latitude, longitude, p, ps, currentUserId);
+    return RestBean.success(result.getRecords(), (int) result.getCurrent(), result.getTotal(), (int) result.getSize());
+  }
+
   /** 用户反馈：当前影院该特典物料已领完等（需登录） */
   @SaCheckLogin
   @PostMapping(ApiPaths.App.Benefit.FEEDBACK_SUBMIT)
   public RestBean<String> submitFeedback(@Valid @RequestBody BenefitFeedbackSubmitQuery query) {
-    Integer userId = cn.dev33.satoken.stp.StpUtil.getLoginIdAsInt();
+    Integer userId = StpUtil.getLoginIdAsInt();
     benefitService.submitFeedback(
       userId,
       query.getCinemaId(),

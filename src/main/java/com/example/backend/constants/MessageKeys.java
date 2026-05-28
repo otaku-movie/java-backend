@@ -151,6 +151,8 @@ public final class MessageKeys {
         public static final String BENEFIT_ITEM_REQUIRED = "error.benefit.itemRequired";
         /** 该影院该阶段已分配过库存，请通过编辑修改数量 */
         public static final String BENEFIT_STOCK_DUPLICATE = "error.benefit.stockDuplicate";
+        /** 特典库存记录不存在（id 无效或已删除） */
+        public static final String BENEFIT_STOCK_NOT_FOUND = "error.benefit.stockNotFound";
         /** 数据范围为院线时必须选择品牌 */
         public static final String ADMIN_USER_DATA_SCOPE_CHAIN_BRAND =
             "error.admin.user.dataScopeChainBrand";
@@ -506,6 +508,13 @@ public final class MessageKeys {
             public static final String CODE_EXPIRED = "validator.saveUser.code.expired";
             /** 验证码错误 */
             public static final String CODE_ERROR = "validator.saveUser.code.error";
+        }
+
+        /** 特典库存保存校验 */
+        public static final class BenefitStock {
+            private BenefitStock() {}
+            /** 新建库存时影院不能为空 */
+            public static final String CINEMA_ID_REQUIRED = "validator.benefitStock.cinemaId.required";
         }
     }
 }

@@ -25,6 +25,10 @@ public class BenefitTheaterStock {
   @TableField("remaining")
   private Integer remaining;
 
+  /** 1=运营置为已领完，与 remaining 无关 */
+  @TableField("manual_sold_out")
+  private Integer manualSoldOut;
+
   @JsonIgnore
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   private Date createTime;

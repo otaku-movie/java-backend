@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.BenefitTheaterStockMapper">
+
+    <sql id="availabilityFrom">
+        FROM benefit_theater_stock s
+        INNER JOIN cinema c ON c.id = s.cinema_id AND c.deleted = 0
+        LEFT JOIN brand b ON b.id = c.brand_id AND b.deleted = 0
+        WHERE s.deleted = 0
+          AND s.benefit_id = #{q.benefitId}
+        <if test="q.whitelistEnabled == true and q.whitelistIds != null and q.whitelistIds.size() &gt; 0">
+            AND c.id IN
+            <foreach collection="q.whitelistIds" item="cid" open="(" separator="," close=")">
+                #{cid}
+            </foreach>
+        </if>
+        <if test="q.regionId != null">
+            AND c.region_id = #{q.regionId}
+        </if>
+        <if test="q.prefectureId != null">
+            AND c.prefecture_id = #{q.prefectureId}
+        </if>
+        <if test="q.keyword != null and q.keyword != ''">
+            AND c.name ILIKE CONCAT('%', #{q.keyword}, '%')
+        </if>
+    </sql>
+
+    <!-- 与 CinemaMapper.getCinemaMovieShowTimeList 一致：未来场次、movie_id、re_release_id -->
+    <sql id="mstFutureMatch">
+        mst.deleted = 0
+        AND mst.cinema_id = c.id
+        AND mst.movie_id = #{q.movieId}
+        <choose>
+            <when test="q.reReleaseId != null">
+                AND mst.re_release_id = #{q.reReleaseId}
+            </when>
+            <otherwise>
+                AND mst.re_release_id IS NULL
+            </otherwise>
+        </choose>
+        AND mst.start_time::timestamp &gt;= now()
+    </sql>
+
+    <select id="countAvailability" resultType="long">
+        SELECT COUNT(1)
+        <include refid="availabilityFrom"/>
+    </select>
+
+    <select id="listAvailability" resultType="com.example.backend.response.benefit.BenefitCinemaAvailabilityRow">
+        SELECT
+            c.id AS cinemaId,
+            c.name AS cinemaName,
+            b.name AS brandName,
+            c.full_address AS fullAddress,
+            c.region_id AS regionId,
+            c.prefecture_id AS prefectureId,
+            c.latitude AS latitude,
+            c.longitude AS longitude,
+            s.quota AS quota,
+            s.remaining AS remaining,
+            COALESCE(s.manual_sold_out, 0) AS manualSoldOut,
+            <choose>
+                <when test="q.movieId != null">
+                    (
+                        SELECT COUNT(1)::int
+                        FROM movie_show_time mst
+                        WHERE
+                        <include refid="mstFutureMatch"/>
+                    ) AS show_time_count,
+                    (
+                        SELECT MIN(mst.start_time)
+                        FROM movie_show_time mst
+                        WHERE
+                        <include refid="mstFutureMatch"/>
+                    ) AS nearest_show_time,
+                </when>
+                <otherwise>
+                    0 AS show_time_count,
+                    NULL::timestamp AS nearest_show_time,
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="q.latitude != null and q.longitude != null">
+                    (
+                        6371000 * acos(
+                            LEAST(1.0, GREATEST(-1.0,
+                                cos(radians(#{q.latitude})) * cos(radians(c.latitude))
+                                * cos(radians(c.longitude) - radians(#{q.longitude}))
+                                + sin(radians(#{q.latitude})) * sin(radians(c.latitude))
+                            ))
+                        )
+                    ) AS distanceMeters
+                </when>
+                <otherwise>
+                    NULL AS distanceMeters
+                </otherwise>
+            </choose>
+        <include refid="availabilityFrom"/>
+        <choose>
+            <when test="q.sort == 'distance'">
+                ORDER BY
+                    CASE WHEN c.latitude IS NULL OR c.longitude IS NULL THEN 1 ELSE 0 END,
+                    distanceMeters ASC NULLS LAST,
+                    c.id ASC
+            </when>
+            <when test="q.sort == 'default'">
+                ORDER BY c.id ASC
+            </when>
+            <otherwise>
+                ORDER BY
+                    CASE WHEN s.remaining IS NULL THEN 1 ELSE 0 END,
+                    s.remaining DESC NULLS LAST,
+                    c.id ASC
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAvailableCinemasForBenefit" resultType="int">
+        SELECT COUNT(1)::int
+        FROM benefit_theater_stock s
+        WHERE s.deleted = 0
+          AND s.benefit_id = #{benefitId}
+          AND COALESCE(s.manual_sold_out, 0) = 0
+          AND (s.remaining IS NULL OR s.remaining &gt; 0)
+    </select>
+</mapper>

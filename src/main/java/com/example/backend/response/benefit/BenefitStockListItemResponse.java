@@ -11,4 +11,6 @@ public class BenefitStockListItemResponse {
   private String benefitName;
   private Integer quota;
   private Integer remaining;
+  /** 1=运营置为已领完 */
+  private Integer manualSoldOut;
 }
