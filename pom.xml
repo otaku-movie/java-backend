@@ -210,6 +210,12 @@
 			<artifactId>fastjson2</artifactId>
 			<version>2.0.34</version>
 		</dependency>
+		<!-- OAuth id_token / JWK signature verification -->
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>9.40</version>
+		</dependency>
 		<!--		minio 存储 -->
 		<dependency>
 			<groupId>io.minio</groupId>
@@ -245,6 +251,8 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<!-- 本地/CI 用 mvn spring-boot:run 时避免默认小堆 OOM；IDE 直接运行请在 Run Configuration 里加相同 VM options -->
+					<jvmArguments>-Xms512m -Xmx2048m -XX:+UseG1GC -XX:MaxMetaspaceSize=512m</jvmArguments>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

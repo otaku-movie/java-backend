@@ -14,4 +14,6 @@ public class ChartResponse {
   List<StatisticsOfDailyMovieScreenings> statisticsOfDailyMovieScreenings;
   List<DailyOrderStatistics> dailyOrderStatistics;
   List<DailyTransactionAmount> dailyTransactionAmount;
+  /** 按注册/登录平台（Google / Apple / Email 等）聚合的用户数 */
+  List<LoginPlatformStatistics> loginPlatformStatistics;
 }

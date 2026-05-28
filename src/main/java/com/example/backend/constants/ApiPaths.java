@@ -101,6 +101,8 @@ public final class ApiPaths {
             public static final String LIST = APP_BASE + "/benefit/list";
             /** 用户提交特典反馈（已领完等）- POST /api/app/benefit/feedback */
             public static final String FEEDBACK_SUBMIT = APP_BASE + "/benefit/feedback";
+            /** 按特典查询可领影院分页 - GET /api/app/benefit/{benefitId}/cinemas */
+            public static final String CINEMA_AVAILABILITY = APP_BASE + "/benefit/{benefitId}/cinemas";
         }
 
         /**
@@ -110,6 +112,35 @@ public final class ApiPaths {
             private Version() {}
             /** 版本检查 - GET /api/app/version/check */
             public static final String CHECK = APP_BASE + "/version/check";
+            /** 下载页 - 各平台最新版本概览 - GET /api/app/version/latest */
+            public static final String LATEST = APP_BASE + "/version/latest";
+        }
+
+        /**
+         * App 端 - 登录方式配置
+         */
+        public static final class AuthProvider {
+            private AuthProvider() {}
+            /** 登录方式配置 - GET /api/app/auth/providers */
+            public static final String LIST = APP_BASE + "/auth/providers";
+        }
+
+        /**
+         * App 端 - 分享落地页
+         */
+        public static final class Share {
+            private Share() {}
+            /** 分享电影详情 - GET /api/app/share/movie/{id} */
+            public static final String MOVIE_DETAIL = APP_BASE + "/share/movie/{id}";
+        }
+
+        /**
+         * App 端 - C 端官网首页
+         */
+        public static final class Home {
+            private Home() {}
+            /** 首屏精选海报 - GET /api/app/home/highlights */
+            public static final String HIGHLIGHTS = APP_BASE + "/home/highlights";
         }
     }
 
@@ -456,6 +487,34 @@ public final class ApiPaths {
             /** 设为最新版本 - POST /api/admin/app/version/setLatest */
             public static final String SET_LATEST = ADMIN_BASE + "/app/version/setLatest";
         }
+
+        /**
+         * Admin 端 - 登录方式配置
+         */
+        public static final class AuthProvider {
+            private AuthProvider() {}
+            /** 登录方式配置列表 - POST /api/admin/auth/provider/list */
+            public static final String LIST = ADMIN_BASE + "/auth/provider/list";
+            /** 保存登录方式配置 - POST /api/admin/auth/provider/save */
+            public static final String SAVE = ADMIN_BASE + "/auth/provider/save";
+        }
+
+        /**
+         * Admin 端 - 协议管理
+         */
+        public static final class Agreement {
+            private Agreement() {}
+            /** 协议列表 - POST /api/admin/agreement/list */
+            public static final String LIST = ADMIN_BASE + "/agreement/list";
+            /** 协议详情 - GET /api/admin/agreement/detail */
+            public static final String DETAIL = ADMIN_BASE + "/agreement/detail";
+            /** 保存协议 - POST /api/admin/agreement/save */
+            public static final String SAVE = ADMIN_BASE + "/agreement/save";
+            /** 发布协议 - POST /api/admin/agreement/publish */
+            public static final String PUBLISH = ADMIN_BASE + "/agreement/publish";
+            /** 删除协议 - DELETE /api/admin/agreement/remove */
+            public static final String REMOVE = ADMIN_BASE + "/agreement/remove";
+        }
         
         /**
          * Admin 端 - 图表统计
@@ -481,6 +540,8 @@ public final class ApiPaths {
             public static final String SAVE = ADMIN_BASE + "/benefit/save";
             /** 删除阶段 - DELETE /api/admin/benefit/remove */
             public static final String REMOVE = ADMIN_BASE + "/benefit/remove";
+            /** 清除某特典在某影院的反馈 Redis 缓存 - POST /api/admin/benefit/feedback/cache/reset */
+            public static final String FEEDBACK_CACHE_RESET = ADMIN_BASE + "/benefit/feedback/cache/reset";
         }
     }
 
@@ -520,6 +581,12 @@ public final class ApiPaths {
             private User() {}
             /** 用户登录 - POST /api/user/login */
             public static final String LOGIN = COMMON_BASE + "/user/login";
+            /** 用户刷新 token - POST /api/user/refresh */
+            public static final String REFRESH = COMMON_BASE + "/user/refresh";
+            /** Google 登录 - POST /api/user/googleLogin */
+            public static final String GOOGLE_LOGIN = COMMON_BASE + "/user/googleLogin";
+            /** Apple 登录 - POST /api/user/appleLogin */
+            public static final String APPLE_LOGIN = COMMON_BASE + "/user/appleLogin";
             /** 用户注册 - POST /api/user/register */
             public static final String REGISTER = COMMON_BASE + "/user/register";
             /** 更新用户信息 - POST /api/user/updateUserInfo */
@@ -530,6 +597,21 @@ public final class ApiPaths {
             public static final String ORDER_LIST = COMMON_BASE + "/user/orderList";
             /** 用户退出 - POST /api/user/logout */
             public static final String LOGOUT = COMMON_BASE + "/user/logout";
+            /** 注销当前用户账号 - POST /api/user/deleteAccount */
+            public static final String DELETE_ACCOUNT = COMMON_BASE + "/user/deleteAccount";
+        }
+
+        /**
+         * 通用 - 协议模块
+         */
+        public static final class Agreement {
+            private Agreement() {}
+            /** 协议详情 - GET /api/agreement/detail */
+            public static final String DETAIL = COMMON_BASE + "/agreement/detail";
+            /** 最新协议版本 - GET /api/agreement/latest */
+            public static final String LATEST = COMMON_BASE + "/agreement/latest";
+            /** 接受协议 - POST /api/agreement/accept */
+            public static final String ACCEPT = COMMON_BASE + "/agreement/accept";
         }
         
         /**

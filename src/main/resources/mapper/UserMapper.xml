@@ -104,4 +104,34 @@
         ORDER BY
             create_date;
     </select>
+    <!-- 按注册/登录平台聚合用户数：local / google / apple / mixed -->
+    <resultMap id="loginPlatformStatistics" type="com.example.backend.response.chart.LoginPlatformStatistics">
+        <result property="platform" column="platform"/>
+        <result property="userCount" column="user_count"/>
+    </resultMap>
+    <!--
+      平台分类基于 user_oauth_binding：
+        - 无任何绑定 → local（仅密码注册）
+        - 多个 provider → mixed
+        - 单个 provider → 该 provider 名（google / apple / ...）
+    -->
+    <select id="loginPlatformStatistics" resultMap="loginPlatformStatistics">
+        SELECT platform, COUNT(*) AS user_count
+        FROM (
+            SELECT
+                u.id,
+                CASE
+                    WHEN COUNT(b.provider) = 0 THEN 'local'
+                    WHEN COUNT(DISTINCT b.provider) > 1 THEN 'mixed'
+                    ELSE MIN(b.provider)
+                END AS platform
+            FROM users u
+            LEFT JOIN user_oauth_binding b
+                ON b.user_id = u.id AND b.deleted = 0
+            WHERE u.deleted = 0
+            GROUP BY u.id
+        ) t
+        GROUP BY platform
+        ORDER BY user_count DESC
+    </select>
 </mapper>

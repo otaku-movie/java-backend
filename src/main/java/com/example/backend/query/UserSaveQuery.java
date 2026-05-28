@@ -32,4 +32,7 @@ public class UserSaveQuery {
 
   /** data_scope=cinema 时绑定的影院 ID */
   List<Integer> cinemaIds;
+
+  /** App 设备 ID，用于 refreshToken 绑定；旧版可为空 */
+  String deviceId;
 }

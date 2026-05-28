@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     cover VARCHAR(255),
     name VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    -- 密码可为空：仅通过第三方 OAuth 注册的用户没有本地密码
+    password VARCHAR(255),
     email VARCHAR(255),
     data_scope VARCHAR(20) NOT NULL DEFAULT 'platform',
     brand_id INTEGER,
@@ -23,6 +24,30 @@ CREATE TABLE IF NOT EXISTS users (
     deleted INTEGER DEFAULT 0,
     CONSTRAINT users_data_scope_check CHECK (data_scope IN ('platform', 'chain', 'cinema'))
 );
+
+-- 第三方登录绑定（用户 ↔ 外部身份的多对多映射；与 OAuthIdTokenVerifier 流程对应）
+CREATE TABLE IF NOT EXISTS user_oauth_binding (
+    id            BIGSERIAL PRIMARY KEY,
+    user_id       INTEGER     NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider      VARCHAR(20) NOT NULL,             -- google / apple / ...
+    subject       VARCHAR(128) NOT NULL,            -- id_token.sub
+    email         VARCHAR(255),
+    name          VARCHAR(255),
+    picture       VARCHAR(512),
+    raw_profile   JSONB,
+    last_login_at TIMESTAMP,
+    create_time   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted       INTEGER DEFAULT 0
+);
+-- 同一外部身份(provider,sub)只能绑一个未删除用户
+CREATE UNIQUE INDEX IF NOT EXISTS uk_user_oauth_binding_provider_subject
+  ON user_oauth_binding (provider, subject) WHERE deleted = 0;
+-- 同一用户每个 provider 只允许 1 条（如允许同 provider 多绑可去掉）
+CREATE UNIQUE INDEX IF NOT EXISTS uk_user_oauth_binding_user_provider
+  ON user_oauth_binding (user_id, provider) WHERE deleted = 0;
+CREATE INDEX IF NOT EXISTS idx_user_oauth_binding_user_id
+  ON user_oauth_binding (user_id) WHERE deleted = 0;
 
 -- 角色表
 CREATE TABLE IF NOT EXISTS role (
@@ -776,6 +801,43 @@ CREATE TABLE IF NOT EXISTS hello_movie (
 );
 
 -- ============================================
+-- 用户协议（条款 / 隐私政策等）与用户接受记录
+-- ============================================
+
+-- 协议主表：按 (code, language, version) 维护多语言/多版本
+CREATE TABLE IF NOT EXISTS agreement (
+    id                 SERIAL PRIMARY KEY,
+    code               VARCHAR(64)  NOT NULL,         -- 业务代码：terms_of_service / privacy_policy 等
+    language           VARCHAR(20)  NOT NULL,         -- 语言：ja / zh_CN / en_US
+    title              VARCHAR(255) NOT NULL,
+    content            TEXT         NOT NULL,
+    version            VARCHAR(32)  NOT NULL DEFAULT '1.0.0',
+    status             VARCHAR(20)  NOT NULL DEFAULT 'DRAFT',  -- DRAFT / PUBLISHED / ARCHIVED
+    is_required_accept BOOLEAN      NOT NULL DEFAULT FALSE,    -- 是否必须接受
+    effective_at       TIMESTAMP,                              -- 协议生效时间
+    published_at       TIMESTAMP,                              -- 协议发布时间
+    create_time        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted            INTEGER   DEFAULT 0
+);
+
+-- 用户协议接受记录：登录用户对某协议某版本的接受日志
+CREATE TABLE IF NOT EXISTS user_agreement_acceptance (
+    id                SERIAL PRIMARY KEY,
+    user_id           INTEGER     NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    agreement_code    VARCHAR(64) NOT NULL,
+    agreement_version VARCHAR(32) NOT NULL,
+    language          VARCHAR(20) NOT NULL,
+    accepted_at       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    client            VARCHAR(64),
+    device_id         VARCHAR(128),
+    ip                VARCHAR(64),
+    create_time       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted           INTEGER   DEFAULT 0
+);
+
+-- ============================================
 -- 创建索引
 -- ============================================
 
@@ -811,6 +873,21 @@ CREATE INDEX IF NOT EXISTS idx_seat_area_id ON seat(seat_area_id) WHERE deleted 
 -- 信用卡表索引
 CREATE INDEX IF NOT EXISTS idx_credit_cards_user_id ON credit_cards(user_id) WHERE deleted = 0;
 CREATE INDEX IF NOT EXISTS idx_credit_cards_is_default ON credit_cards(is_default) WHERE deleted = 0;
+
+-- 协议表索引（最常用：按 code+language 找最新发布）
+CREATE INDEX IF NOT EXISTS idx_agreement_code_language_status
+  ON agreement(code, language, status, published_at DESC) WHERE deleted = 0;
+-- 同一 code+language+version 不允许重复（草稿态也保留唯一性）
+CREATE UNIQUE INDEX IF NOT EXISTS uk_agreement_code_language_version
+  ON agreement(code, language, version) WHERE deleted = 0;
+
+-- 用户接受记录索引
+CREATE INDEX IF NOT EXISTS idx_user_agreement_acceptance_user
+  ON user_agreement_acceptance(user_id) WHERE deleted = 0;
+-- 同一用户对同一 (code, version, language) 仅一条
+CREATE UNIQUE INDEX IF NOT EXISTS uk_user_agreement_acceptance_user_code_ver_lang
+  ON user_agreement_acceptance(user_id, agreement_code, agreement_version, language)
+  WHERE deleted = 0;
 
 -- ============================================
 -- 创建唯一约束

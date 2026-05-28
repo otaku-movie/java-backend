@@ -32,6 +32,7 @@ public class SecurityConfiguration {
                 cors.addAllowedHeader("*");
                 cors.addExposedHeader("*");
                 cors.addAllowedMethod("*");
+                cors.setMaxAge(3600L);
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", cors);

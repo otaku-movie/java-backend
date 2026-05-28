@@ -2,7 +2,7 @@
   "java.configuration.runtimes": [
     {
       "name": "JavaSE-21",
-      "path": "C:\\Program Files\\Zulu\\zulu-21.0.1",
+      "path": "C:\\Program Files\\Zulu\\zulu-21",
       "default": true
     }
   ],

@@ -16,5 +16,14 @@ public class AppLoginResponse {
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   private Date createTime;
 
+  /** 旧版 App 读取 token；新版本等同 accessToken，暂保留兼容。 */
   private String token;
+
+  private String accessToken;
+
+  private String refreshToken;
+
+  private Long accessExpiresIn;
+
+  private Long refreshExpiresIn;
 }

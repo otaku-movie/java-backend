@@ -105,3 +105,16 @@ order:
   payment-rate-limit: 10
   # 支付锁超时时间（单位：秒），防止重复支付
   payment-lock-timeout: 60
+
+oauth:
+  google:
+    # 多个平台 Client ID 用英文逗号分隔；留空时开发环境跳过 aud 校验
+    client-ids: ${OAUTH_GOOGLE_CLIENT_IDS:}
+  apple:
+    client-ids: ${OAUTH_APPLE_CLIENT_IDS:}
+
+# 入场者特典 - 用户反馈（Redis）
+benefit:
+  feedback:
+    sold-out-threshold: 3
+    window-hours: 24

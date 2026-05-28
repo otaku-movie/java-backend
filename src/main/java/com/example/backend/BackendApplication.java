@@ -1,7 +1,6 @@
 package com.example.backend;
 
 import cn.dev33.satoken.SaManager;
-import cn.dev33.satoken.stp.StpUtil;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +11,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.core.env.Environment;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 
@@ -25,6 +25,7 @@ import java.util.Arrays;
 	}
 )
 @EnableAspectJAutoProxy(proxyTargetClass = true)
+@EnableAsync
 @MapperScan("com.example.backend.mapper")
 public class BackendApplication {
 
@@ -39,7 +40,14 @@ public class BackendApplication {
 
 		// 通过 Environment 取激活的 Profile
 		String[] profiles = ctx.getEnvironment().getActiveProfiles();
-		org.slf4j.LoggerFactory.getLogger(BackendApplication.class).info("Active Profiles: {}", Arrays.toString(profiles));
-		org.slf4j.LoggerFactory.getLogger(BackendApplication.class).info("启动成功，Sa-Token 配置: {}", SaManager.getConfig());
+		var log = org.slf4j.LoggerFactory.getLogger(BackendApplication.class);
+		log.info("Active Profiles: {}", Arrays.toString(profiles));
+		var cfg = SaManager.getConfig();
+		log.info(
+			"启动成功，Sa-Token: tokenName={}, timeout={}s, concurrent={}, share={}",
+			cfg.getTokenName(),
+			cfg.getTimeout(),
+			cfg.getIsConcurrent(),
+			cfg.getIsShare());
 	}
 }

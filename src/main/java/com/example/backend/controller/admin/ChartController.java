@@ -49,6 +49,8 @@ public class ChartController {
     chartResponse.setDailyOrderStatistics(movieOrderMapper.DailyOrderStatistics());
     // 统计日成交金额
     chartResponse.setDailyTransactionAmount(movieOrderMapper.DailyTransactionAmount(OrderState.order_succeed.getCode(), PayState.payment_successful.getCode()));
+    // 多平台登录数据统计：按 oauth_provider（local/google/apple/mixed）聚合用户数
+    chartResponse.setLoginPlatformStatistics(userMapper.loginPlatformStatistics());
 
     return RestBean.success(chartResponse, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }

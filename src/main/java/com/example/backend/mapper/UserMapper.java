@@ -7,6 +7,7 @@ import com.example.backend.entity.User;
 import com.example.backend.query.UserListQuery;
 import com.example.backend.response.UserEffectiveButtonResponse;
 import com.example.backend.response.UserListResponse;
+import com.example.backend.response.chart.LoginPlatformStatistics;
 import com.example.backend.response.chart.StatisticsUserCount;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -24,6 +25,9 @@ public interface UserMapper extends BaseMapper<User> {
   List<UserEffectiveButtonResponse> userEffectiveButtons(@Param("userId") Integer userId);
 
   List<StatisticsUserCount> StatisticsOfDailyRegisteredUsers();
+
+  /** 按注册/登录平台聚合用户数（基于 user_oauth_binding），用于多平台登录数据统计图表 */
+  List<LoginPlatformStatistics> loginPlatformStatistics();
   @Select("""
         SELECT COUNT(*) 
         FROM (

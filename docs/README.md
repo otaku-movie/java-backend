@@ -5,7 +5,8 @@
 ## 📋 文档分类
 
 ### 📚 主文档
-- [README.md](../README.md) - 项目主文档
+- [README.md](../README.md) - 后端模块主文档
+- [仓库级文档索引](../../docs/README.md) - App / 面试题 / 权益与特典 / 权限 / **影院爬虫** 等（与 `java-backend/docs` 平级的 `docs/`）
 
 ### 📖 API 文档
 - [APIFOX_README.md](./api/APIFOX_README.md) - Apifox 接口文档生成说明
