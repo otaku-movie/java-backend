@@ -6,6 +6,8 @@ import lombok.Data;
 public class GetCinemaMovieShowTimeListQuery {
   Integer cinemaId;
   Integer movieId;
+  /** 重映计划 ID；不传则只查首映场次（re_release_id IS NULL） */
+  Integer reReleaseId;
   /**
    * 版本代码（字典：原版、中文配音、日语配音等）
    */

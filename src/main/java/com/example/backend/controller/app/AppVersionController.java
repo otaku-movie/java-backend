@@ -1,10 +1,14 @@
 package com.example.backend.controller.app;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
+import com.example.backend.entity.AppVersion;
 import com.example.backend.entity.RestBean;
 import com.example.backend.mapper.AppVersionMapper;
 import com.example.backend.response.app.AppVersionCheckResponse;
+import com.example.backend.response.app.AppVersionLatestItem;
+import com.example.backend.response.app.AppVersionLatestResponse;
 import com.example.backend.utils.MessageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +53,60 @@ public class AppVersionController {
     latest.setNeedUpdate(needUpdate);
     latest.setForceUpdate(forceByMin || Boolean.TRUE.equals(latest.getForceUpdate()));
     return RestBean.success(latest, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+  }
+
+  @GetMapping(ApiPaths.App.Version.LATEST)
+  public RestBean<AppVersionLatestResponse> latest(
+      @RequestHeader(value = "Accept-Language", required = false) String lang
+  ) {
+    String normalizedLang = lang == null ? "zh-CN" : lang;
+    AppVersionLatestResponse data = new AppVersionLatestResponse();
+    data.setAndroid(loadLatestForDownload("Android", normalizedLang));
+    data.setIos(loadLatestForDownload("IOS", normalizedLang));
+    return RestBean.success(data, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+  }
+
+  private AppVersionLatestItem loadLatestForDownload(String platform, String lang) {
+    AppVersion row = appVersionMapper.selectOne(new QueryWrapper<AppVersion>()
+        .eq("deleted", 0)
+        .eq("platform", platform)
+        .and(w -> w.isNull("release_percent").or().gt("release_percent", 0))
+        .orderByDesc("is_latest")
+        .orderByDesc("build_number")
+        .orderByDesc("version_code")
+        .orderByDesc("id")
+        .last("LIMIT 1"));
+    if (row == null) return null;
+    AppVersionLatestItem item = new AppVersionLatestItem();
+    item.setPlatform(row.getPlatform());
+    item.setVersionName(row.getVersionName());
+    item.setBuildNumber(row.getBuildNumber());
+    item.setDownloadUrl(row.getDownloadUrl());
+    item.setMinSupportedVersion(row.getMinSupportedVersion());
+    item.setForceUpdate(Boolean.TRUE.equals(row.getIsForceUpdate()) || Boolean.TRUE.equals(row.getForceUpdate()));
+    item.setReleaseNote(pickReleaseNote(row, lang));
+    item.setPublishedAt(row.getUpdateTime() != null ? row.getUpdateTime() : row.getCreateTime());
+    return item;
+  }
+
+  private String pickReleaseNote(AppVersion row, String lang) {
+    String note;
+    if (lang != null && lang.toLowerCase().startsWith("ja")) {
+      note = firstNonBlank(row.getReleaseNoteJa(), row.getReleaseNoteZh(), row.getUpdateMessage());
+    } else if (lang != null && lang.toLowerCase().startsWith("en")) {
+      note = firstNonBlank(row.getReleaseNoteEn(), row.getReleaseNoteZh(), row.getUpdateMessage());
+    } else {
+      note = firstNonBlank(row.getReleaseNoteZh(), row.getUpdateMessage());
+    }
+    return note == null ? "" : note;
+  }
+
+  private String firstNonBlank(String... values) {
+    if (values == null) return null;
+    for (String v : values) {
+      if (v != null && !v.isEmpty()) return v;
+    }
+    return null;
   }
 
   private String normalizePlatform(String platform) {

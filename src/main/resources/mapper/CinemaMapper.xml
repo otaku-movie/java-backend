@@ -200,6 +200,14 @@
             movie_show_time.deleted = 0
             AND movie_show_time.cinema_id = #{query.cinemaId}
             AND movie_show_time.movie_id = #{query.movieId}
+            <choose>
+                <when test="query.reReleaseId != null">
+                    AND movie_show_time.re_release_id = #{query.reReleaseId}
+                </when>
+                <otherwise>
+                    AND movie_show_time.re_release_id IS NULL
+                </otherwise>
+            </choose>
             <if test="query.versionCode != null">
                 AND movie_version.version_code = #{query.versionCode}
             </if>
