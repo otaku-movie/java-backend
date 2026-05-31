@@ -34,10 +34,10 @@ spring:
 # 旧 minio.* 已迁移到 storage.*；保留 block 仅为兼容历史 MinioConfiguration bean，
 # 同源从 storage.* 注入；凭证仅通过环境变量注入
 minio:
-  endpoint: ${STORAGE_ENDPOINT:}
-  accessKey: ${STORAGE_ACCESS_KEY:}
-  secretKey: ${STORAGE_SECRET_KEY:}
-  bucket: ${STORAGE_BUCKET:test-movie}
+  endpoint: http://43.154.172.94:9000/
+  accessKey: RQXIcweef6ZzjFWFsDrj
+  secretKey: pfASmYyXgqQnR81CHTLyIIaHTt1SoxUcTgYaeR2p
+  bucket: test-movie
   previewURL: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
 
 # Cloudflare R2（S3 兼容）配置
@@ -49,12 +49,28 @@ minio:
 # - access-key / secret-key：仅通过环境变量传入，不写入文件
 storage:
   endpoint: ${STORAGE_ENDPOINT:https://fc57c8ebc7f4ac0ad80e7f84cb52fd1d.r2.cloudflarestorage.com}
-  access-key: ${STORAGE_ACCESS_KEY:}
-  secret-key: ${STORAGE_SECRET_KEY:}
+  access-key: ${STORAGE_ACCESS_KEY:352312287d2794bd1803567b457ac343}
+  secret-key: ${STORAGE_SECRET_KEY:5824d818abe4ea0eb7dc744581e53dfea94b94fb4cd27500c1cc98644cd1e487}
   region: ${STORAGE_REGION:auto}
   bucket: ${STORAGE_BUCKET:test-movie}
   public-url: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
   path-style-access: ${STORAGE_PATH_STYLE:false}
+
+# App 启动页配置：运营可在这里换图换文案，App 启动时从 /api/app/splash/current 拉取。
+# 后续若要做无发版热更新（不重启后端），可把这块配置迁移到 DB 表 app_splash_config，
+# 仍然走 AppSplashController 出口。
+app:
+  splash:
+    image-url: ${APP_SPLASH_IMAGE_URL:}
+    title-en: ${APP_SPLASH_TITLE_EN:Otaku Movie}
+    title-zh: ${APP_SPLASH_TITLE_ZH:Otaku Movie}
+    title-ja: ${APP_SPLASH_TITLE_JA:Otaku Movie}
+    subtitle-en: ${APP_SPLASH_SUBTITLE_EN:Anime movies, in one tap}
+    subtitle-zh: ${APP_SPLASH_SUBTITLE_ZH:动漫电影，一键直达}
+    subtitle-ja: ${APP_SPLASH_SUBTITLE_JA:アニメ映画をワンタップで}
+    min-duration-ms: ${APP_SPLASH_MIN_MS:1500}
+    max-duration-ms: ${APP_SPLASH_MAX_MS:3500}
+    tap-action: ${APP_SPLASH_TAP_ACTION:}
 logging:
   level:
     root: INFO

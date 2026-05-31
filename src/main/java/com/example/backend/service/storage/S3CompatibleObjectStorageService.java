@@ -2,6 +2,7 @@ package com.example.backend.service.storage;
 
 import java.io.File;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -18,12 +19,13 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 public class S3CompatibleObjectStorageService implements ObjectStorageService {
 
   private final StorageProperties props;
-  private final S3Client s3Client;
+  private final ObjectProvider<S3Client> s3ClientProvider;
 
   @Override
   public UploadResult uploadFile(File file, String key, String contentType) {
+    S3Client s3Client = s3ClientProvider.getIfAvailable();
     if (s3Client == null || !StringUtils.hasText(props.getBucket())) {
-      throw new IllegalStateException("Storage 未配置（endpoint/bucket）");
+      throw new IllegalStateException("Storage 未配置（endpoint/bucket/access-key/secret-key）");
     }
 
     final var put = PutObjectRequest.builder()
@@ -41,8 +43,9 @@ public class S3CompatibleObjectStorageService implements ObjectStorageService {
 
   @Override
   public void delete(String key) {
+    S3Client s3Client = s3ClientProvider.getIfAvailable();
     if (s3Client == null || !StringUtils.hasText(props.getBucket())) {
-      throw new IllegalStateException("Storage 未配置（endpoint/bucket）");
+      throw new IllegalStateException("Storage 未配置（endpoint/bucket/access-key/secret-key）");
     }
 
     final var del = DeleteObjectRequest.builder()

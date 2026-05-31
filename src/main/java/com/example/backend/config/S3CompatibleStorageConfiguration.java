@@ -17,8 +17,11 @@ public class S3CompatibleStorageConfiguration {
 
   @Bean
   public S3Client s3Client(StorageProperties props) {
-    if (!StringUtils.hasText(props.getEndpoint())) {
-      // 允许应用在未配置存储时启动；调用上传接口时再返回错误
+    if (!StringUtils.hasText(props.getEndpoint())
+      || !StringUtils.hasText(props.getBucket())
+      || !StringUtils.hasText(props.getAccessKey())
+      || !StringUtils.hasText(props.getSecretKey())) {
+      // 允许应用在未完整配置存储时启动；调用上传接口时再返回错误
       return null;
     }
 
