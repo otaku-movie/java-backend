@@ -3,17 +3,29 @@ package com.example.backend.controller.app;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
+import com.example.backend.entity.Benefit;
+import com.example.backend.entity.Cinema;
 import com.example.backend.entity.Movie;
+import com.example.backend.entity.MovieOrder;
 import com.example.backend.entity.MovieRate;
+import com.example.backend.entity.MovieShowTime;
 import com.example.backend.entity.MovieTag;
 import com.example.backend.entity.MovieTagTags;
 import com.example.backend.entity.RestBean;
+import com.example.backend.mapper.BenefitMapper;
+import com.example.backend.mapper.CinemaMapper;
 import com.example.backend.mapper.MovieMapper;
+import com.example.backend.mapper.MovieOrderMapper;
 import com.example.backend.mapper.MovieRateMapper;
+import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.mapper.MovieTagMapper;
 import com.example.backend.mapper.MovieTagTagsMapper;
+import com.example.backend.response.app.BenefitShareDetailResponse;
 import com.example.backend.response.app.MovieShareDetailResponse;
+import com.example.backend.response.app.OrderShareDetailResponse;
 import com.example.backend.utils.MessageUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +49,16 @@ public class AppShareController {
   private MovieTagMapper movieTagMapper;
   @Autowired
   private MovieRateMapper movieRateMapper;
+  @Autowired
+  private MovieOrderMapper movieOrderMapper;
+  @Autowired
+  private MovieShowTimeMapper movieShowTimeMapper;
+  @Autowired
+  private CinemaMapper cinemaMapper;
+  @Autowired
+  private BenefitMapper benefitMapper;
+
+  private static final ObjectMapper JSON = new ObjectMapper();
 
   @GetMapping(ApiPaths.App.Share.MOVIE_DETAIL)
   public RestBean<MovieShareDetailResponse> movieDetail(@PathVariable("id") Integer id) {
@@ -115,5 +137,102 @@ public class AppShareController {
   private static class MovieRateSummary {
     Double average;
     Integer count;
+  }
+
+  /**
+   * 订单/票根分享落地页。
+   * <p>不依赖登录态，但只返回「电影 + 场次时间 + 影院」这类朋友圈炫耀级别的字段，
+   * 不返回座位号 / 支付金额 / 用户身份，避免 orderNumber 被分享后导致信息泄露。</p>
+   */
+  @GetMapping(ApiPaths.App.Share.ORDER_DETAIL)
+  public RestBean<OrderShareDetailResponse> orderDetail(@PathVariable("orderNumber") String orderNumber) {
+    if (orderNumber == null || orderNumber.isBlank()) {
+      return RestBean.error(400, "Invalid order number");
+    }
+    MovieOrder order = movieOrderMapper.selectOne(new QueryWrapper<MovieOrder>()
+        .eq("order_number", orderNumber)
+        .eq("deleted", 0)
+        .last("LIMIT 1"));
+    if (order == null) {
+      return RestBean.error(404, "Order not found");
+    }
+    OrderShareDetailResponse data = new OrderShareDetailResponse();
+    data.setOrderNumber(orderNumber);
+
+    if (order.getMovieShowTimeId() != null) {
+      MovieShowTime showTime = movieShowTimeMapper.selectById(order.getMovieShowTimeId());
+      if (showTime != null) {
+        // start_time 是 PostgreSQL timestamp 类型，被 MyBatis 取出后是字符串形式如 "2026-06-12 18:30:00"，
+        // 简单拆成 date + time 两段返回，避免前端再处理时区。
+        String raw = showTime.getStartTime();
+        if (raw != null && raw.contains(" ")) {
+          String[] parts = raw.split(" ", 2);
+          data.setDate(parts[0]);
+          data.setStartTime(parts[1].length() >= 5 ? parts[1].substring(0, 5) : parts[1]);
+        } else if (raw != null && raw.length() >= 10) {
+          data.setDate(raw.substring(0, 10));
+        }
+        if (showTime.getMovieId() != null) {
+          Movie movie = movieMapper.selectById(showTime.getMovieId());
+          if (movie != null) {
+            data.setMovieId(movie.getId());
+            data.setMovieName(movie.getName());
+            data.setMoviePoster(movie.getCover());
+          }
+        }
+        if (showTime.getCinemaId() != null) {
+          Cinema cinema = cinemaMapper.selectById(showTime.getCinemaId());
+          if (cinema != null) {
+            data.setCinemaName(cinema.getName());
+            data.setCinemaCity(cinema.getAddress());
+          }
+        }
+      }
+    }
+    return RestBean.success(data, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+  }
+
+  /**
+   * 入场者特典分享落地页。
+   */
+  @GetMapping(ApiPaths.App.Share.BENEFIT_DETAIL)
+  public RestBean<BenefitShareDetailResponse> benefitDetail(
+      @PathVariable("movieId") Integer movieId,
+      @PathVariable("benefitId") Integer benefitId) {
+    if (movieId == null || benefitId == null) {
+      return RestBean.error(400, "Invalid path");
+    }
+    Benefit benefit = benefitMapper.selectById(benefitId);
+    if (benefit == null || benefit.getMovieId() == null || !benefit.getMovieId().equals(movieId)) {
+      // 强制 movieId 与 benefit 关联匹配，防止通过任意 movieId 探测他人特典。
+      return RestBean.error(404, "Benefit not found");
+    }
+
+    BenefitShareDetailResponse data = new BenefitShareDetailResponse();
+    data.setId(benefit.getId());
+    data.setMovieId(benefit.getMovieId());
+    data.setName(benefit.getName());
+    data.setDescription(benefit.getDescription());
+    data.setStartDate(benefit.getStartDate());
+    data.setEndDate(benefit.getEndDate());
+    data.setStatus(benefit.getPhaseStatus());
+    data.setImageUrls(parseImageUrls(benefit.getImageUrls()));
+
+    Movie movie = movieMapper.selectById(movieId);
+    if (movie != null) {
+      data.setMovieName(movie.getName());
+      data.setMoviePoster(movie.getCover());
+    }
+    return RestBean.success(data, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+  }
+
+  /** 特典物料图列表存的是 JSON 数组字符串，容错解析后返回。 */
+  private List<String> parseImageUrls(String raw) {
+    if (raw == null || raw.isBlank()) return Collections.emptyList();
+    try {
+      return JSON.readValue(raw, new TypeReference<List<String>>() {});
+    } catch (Exception e) {
+      return Collections.emptyList();
+    }
   }
 }

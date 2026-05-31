@@ -132,6 +132,19 @@ public final class ApiPaths {
             private Share() {}
             /** 分享电影详情 - GET /api/app/share/movie/{id} */
             public static final String MOVIE_DETAIL = APP_BASE + "/share/movie/{id}";
+            /** 分享订单/票根（只返回可公开展示的字段，绝不暴露座位 / 用户敏感信息） - GET /api/app/share/order/{orderNumber} */
+            public static final String ORDER_DETAIL = APP_BASE + "/share/order/{orderNumber}";
+            /** 分享特典物料 - GET /api/app/share/benefit/{movieId}/{benefitId} */
+            public static final String BENEFIT_DETAIL = APP_BASE + "/share/benefit/{movieId}/{benefitId}";
+        }
+
+        /**
+         * App 端 - 启动页配置
+         */
+        public static final class Splash {
+            private Splash() {}
+            /** 当前生效的启动页配置 - GET /api/app/splash/current */
+            public static final String CURRENT = APP_BASE + "/splash/current";
         }
 
         /**
