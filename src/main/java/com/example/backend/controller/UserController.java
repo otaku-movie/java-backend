@@ -18,6 +18,7 @@ import com.example.backend.mapper.MovieOrderMapper;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.mapper.UserOAuthBindingMapper;
 import com.example.backend.query.auth.OAuthLoginQuery;
+import com.example.backend.query.auth.TwitterLoginQuery;
 import com.example.backend.query.PaginationQuery;
 import com.example.backend.query.UserSaveQuery;
 import com.example.backend.query.auth.RefreshTokenQuery;
@@ -25,6 +26,7 @@ import com.example.backend.response.AppLoginResponse;
 import com.example.backend.response.order.OrderListResponse;
 import com.example.backend.service.OAuthIdTokenVerifier;
 import com.example.backend.service.RefreshTokenService;
+import com.example.backend.service.XOAuthService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
@@ -68,6 +70,31 @@ class UpdateUserInfoQuery {
 @Data
 class UserDetail extends User{
   int orderCount;
+  /**
+   * 是否设置过本地密码。前端用来判断「最后一个登录方式」保护：
+   * hasPassword=false 且仅剩 1 个 oauthBinding 时，解绑按钮应禁用并提示。
+   */
+  boolean hasPassword;
+  /** 已绑定的第三方身份列表（已脱敏：不返回 subject / rawProfile）。 */
+  java.util.List<OAuthBindingItem> oauthBindings;
+}
+
+@Data
+class OAuthBindingItem {
+  /** google / apple / x */
+  String provider;
+  /** 在该 provider 下的展示名（最近一次同步），不一定等于本地 user.name。 */
+  String name;
+  /** 在该 provider 下的头像 URL，可能为 null（X 必为 null 或来自 X CDN）。 */
+  String picture;
+  /** 在该 provider 下的邮箱（X 无此字段）。 */
+  String email;
+  /** 最近一次通过该 provider 登录的时间。 */
+  @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
+  java.util.Date lastLoginAt;
+  /** 首次绑定时间。 */
+  @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
+  java.util.Date createTime;
 }
 
 @RestController
@@ -86,6 +113,9 @@ public class UserController {
 
   @Autowired
   private OAuthIdTokenVerifier oAuthIdTokenVerifier;
+
+  @Autowired
+  private XOAuthService xOAuthService;
 
   @Autowired
   private UserOAuthBindingMapper userOAuthBindingMapper;
@@ -144,12 +174,55 @@ public class UserController {
 
   @PostMapping(ApiPaths.Common.User.APPLE_LOGIN)
   public RestBean<AppLoginResponse> appleLogin(@RequestBody @Validated OAuthLoginQuery query) {
-    OAuthIdTokenVerifier.OAuthProfile profile = oAuthIdTokenVerifier.verifyApple(query.getIdToken());
+    OAuthIdTokenVerifier.OAuthProfile profile = oAuthIdTokenVerifier.verifyApple(query.getIdToken(), query.getNonce());
+    // Apple 只在首次登录返回 fullName，客户端会原样回传给后端，这里补到 profile 上
+    // 供后续 findOrCreateOAuthUser 创建用户/绑定时使用。
+    applyOAuthFallbackName(profile, query.getFirstName(), query.getLastName());
     User user = findOrCreateOAuthUser(profile);
     return RestBean.success(
         refreshTokenService.issueLoginResponse(user, query.getDeviceId()),
         messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS)
     );
+  }
+
+  /**
+   * X (Twitter) 登录 - OAuth 2.0 PKCE。
+   *
+   * <p>客户端走 PKCE 拿到 access_token 后回传，后端调 X /2/users/me 验真：
+   * <ul>
+   *   <li>HTTP 200 → 取 id/name/username/profile_image_url</li>
+   *   <li>HTTP 401/403 → token 过期或撤销，返回 4xx 让客户端重新走登录</li>
+   * </ul>
+   * </p>
+   */
+  @PostMapping(ApiPaths.Common.User.TWITTER_LOGIN)
+  public RestBean<AppLoginResponse> twitterLogin(@RequestBody @Validated TwitterLoginQuery query) {
+    try {
+      OAuthIdTokenVerifier.OAuthProfile profile = xOAuthService.fetchProfile(query.getAccessToken());
+      User user = findOrCreateOAuthUser(profile);
+      return RestBean.success(
+          refreshTokenService.issueLoginResponse(user, query.getDeviceId()),
+          messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS)
+      );
+    } catch (IllegalArgumentException e) {
+      return RestBean.error(ResponseCode.ERROR.getCode(), "x login failed: " + e.getMessage());
+    }
+  }
+
+  /**
+   * 若 idToken 中没有 name（典型场景：Apple 二次及以后登录），用客户端补传的姓名兜底。
+   * idToken 已包含 name 时优先采用 token 中的值（更可信）。
+   */
+  private void applyOAuthFallbackName(OAuthIdTokenVerifier.OAuthProfile profile, String firstName, String lastName) {
+    if (profile == null) return;
+    if (profile.getName() != null && !profile.getName().isBlank()) return;
+    StringBuilder sb = new StringBuilder();
+    if (firstName != null && !firstName.isBlank()) sb.append(firstName.trim());
+    if (lastName != null && !lastName.isBlank()) {
+      if (sb.length() > 0) sb.append(' ');
+      sb.append(lastName.trim());
+    }
+    if (sb.length() > 0) profile.setName(sb.toString());
   }
   @PostMapping(ApiPaths.Common.User.UPDATE_INFO)
   public RestBean<Null> updateUserInfo(@RequestBody @Validated UpdateUserInfoQuery query){
@@ -221,15 +294,34 @@ public class UserController {
   @SaCheckLogin
   @GetMapping(ApiPaths.Common.User.DETAIL)
   public RestBean<Object> detail () {
-    QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     int userId = StpUtil.getLoginIdAsInt();
-    queryWrapper.eq("id", StpUtil.getLoginIdAsInt());
-    queryWrapper.eq("deleted", 0);
-    queryWrapper.select("id", "cover", "name", "email", "create_time");
-    User result = userMapper.selectOne(queryWrapper);
+    // 注意：这里必须把 password 也查出来用于判断 hasPassword，再 BeanUtils 复制属性时
+    // User.password 有 @JsonIgnore，不会泄露给前端。
+    User result = userMapper.selectOne(new QueryWrapper<User>()
+        .eq("id", userId)
+        .eq("deleted", 0)
+        .select("id", "cover", "name", "email", "create_time", "password"));
     UserDetail userDetail = new UserDetail();
-    BeanUtils.copyProperties(result, userDetail);  // 直接复制属性
+    BeanUtils.copyProperties(result, userDetail);
     userDetail.setOrderCount(userMapper.countDistinctMovieOrders(userId));
+    userDetail.setHasPassword(result.getPassword() != null && !result.getPassword().isBlank());
+
+    List<UserOAuthBinding> bindings = userOAuthBindingMapper.selectList(
+        new QueryWrapper<UserOAuthBinding>()
+            .eq("user_id", userId)
+            .eq("deleted", 0)
+            .orderByDesc("last_login_at"));
+    userDetail.setOauthBindings(bindings.stream().map(b -> {
+      OAuthBindingItem item = new OAuthBindingItem();
+      item.setProvider(b.getProvider());
+      item.setName(b.getName());
+      item.setPicture(b.getPicture());
+      item.setEmail(b.getEmail());
+      item.setLastLoginAt(b.getLastLoginAt());
+      item.setCreateTime(b.getCreateTime());
+      return item;
+    }).collect(java.util.stream.Collectors.toList()));
+
     return RestBean.success(userDetail, messageUtils.getMessage(MessageKeys.Success.GET));
   }
   @SaCheckLogin

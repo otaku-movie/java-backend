@@ -14,8 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -43,14 +46,51 @@ public class OAuthIdTokenVerifierImpl implements OAuthIdTokenVerifier {
   }
 
   @Override
-  public OAuthProfile verifyApple(String idToken) {
+  public OAuthProfile verifyApple(String idToken, String expectedNonce) {
     JWTClaimsSet claims = verify(idToken, APPLE_JWKS, List.of("https://appleid.apple.com"), clientIds(appleClientIds));
+    verifyNonce(claims, expectedNonce);
     OAuthProfile profile = new OAuthProfile();
     profile.setProvider("apple");
     profile.setSubject(claims.getSubject());
     profile.setEmail((String) claims.getClaim("email"));
     profile.setEmailVerified(parseBoolean(claims.getClaim("email_verified")));
     return profile;
+  }
+
+  /**
+   * Apple idToken 中的 `nonce` claim 是客户端传给 Apple 的 sha256(nonce) 的原文。
+   * 因此后端需要把客户端补传过来的原始 nonce 再做一次 sha256，base64url 编码后与 claim 对比。
+   */
+  private void verifyNonce(JWTClaimsSet claims, String expectedNonce) {
+    if (!StringUtils.hasText(expectedNonce)) {
+      // 兼容老客户端没传 nonce 的情况：不强制校验，但生产环境应监控并尽快下线老版本。
+      return;
+    }
+    Object claim = claims.getClaim("nonce");
+    if (!(claim instanceof String tokenNonce) || tokenNonce.isBlank()) {
+      throw new IllegalArgumentException("id_token nonce missing");
+    }
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(expectedNonce.getBytes(StandardCharsets.UTF_8));
+      String hex = bytesToHex(hash);
+      // Apple 文档：nonce claim 是 sha256(nonce) 的 hex 字符串（lower-case）。
+      // 部分老客户端 / SDK 可能误传 base64url，这里两种都允许。
+      String base64Url = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+      if (!tokenNonce.equalsIgnoreCase(hex) && !tokenNonce.equals(base64Url)) {
+        throw new IllegalArgumentException("id_token nonce mismatch");
+      }
+    } catch (Exception e) {
+      throw new IllegalArgumentException("id_token nonce verify failed", e);
+    }
+  }
+
+  private static String bytesToHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder(bytes.length * 2);
+    for (byte b : bytes) {
+      sb.append(String.format("%02x", b));
+    }
+    return sb.toString();
   }
 
   /** Google 多为 Boolean，Apple 多为 "true"/"false" 字符串，做统一解析。 */

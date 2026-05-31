@@ -600,6 +600,10 @@ public final class ApiPaths {
             public static final String GOOGLE_LOGIN = COMMON_BASE + "/user/googleLogin";
             /** Apple 登录 - POST /api/user/appleLogin */
             public static final String APPLE_LOGIN = COMMON_BASE + "/user/appleLogin";
+            /** X (Twitter) 登录 - POST /api/user/twitterLogin
+             *  客户端走 OAuth 2.0 PKCE 拿到 access_token 后回传，
+             *  后端调 X /2/users/me 验真。 */
+            public static final String TWITTER_LOGIN = COMMON_BASE + "/user/twitterLogin";
             /** 用户注册 - POST /api/user/register */
             public static final String REGISTER = COMMON_BASE + "/user/register";
             /** 更新用户信息 - POST /api/user/updateUserInfo */

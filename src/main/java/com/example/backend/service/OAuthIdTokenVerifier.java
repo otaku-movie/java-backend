@@ -5,7 +5,15 @@ import lombok.Data;
 public interface OAuthIdTokenVerifier {
   OAuthProfile verifyGoogle(String idToken);
 
-  OAuthProfile verifyApple(String idToken);
+  /**
+   * 校验 Apple idToken。
+   *
+   * @param idToken    Apple 返回的 identityToken
+   * @param expectedNonce 客户端发起登录时生成的随机 nonce 原文；
+   *                      非空时会与 idToken 中的 `nonce` claim 进行 sha256 比对，
+   *                      用于防止 idToken 被截获后重放。
+   */
+  OAuthProfile verifyApple(String idToken, String expectedNonce);
 
   @Data
   class OAuthProfile {
