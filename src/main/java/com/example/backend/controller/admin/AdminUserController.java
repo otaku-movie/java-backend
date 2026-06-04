@@ -1,7 +1,6 @@
 package com.example.backend.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -35,6 +34,7 @@ import com.example.backend.response.UserEffectiveButtonResponse;
 import com.example.backend.response.UserListResponse;
 import com.example.backend.service.UserRoleService;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.PasswordUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -92,14 +92,20 @@ public class AdminUserController {
   public RestBean<AdminLoginResponse> login(@RequestBody @Validated UserLoginQuery query) {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("email", query.getEmail());
-    queryWrapper.eq("password", SaSecureUtil.md5(query.getPassword()));
+    // 取出 password 用于校验（BCrypt 无法用等值查询匹配）
     queryWrapper.select(
-        "id", "cover", "name", "email", "create_time", "data_scope", "brand_id");
+        "id", "cover", "name", "email", "create_time", "data_scope", "brand_id", "password");
     User result = userMapper.selectOne(queryWrapper);
-    if (result == null) {
+    if (result == null || !PasswordUtil.matches(query.getPassword(), result.getPassword())) {
       return RestBean.error(
           ResponseCode.ERROR.getCode(),
           MessageUtils.getMessage(MessageKeys.Common.User.NOT_FOUND));
+    }
+    // 老的无盐 md5 密码：校验通过后自动升级为 BCrypt
+    if (PasswordUtil.needsUpgrade(result.getPassword())) {
+      userMapper.update(null, new LambdaUpdateWrapper<User>()
+          .set(User::getPassword, PasswordUtil.encode(query.getPassword()))
+          .eq(User::getId, result.getId()));
     }
     String scope = DataScope.normalize(result.getDataScope());
     if (DataScope.CHAIN.getCode().equals(scope)) {
@@ -453,10 +459,10 @@ public class AdminUserController {
             ResponseCode.PARAMETER_ERROR.getCode(),
             MessageUtils.getMessage(MessageKeys.Validator.SaveUser.PASSWORD_REQUIRED));
       }
-      user.setPassword(SaSecureUtil.md5(query.getPassword()));
+      user.setPassword(PasswordUtil.encode(query.getPassword()));
     } else {
       if (query.getPassword() != null) {
-        user.setPassword(SaSecureUtil.md5(query.getPassword()));
+        user.setPassword(PasswordUtil.encode(query.getPassword()));
       }
     }
 
@@ -501,7 +507,7 @@ public class AdminUserController {
             User::getBrandId,
             DataScope.CHAIN.getCode().equals(scope) ? effectiveBrandId : null);
     if (query.getPassword() != null) {
-      uw.set(User::getPassword, SaSecureUtil.md5(query.getPassword()));
+      uw.set(User::getPassword, PasswordUtil.encode(query.getPassword()));
     }
     userMapper.update(null, uw);
     syncUserCinemas(query.getId(), scope, effectiveCinemaIds);

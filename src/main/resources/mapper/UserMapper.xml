@@ -46,7 +46,7 @@
                 AND users.id = #{query.id}
             </if>
             <if test="query.name != null and !query.name.equals('')">
-                AND users.name LIKE concat('%', #{query.name}, '%')
+                AND users.name LIKE '%' || #{query.name} || '%'
             </if>
             <if test="query.email != null and !query.email.equals('')">
                 AND users.email = #{query.email}

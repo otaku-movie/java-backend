@@ -1,7 +1,6 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -28,6 +27,7 @@ import com.example.backend.service.OAuthIdTokenVerifier;
 import com.example.backend.service.RefreshTokenService;
 import com.example.backend.service.XOAuthService;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.PasswordUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -127,14 +127,19 @@ public class UserController {
   public RestBean<AppLoginResponse> login(@RequestBody @Validated UserLoginQuery query) {
     QueryWrapper<User> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("email", query.getEmail());
-
-    queryWrapper.eq("password", SaSecureUtil.md5(query.getPassword()));
     queryWrapper.eq("deleted", 0);
-    queryWrapper.select("id", "cover", "name", "email", "create_time");
+    // 取出 password 用于校验（BCrypt 无法用等值查询匹配）；User.password 有 @JsonIgnore 不会泄露
+    queryWrapper.select("id", "cover", "name", "email", "create_time", "password");
 
     User result = userMapper.selectOne(queryWrapper);
 
-    if (result != null) {
+    if (result != null && PasswordUtil.matches(query.getPassword(), result.getPassword())) {
+      // 老的无盐 md5 密码：校验通过后自动升级为 BCrypt
+      if (PasswordUtil.needsUpgrade(result.getPassword())) {
+        userMapper.update(null, new UpdateWrapper<User>()
+            .set("password", PasswordUtil.encode(query.getPassword()))
+            .eq("id", result.getId()));
+      }
       StpUtil.login(result.getId());
       AppLoginResponse loginResponse = new AppLoginResponse();
       loginResponse.setId(result.getId());
@@ -244,7 +249,7 @@ public class UserController {
     user.setCover(query.getCover());
     user.setName(query.getName());
     user.setEmail(query.getEmail());
-    user.setPassword(SaSecureUtil.md5(query.getPassword()));
+    user.setPassword(PasswordUtil.encode(query.getPassword()));
 
 
     // 验证邮箱是否有效
@@ -275,8 +280,7 @@ public class UserController {
       AppLoginResponse loginResponse = new AppLoginResponse();
       QueryWrapper<User> queryWrapper = new QueryWrapper<>();
       queryWrapper.eq("email", query.getEmail());
-
-      queryWrapper.eq("password", SaSecureUtil.md5(query.getPassword()));
+      // 注册成功后直接按 email 取回刚插入的用户（密码已是 BCrypt，无法用等值匹配）
       queryWrapper.eq("deleted", 0);
       queryWrapper.select("id", "cover", "name", "email", "create_time");
       User result = userMapper.selectOne(queryWrapper);
