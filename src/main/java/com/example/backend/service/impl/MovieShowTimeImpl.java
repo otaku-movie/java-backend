@@ -38,8 +38,13 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
   @Override
   @Transactional(rollbackFor = Exception.class)
   public void updateScreeningState() {
+    // 注意：早先这里有 `ne("status", ended)` 过滤——一旦某条被错误置为 3，
+    // 后续任务再也不会回头校正。爬虫导入偶发会写入错误 status，导致
+    // "明明时间没到，前台却显示放映结束" 的脏数据。
+    // 现在拿全表（deleted=0）逐条按 start/end 重算，但只 update 状态真的
+    // 发生变化的记录，避免每分钟全表写放大。
     QueryWrapper<MovieShowTime> queryWrapper = new QueryWrapper<>();
-    queryWrapper.ne("status", ShowTimeState.ended.getCode());
+    queryWrapper.eq("deleted", 0);
     List<MovieShowTime> data = movieShowTimeMapper.selectList(queryWrapper);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     LocalDateTime now = LocalDateTime.now();
@@ -52,13 +57,19 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
       try {
         LocalDateTime start = LocalDateTime.parse(item.getStartTime(), formatter);
         LocalDateTime end = LocalDateTime.parse(item.getEndTime(), formatter);
+        int newStatus;
         if (now.isAfter(start) && now.isBefore(end)) {
-          item.setStatus(ShowTimeState.screening.getCode());
+          newStatus = ShowTimeState.screening.getCode();
         } else if (now.isAfter(end)) {
-          item.setStatus(ShowTimeState.ended.getCode());
+          newStatus = ShowTimeState.ended.getCode();
         } else {
-          item.setStatus(ShowTimeState.no_started.getCode());
+          newStatus = ShowTimeState.no_started.getCode();
         }
+        Integer current = item.getStatus();
+        if (current != null && current == newStatus) {
+          return null;
+        }
+        item.setStatus(newStatus);
         return item;
       } catch (Exception e) {
         log.warn("场次时间解析失败 id={}, startTime={}, endTime={}", item.getId(), item.getStartTime(), item.getEndTime(), e);
@@ -66,7 +77,7 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
       }
     }).filter(item -> item != null).toList();
     if (!toUpdate.isEmpty()) {
-      updateBatchById(toUpdate, toUpdate.size());
+      updateBatchById(toUpdate, Math.min(toUpdate.size(), 500));
     }
   }
 
