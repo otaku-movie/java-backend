@@ -22,15 +22,35 @@
         </encoder>
     </appender>
     
-    <!-- 文件输出配置 -->
+    <!-- 文件输出配置（全量日志，按天滚动，单文件 50MB） -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/application.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/application-%d{yyyy-MM-dd}.log</fileNamePattern>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/application-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
             <maxHistory>30</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%wEx</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 错误日志单独输出，方便排查；只记录 ERROR 及以上 -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%wEx</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
@@ -39,6 +59,8 @@
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
         </root>
         <logger name="com.example.backend" level="DEBUG"/>
         <logger name="org.springframework.web" level="DEBUG"/>
@@ -64,13 +86,15 @@
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
         </root>
     </springProfile>
-    
+
     <!-- 生产环境配置 -->
     <springProfile name="prod">
         <root level="INFO">
             <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
         </root>
     </springProfile>
     

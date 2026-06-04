@@ -36,6 +36,9 @@ build/
 # JVM crash logs
 hs_err_pid*.log
 
+# 应用日志目录（logback 输出）
+logs/
+
 # 数据库备份文件与本机备份环境变量
 backups/
 .env.backup

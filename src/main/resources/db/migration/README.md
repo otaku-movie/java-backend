@@ -17,10 +17,20 @@ U<版本号>__<描述>.sql            -- 回滚脚本（社区版不会自动执
 
 ## 已有脚本
 
-| 版本 | 文件                          | 说明                                              |
-|------|-------------------------------|---------------------------------------------------|
-| V1   | `V1__baseline_schema.sql`     | 基线 schema（原 `sql/init_schema.sql`）           |
-| V2   | `V2__order_id_bigint.sql`     | 订单主键升级到 `bigint`，同步选座外键              |
+| 版本 | 文件                                | 说明                                                                   |
+|------|-------------------------------------|------------------------------------------------------------------------|
+| V1   | `V1__baseline_schema.sql`           | 基线 schema（原 `sql/init_schema.sql`）                                |
+| V2   | `V2__order_id_bigint.sql`           | 订单主键升级到 `bigint`，同步选座外键                                  |
+| V3   | `V3__crawl_schema.sql`              | 新增 `crawl` schema，镜像业务表并承载爬虫入库数据                       |
+| V4   | `V4__presale_tables.sql`            | `crawl.presale` / `crawl.presale_specification` 预售券表                |
+| V5   | `V5__public_extra_tables.sql`       | 把历史上绕过 Flyway 落到 `public` 的 11 张业务表（benefit / pricing 等）补登记 |
+| V6   | `V6__crawl_mirror_extra_tables.sql` | 将 V5 的 11 张表镜像到 `crawl` schema，保持 V3 的"镜像 public 全表"约束    |
+| V7   | `V7__crawl_level_seed.sql`          | 初始化 `crawl.level` 的日本映倫分级（G / PG-12 / R-15 / R-18），供 crawler 写 `movie.level_id` |
+| V8   | `V8__crawl_movie_show_time_tag_uk.sql` | 给 `crawl.movie_show_time_tag` 增加唯一键                                |
+| V9   | `V9__crawl_movie_manual_extras.sql` | `crawl.movie_manual_extras` 手工补录表结构                              |
+| V10  | `V10__crawl_movie_manual_extras_seed.sql` | `crawl.movie_manual_extras` 初始 5 条手工补录数据                       |
+| V11  | `V11__crawl_permission_seed.sql`    | 把 public 的 RBAC / 鉴权表（users、role、menu、button、api、user_role、role_menu、role_button、user_oauth_binding、user_cinema）以及字典表（dict、dict_item）数据写死成种子直接 INSERT 进 crawl schema，并对齐 IDENTITY 序列 |
+| V12  | `V12__crawl_areas_seed.sql`         | 从 public.areas 同步 327 行行政区字典到 crawl.areas、清理爬虫遗留的 12 行非标 prefecture（id 617-628）映射、根据 address 前缀给 crawl.cinema 回填 prefecture_id / region_id |
 
 ## 接入策略
 

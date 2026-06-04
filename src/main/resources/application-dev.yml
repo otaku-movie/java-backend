@@ -3,9 +3,14 @@ spring:
     # 使用 PostgreSQL 官方 JDBC 驱动（42.7.3，支持 PostgreSQL 17）
     driver-class-name: org.postgresql.Driver
     # Docker 环境可通过 SPRING_DATASOURCE_URL 覆盖，本地默认连接 localhost
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/test_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/test_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=crawl}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgre}
+    # HikariCP：dashboard 一次需要并发 19 条聚合 SQL，默认 10 连接会让请求被分成 2 批。
+    # 调到 20 后单次冷请求里这些 SQL 可以真正同时跑。
+    hikari:
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:20}
+      minimum-idle: ${HIKARI_MIN_IDLE:5}
   data:
     redis:
       # Docker 环境使用容器服务名，本地开发使用 localhost
