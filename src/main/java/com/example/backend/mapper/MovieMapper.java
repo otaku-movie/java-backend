@@ -2,14 +2,11 @@ package com.example.backend.mapper;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.backend.entity.Movie;
-import com.example.backend.entity.MovieShowTime;
-import com.example.backend.enumerate.ShowTimeState;
 import com.example.backend.query.MovieListQuery;
 import com.example.backend.query.app.AppMovieListQuery;
 import com.example.backend.query.app.getMovieShowTimeQuery;
 import com.example.backend.response.Spec;
 import com.example.backend.response.app.*;
-import com.example.backend.response.app.AppMovieShowTimeResponse;
 import com.example.backend.response.movie.HelloMovie;
 import com.example.backend.response.movie.MovieResponse;
 import com.example.backend.response.MovieStaffResponse;
@@ -37,16 +34,46 @@ public interface MovieMapper extends BaseMapper<Movie> {
     List<AppMovieStaffResponse> appMovieStaff(Integer movieId);
     // 批量获取Hello Movie信息
     List<com.example.backend.response.movie.HelloMovie> getHelloMoviesByMovieIds(List<Integer> movieIds);
+    // 批量获取監督（监督）信息，position.name = '監督'
+    List<MovieDirectorRow> getDirectorsByMovieIds(List<Integer> movieIds);
     IPage<com.example.backend.response.app.MovieComingSoonResponse> getMovieComingSoon(AppMovieListQuery query, IPage<MovieMapper> page);
 
     List<MovieStaffResponse> movieStaffList(Integer id);
 
     List<MovieStaffResponse> movieCharacterList(Integer id);
 
+    /**
+     * 电影详情页"场次列表"原始查询。
+     *
+     * 故意 <b>不</b> 走 {@code PaginationInnerInterceptor} 的自动分页：
+     * 分页拦截器只能给 SQL 末尾追加 {@code LIMIT N}，但这个接口语义是
+     * "按影院分页"——10 条 raw 场次记录会被一家热门影院的多个场次塞满，
+     * 让其余影院完全消失。调用方拿到全量列表后，应在 Java 层先
+     * 按 {@code cinema_id} 唯一化排序，再 skip/limit 取出当前页要展示
+     * 的 N 家影院，并保留这些影院的全部场次。
+     */
     List<AppBeforeMovieShowTimeResponse> getMovieShowTime(
       getMovieShowTimeQuery query,
-      Integer showTimeState,
-      IPage<MovieShowTimeMapper> page
+      Integer showTimeState
+    );
+
+    /**
+     * 该电影（含 reReleaseId 区分）全部未来场次实际出现过的 distinct 字幕语言 id。
+     * 用于「按实际场次动态返回」的字幕筛选项——只按 movieId/reReleaseId/时间限定，
+     * 不应用字幕/标签/地区等其它筛选，保证选项是该电影的固定全集、不会自我消除。
+     */
+    List<Integer> getMovieShowTimeSubtitleIds(
+      getMovieShowTimeQuery query,
+      Integer showTimeState
+    );
+
+    /**
+     * 该电影（含 reReleaseId 区分）全部未来场次实际出现过的 distinct 上映标签 id。
+     * 语义同 {@link #getMovieShowTimeSubtitleIds}。
+     */
+    List<Integer> getMovieShowTimeTagIds(
+      getMovieShowTimeQuery query,
+      Integer showTimeState
     );
 
 

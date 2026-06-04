@@ -18,6 +18,8 @@ public class NowMovieShowingResponse {
   List<Spec> spec;
   String levelName;
   List<Staff> cast;
+  /** 監督（监督）列表，按职位 = 監督 过滤，可为空 */
+  List<Staff> director;
   List<HelloMovie> helloMovie;
   String startDate;
   /** 是否有入场者特典（设计 3.4） */
@@ -35,4 +37,7 @@ public class NowMovieShowingResponse {
   Boolean hasPresaleTicket;
   /** 该预售券是否含特典 */
   Boolean hasBonus;
+
+  /** 当前可售场次数量，列表按此降序排序，供前端展示「热映」标识 */
+  Integer showTimeCount;
 }

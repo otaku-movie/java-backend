@@ -20,6 +20,7 @@
         <result property="latitude" column="latitude"></result>
         <result property="longitude" column="longitude"></result>
         <result property="postalCode" column="postal_code"></result>
+        <result property="favorite" column="is_favorite"></result>
         <result property="distance" column="distance"></result>
     </resultMap>
         <select id="getCinemaSpec" resultType="com.example.backend.response.Spec">
@@ -48,6 +49,8 @@
             cinema.postal_code,
             brand.id as brand_id,
             brand.name as brand_name,
+            <!-- 当前登录用户是否收藏该影院（按 cinema_id）。未登录 userId 为 null，恒为 false。 -->
+            (fav.id IS NOT NULL) AS is_favorite,
             (
                 SELECT
                     COUNT(theater_hall.cinema_id)
@@ -72,13 +75,17 @@
             </if>
             FROM cinema
             LEFT JOIN brand ON cinema.brand_id = brand.id
+            LEFT JOIN user_favorite_cinema fav
+                ON fav.cinema_id = cinema.id
+                AND fav.deleted = 0
+                AND fav.user_id = #{query.userId}
             <if test="query.specId != null">
                 LEFT JOIN cinema_spec_spec ON cinema.id = cinema_spec_spec.cinema_id
             </if>
             <where>
                 cinema.deleted = 0
                 <if test="query.name != null and !query.name.equals('')">
-                    AND cinema.name LIKE concat('%', #{query.name}, '%')
+                    AND cinema.name LIKE '%' || #{query.name} || '%'
                 </if>
                 <if test="query.id != null and !query.id.equals('')">
                     AND cinema.id = #{query.id}
@@ -113,8 +120,12 @@
                     ) &lt;= #{query.radius}
                 </if>
             </where>
-            <if test="query.latitude != null and query.longitude != null">
-                ORDER BY distance ASC
+            <if test="query.userId != null or (query.latitude != null and query.longitude != null)">
+                ORDER BY
+                <trim suffixOverrides=",">
+                    <if test="query.userId != null"> is_favorite DESC, </if>
+                    <if test="query.latitude != null and query.longitude != null"> distance ASC </if>
+                </trim>
             </if>
         </select>
         <select id="cinemaDetail" resultMap="cinemaList">
@@ -170,9 +181,21 @@
                 <result property="showTimeTagId" column="show_time_tag_id" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"/>
                 <result property="movieVersionId" column="movie_version_id"/>
                 <result property="versionCode" column="version_code"/>
+                <!-- 放映类型：dict_item.id，2D/3D。详情页也要展示，列表页已有该字段。 -->
+                <result property="dimensionType" column="dimension_type"/>
+                <!-- 影院官方购票链接：app 端「购票」按钮直接外跳。NULL 时由前端回退处理。 -->
+                <result property="reservationUrl" column="reservation_url"/>
+                <!-- 爬虫透传的售票状态（on_sale/few/sold_out/pre_sale/sale_ended/closed/unknown）。
+                     app 端用此判断"未开放购票"以禁用按钮。 -->
+                <result property="saleStatus" column="sale_status"/>
             </collection>
         </collection>
     </resultMap>
+    <!--
+      reservation_url：从 reservation_params_json 抽取外跳购票 URL。
+      用 MIN 聚合避免把 JSONB 列塞进 GROUP BY（每个 movie_show_time.id
+      对应一条记录，MIN 等价于取唯一值）。
+     -->
     <select id="getCinemaMovieShowTimeList" resultMap="getCinemaMovieShowTimeList">
         SELECT
             movie_show_time.id AS id,
@@ -185,16 +208,28 @@
             TO_CHAR(movie_show_time.end_time::timestamp, 'HH24:MI') AS end_time,
             theater_hall.id as theater_hall_id,
             theater_hall.name as theater_hall_name,
-            cinema_spec.name as spec_name,
+            -- 把所有规格（IMAX / Dolby / MX4D / TCX 等）按 spec_ids 数组的原顺序拼起来，
+            -- 用「、」分隔；前端按分隔符 split 出多个 chip 展示。
+            -- 同 getMovieShowTime 一致；不再 LEFT JOIN cinema_spec ON spec_ids[1] 只取首个。
+            (
+                SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id))
+                FROM cinema_spec cs
+                WHERE cs.id = ANY(movie_show_time.spec_ids) AND cs.deleted = 0
+            ) AS spec_name,
             movie_show_time.subtitle_id,
             movie_show_time.show_time_tag_id,
             movie_show_time.movie_version_id,
-            movie_version.version_code
+            movie_show_time.dimension_type,
+            -- 原版 / 配音版：importer 写入 movie_show_time.dub_version（1=オリジナル版, 2=吹き替え版）。
+            -- 旧数据若仍走 movie_version.version_code，则作为 fallback。
+            COALESCE(movie_show_time.dub_version, movie_version.version_code) AS version_code,
+            MIN(movie_show_time.reservation_params_json->>'reservation_url') AS reservation_url,
+            -- 同 reservation_url 同样套路：用 MIN 聚合规避 jsonb 不能直接放 GROUP BY 的限制
+            MIN(movie_show_time.crawl_raw_json->>'status') AS sale_status
         FROM
             movie_show_time
         LEFT JOIN cinema ON movie_show_time.cinema_id = cinema.id
         LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall."id"
-        LEFT JOIN cinema_spec ON cinema_spec.id = movie_show_time.spec_ids[1] AND cinema_spec.deleted = 0
         LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
         WHERE
             movie_show_time.deleted = 0
@@ -209,7 +244,7 @@
                 </otherwise>
             </choose>
             <if test="query.versionCode != null">
-                AND movie_version.version_code = #{query.versionCode}
+                AND COALESCE(movie_show_time.dub_version, movie_version.version_code) = #{query.versionCode}
             </if>
             AND movie_show_time.start_time::timestamp >= now()
             <!-- 时间范围筛选（只比较时间部分 HH:mm，不考虑日期） -->
@@ -220,7 +255,7 @@
                 AND TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') &lt;= #{query.startTimeTo}
             </if>
         GROUP BY
-            date, movie_show_time.id, cinema.id, cinema.name, cinema.full_address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name", cinema_spec.name, movie_show_time.subtitle_id, movie_show_time.show_time_tag_id, movie_show_time.movie_version_id, movie_version.version_code
+            date, movie_show_time.id, cinema.id, cinema.name, cinema.full_address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name", movie_show_time.spec_ids, movie_show_time.subtitle_id, movie_show_time.show_time_tag_id, movie_show_time.movie_version_id, movie_show_time.dimension_type, movie_show_time.dub_version, movie_version.version_code
         ORDER BY
             date, movie_show_time.start_time
     </select>

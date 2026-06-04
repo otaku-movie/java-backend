@@ -39,7 +39,7 @@
                     AND movie.id = #{query.id}
                 </if>
                 <if test="query.name != null and !query.name.equals('')">
-                    AND movie.name LIKE concat('%', #{query.name}, '%')
+                    AND movie.name LIKE '%' || #{query.name} || '%'
                 </if>
                 <if test="query.status != null and !query.status.equals('')">
                     AND movie.status = #{query.status}

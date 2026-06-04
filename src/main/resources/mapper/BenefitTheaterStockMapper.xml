@@ -21,7 +21,7 @@
             AND c.prefecture_id = #{q.prefectureId}
         </if>
         <if test="q.keyword != null and q.keyword != ''">
-            AND c.name ILIKE CONCAT('%', #{q.keyword}, '%')
+            AND c.name ILIKE '%' || #{q.keyword} || '%'
         </if>
     </sql>
 

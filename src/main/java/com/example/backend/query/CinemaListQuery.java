@@ -20,6 +20,8 @@ public class CinemaListQuery {
   private Double latitude;
   private Double longitude;
   private Double radius; // 搜索半径，单位：米，默认不限制
+  // 当前登录用户 id（由 Controller 注入，未登录为 null）。用于「收藏影院置顶」排序。
+  private Integer userId;
 
   public CinemaListQuery() {
     this.page = 1; // 默认页数为1

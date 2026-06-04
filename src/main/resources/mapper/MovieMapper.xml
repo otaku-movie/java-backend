@@ -6,7 +6,8 @@
         <result property="id" column="id"></result>
         <result property="name" column="name"></result>
         <result property="description" column="description"></result>
-        <result property="cover" column="cover"></result>
+        <!-- cover 实际取自 SELECT 里的 COALESCE(cover_url, cover) AS resolved_cover。 -->
+        <result property="cover" column="resolved_cover"></result>
         <result property="originalName" column="original_name"></result>
         <result property="homePage" column="home_page"></result>
         <result property="startDate" column="start_date"></result>
@@ -97,6 +98,8 @@
     <select id="movieList" resultMap="movieList" resultType="com.example.backend.response.movie.MovieResponse">
             SELECT
                 movie.*,
+                <!-- 用 R2 镜像 URL 覆盖默认 cover；ResultMap 把 cover 属性绑到 resolved_cover 列。 -->
+                COALESCE(movie.cover_url, movie.cover) AS resolved_cover,
                 level.name AS level_name,
                 EXISTS(
                     SELECT 1
@@ -113,10 +116,15 @@
                     AND movie.id = #{query.id}
                 </if>
                 <if test="query.name != null and !query.name.equals('')">
-                    AND movie.name LIKE concat('%', #{query.name}, '%')
+                    AND movie.name LIKE '%' || #{query.name} || '%'
                 </if>
                 <if test="query.status != null and !query.status.equals('')">
                     AND movie.status = #{query.status}
+                </if>
+                <!-- ODS 过滤：默认 'movie'（隐藏演唱会 / 舞台 / 直播类）；
+                     传 "all" 时跳过过滤；传 "ods" 时仅返回 ODS。 -->
+                <if test="query.kind != null and !query.kind.equals('all')">
+                    AND movie.kind = #{query.kind}
                 </if>
                 <if test="query.hasReRelease != null">
                     <choose>
@@ -139,7 +147,51 @@
                     </choose>
                 </if>
             </where>
-            ORDER BY movie.update_time DESC
+            <!--
+              动态排序：sortField 已在 Java 层做白名单（见 MovieListQuery#getSortField），
+              这里再用 <choose> 一一映射，避免 ${} 直接拼接被注入。NULL 值统一放最后，
+              方便用户看到"有数据 -> 排序键升降"的稳定顺序。
+            -->
+            <choose>
+                <when test="query.sortField == 'cinemaCount'">
+                    ORDER BY (
+                        SELECT COUNT(DISTINCT st.cinema_id)
+                        FROM movie_show_time st
+                        WHERE st.deleted = 0 AND st.movie_id = movie.id
+                    ) <choose><when test="query.sortOrder == 'asc'">ASC NULLS FIRST</when><otherwise>DESC NULLS LAST</otherwise></choose>, movie.update_time DESC
+                </when>
+                <when test="query.sortField == 'theaterCount'">
+                    ORDER BY (
+                        SELECT COUNT(st.cinema_id)
+                        FROM movie_show_time st
+                        WHERE st.deleted = 0 AND st.movie_id = movie.id
+                    ) <choose><when test="query.sortOrder == 'asc'">ASC NULLS FIRST</when><otherwise>DESC NULLS LAST</otherwise></choose>, movie.update_time DESC
+                </when>
+                <when test="query.sortField == 'commentCount'">
+                    ORDER BY (
+                        SELECT COUNT(mc.id) + COUNT(mr.id)
+                        FROM movie_comment mc
+                                 LEFT JOIN movie_reply mr
+                                     ON mc.id = mr.movie_comment_id AND mr.deleted = 0
+                        WHERE mc.deleted = 0 AND mc.movie_id = movie.id
+                    ) <choose><when test="query.sortOrder == 'asc'">ASC NULLS FIRST</when><otherwise>DESC NULLS LAST</otherwise></choose>, movie.update_time DESC
+                </when>
+                <when test="query.sortField == 'watchedCount'">
+                    ORDER BY movie.watched_count <choose><when test="query.sortOrder == 'asc'">ASC NULLS FIRST</when><otherwise>DESC NULLS LAST</otherwise></choose>, movie.update_time DESC
+                </when>
+                <when test="query.sortField == 'wantToSeeCount'">
+                    ORDER BY movie.want_to_see_count <choose><when test="query.sortOrder == 'asc'">ASC NULLS FIRST</when><otherwise>DESC NULLS LAST</otherwise></choose>, movie.update_time DESC
+                </when>
+                <when test="query.sortField == 'startDate'">
+                    ORDER BY movie.start_date <choose><when test="query.sortOrder == 'asc'">ASC NULLS FIRST</when><otherwise>DESC NULLS LAST</otherwise></choose>, movie.update_time DESC
+                </when>
+                <when test="query.sortField == 'endDate'">
+                    ORDER BY movie.end_date <choose><when test="query.sortOrder == 'asc'">ASC NULLS FIRST</when><otherwise>DESC NULLS LAST</otherwise></choose>, movie.update_time DESC
+                </when>
+                <otherwise>
+                    ORDER BY movie.update_time DESC
+                </otherwise>
+            </choose>
     </select>
     <resultMap id="appMovieStaff" type="com.example.backend.response.app.AppMovieStaffResponse">
         <id property="id" column="id"></id>
@@ -176,6 +228,7 @@
         <result property="presaleId" column="presale_id"></result>
         <result property="hasPresaleTicket" column="has_presale_ticket"></result>
         <result property="hasBonus" column="has_bonus"></result>
+        <result property="showTimeCount" column="show_time_count"></result>
         <collection property="spec" ofType="com.example.backend.response.Spec">
             <result property="id" column="spec_id"></result>
             <result property="name" column="spec_name"></result>
@@ -193,10 +246,11 @@
     </resultMap>
 
     <select id="nowMovieShowing" resultMap="nowMovieShowing">
-        SELECT DISTINCT
+        SELECT
             movie.id,
             movie.name,
-            movie.cover,
+            <!-- 优先返回 Cloudflare R2 上的 WebP 海报；NULL 时兜底 raw URL。 -->
+            COALESCE(movie.cover_url, movie.cover) AS cover,
             movie.start_date,
             level.name AS level_name,
             presale.id AS presale_id,
@@ -206,16 +260,19 @@
                 WHERE ps.presale_id = presale.id
                   AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
             )) AS has_bonus,
+            COUNT(DISTINCT movie_show_time.id) AS show_time_count,
             MIN(movie_show_time.start_time::timestamp) AS show_time
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN level ON movie.level_id = level.id
                  LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
         WHERE movie_show_time.deleted = 0
-          AND movie_show_time.start_time::timestamp >= CURRENT_TIMESTAMP
+          AND movie_show_time.start_time::timestamp &gt;= CURRENT_TIMESTAMP
           AND movie_show_time.open = TRUE
+          AND movie.kind = 'movie'
         GROUP BY movie.id, movie.name, movie.cover, movie.start_date, level.name, presale.id
-        ORDER BY MIN(movie_show_time.start_time::timestamp) ASC
+        ORDER BY COUNT(DISTINCT movie_show_time.id) DESC,
+                 MIN(movie_show_time.start_time::timestamp) ASC
     </select>
 
     <!-- 批量获取Hello Movie信息 -->
@@ -232,9 +289,31 @@
         </foreach>
         AND deleted = 0
     </select>
+
+    <!-- 批量获取監督（监督）信息：position.name = '監督' -->
+    <select id="getDirectorsByMovieIds" resultType="com.example.backend.response.app.MovieDirectorRow">
+        SELECT
+            movie_staff.movie_id AS movieId,
+            staff.id            AS id,
+            staff.name          AS name,
+            staff.cover         AS cover
+        FROM movie_staff
+        LEFT JOIN staff    ON movie_staff.staff_id   = staff.id
+        LEFT JOIN position ON movie_staff.position_id = position.id
+        WHERE movie_staff.deleted = 0
+          AND position.name = '監督'
+          AND movie_staff.movie_id IN
+        <foreach collection="movieIds" item="movieId" open="(" separator="," close=")">
+            #{movieId}
+        </foreach>
+        ORDER BY movie_staff.movie_id, movie_staff.staff_id
+    </select>
     <select id="getMovieComingSoon" resultType="com.example.backend.response.app.MovieComingSoonResponse">
-        SELECT 
-            movie.*,
+        SELECT
+            movie.id, movie.name, movie.original_name, movie.description,
+            COALESCE(movie.cover_url, movie.cover) AS cover,
+            movie.level_id, movie.status, movie.start_date, movie.end_date,
+            movie.time, movie.watched_count, movie.want_to_see_count,
             level.name AS levelName,
             COUNT(DISTINCT movie_show_time.id) AS presaleShowTimeCount,
             MIN(movie_show_time.start_time::timestamp) AS earliestShowTime,
@@ -254,6 +333,7 @@
         LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
         WHERE
             movie.deleted = 0
+          AND movie.kind = 'movie'
           AND (
                 movie.start_date IS NULL
                 OR movie.start_date = ''
@@ -286,6 +366,11 @@
     <select id="movieDetail" resultMap="movieList">
         SELECT
             movie.*,
+            <!-- 与 movieList 保持一致：cover 属性绑定到 resolved_cover 列；
+                 优先使用 R2 镜像 URL（cover_url），回落到原始 cover。
+                 没有这一行时 movie.* 只暴露 movie.cover 列，
+                 而 resultMap movieList 期待 resolved_cover，导致前端 cover 一直为 null。 -->
+            COALESCE(movie.cover_url, movie.cover) AS resolved_cover,
             level.name AS level_name,
             level.description AS level_description
         FROM
@@ -380,18 +465,28 @@
         <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
         <result property="reReleaseId" column="re_release_id"></result>
         <result property="reReleaseVersionInfo" column="re_release_version_info"></result>
+        <result property="reservationUrl" column="reservation_url"></result>
+        <result property="saleStatus" column="sale_status"></result>
+        <result property="subtitleNames" column="subtitle_names"></result>
+        <result property="favorite" column="is_favorite"></result>
     </resultMap>
     <select id="getMovieShowTime" resultMap="getMovieShowTime">
 
         SELECT DISTINCT
             movie_show_time.movie_id AS movie_id,
             movie_show_time.spec_ids AS spec_ids,
+            movie_show_time.reservation_params_json->>'reservation_url' AS reservation_url,
+            -- 爬虫透传的售票/座位状态：on_sale / few / sold_out / pre_sale / sale_ended / closed / unknown
+            -- 用于 app 端在没有自家 seat 表数据时也能给到准确的座位状态图标。
+            movie_show_time.crawl_raw_json->>'status' AS sale_status,
             cinema.id AS cinema_id,
             cinema.name AS cinema_name,
             cinema.full_address AS cinema_address,
             cinema.tel AS cinema_tel,
             cinema.latitude AS cinema_latitude,
             cinema.longitude AS cinema_longitude,
+            <!-- 当前登录用户是否收藏该影院（按 cinema_id）。未登录 userId 为 null，恒为 false。 -->
+            (fav.id IS NOT NULL) AS is_favorite,
             movie_show_time.id AS id,
             movie_show_time.start_time AS start_time,
             movie_show_time.end_time AS end_time,
@@ -406,9 +501,19 @@
             ) AS spec_name,
             movie_show_time.dimension_type,
             movie_show_time.subtitle_id,
+            -- 字幕语言名称（按 subtitle_id 原顺序「、」拼接），用于列表卡片直接展示
+            (
+                SELECT string_agg(l.name, '、' ORDER BY array_position(movie_show_time.subtitle_id, l.id))
+                FROM language l
+                WHERE movie_show_time.subtitle_id IS NOT NULL
+                  AND l.id = ANY(movie_show_time.subtitle_id)
+                  AND l.deleted = 0
+            ) AS subtitle_names,
             movie_show_time.show_time_tag_id,
             movie_show_time.movie_version_id,
-            movie_version.version_code,
+            -- 原版 / 配音版：importer 写入 movie_show_time.dub_version（1=オリジナル版, 2=吹き替え版）。
+            -- 旧数据若仍走 movie_version.version_code，则作为 fallback。
+            COALESCE(movie_show_time.dub_version, movie_version.version_code) AS version_code,
             (
                 SELECT COUNT(seat.id)
                 FROM seat
@@ -444,6 +549,10 @@
                 LEFT JOIN theater_hall ON movie_show_time.theater_hall_id = theater_hall.id
                 LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
                 LEFT JOIN re_release ON re_release.id = movie_show_time.re_release_id AND re_release.deleted = 0
+                LEFT JOIN user_favorite_cinema fav
+                    ON fav.cinema_id = cinema.id
+                    AND fav.deleted = 0
+                    AND fav.user_id = #{query.userId}
         WHERE
             movie_show_time.deleted = 0
              AND movie_show_time.status = #{showTimeState}
@@ -470,6 +579,11 @@
             AND cinema.city_id = #{query.cityId}
         </if>
 
+        <if test="query.brandId != null and query.brandId.size() > 0">
+            AND cinema.brand_id IN
+            <foreach collection="query.brandId" item="bid" open="(" separator="," close=")">#{bid}</foreach>
+        </if>
+
         <if test="query.subtitleId != null">
             AND #{query.subtitleId} = ANY(movie_show_time.subtitle_id)
         </if>
@@ -489,13 +603,13 @@
         </if>
 
         <if test="query.versionCode != null">
-            AND movie_version.version_code = #{query.versionCode}
+                AND COALESCE(movie_show_time.dub_version, movie_version.version_code) = #{query.versionCode}
         </if>
 
         <if test="query.keyword != null and query.keyword != ''">
             AND (
-                cinema.name LIKE concat('%', #{query.keyword}, '%')
-                OR cinema.full_address LIKE concat('%', #{query.keyword}, '%')
+                cinema.name LIKE '%' || #{query.keyword} || '%'
+                OR cinema.full_address LIKE '%' || #{query.keyword} || '%'
             )
         </if>
 
@@ -520,8 +634,54 @@
                 )
             ) &lt;= #{query.radius}
         </if>
-        <if test="query.latitude != null and query.longitude != null">
-            ORDER BY distance ASC
+        <if test="query.userId != null or (query.latitude != null and query.longitude != null)">
+            ORDER BY
+            <trim suffixOverrides=",">
+                <if test="query.userId != null"> is_favorite DESC, </if>
+                <if test="query.latitude != null and query.longitude != null"> distance ASC </if>
+            </trim>
         </if>
+    </select>
+
+    <!--
+      动态筛选项：该电影全部未来场次实际出现过的 distinct 字幕语言 id。
+      仅按 movieId / reReleaseId / 上映状态 / 时间限定，刻意不引用字幕、标签、
+      地区、规格等其它筛选条件 —— 让字幕筛选项成为该电影的固定全集，
+      用户选中某个字幕后选项列表也不会自我消除。
+      subtitle_id 是 int4[]，用 unnest 展开后再 DISTINCT。
+    -->
+    <select id="getMovieShowTimeSubtitleIds" resultType="java.lang.Integer">
+        SELECT DISTINCT sid
+        FROM movie_show_time mst, unnest(mst.subtitle_id) AS sid
+        WHERE mst.deleted = 0
+          AND mst.status = #{showTimeState}
+          AND mst.movie_id = #{query.movieId}
+          <choose>
+              <when test="query.reReleaseId != null">
+                  AND mst.re_release_id = #{query.reReleaseId}
+              </when>
+              <otherwise>
+                  AND mst.re_release_id IS NULL
+              </otherwise>
+          </choose>
+          AND mst.start_time::timestamp >= now()
+    </select>
+
+    <!-- 动态筛选项：该电影全部未来场次实际出现过的 distinct 上映标签 id。语义同上。 -->
+    <select id="getMovieShowTimeTagIds" resultType="java.lang.Integer">
+        SELECT DISTINCT tid
+        FROM movie_show_time mst, unnest(mst.show_time_tag_id) AS tid
+        WHERE mst.deleted = 0
+          AND mst.status = #{showTimeState}
+          AND mst.movie_id = #{query.movieId}
+          <choose>
+              <when test="query.reReleaseId != null">
+                  AND mst.re_release_id = #{query.reReleaseId}
+              </when>
+              <otherwise>
+                  AND mst.re_release_id IS NULL
+              </otherwise>
+          </choose>
+          AND mst.start_time::timestamp >= now()
     </select>
 </mapper>

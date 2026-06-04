@@ -28,6 +28,23 @@ public class ShowTimeInfo {
   private String reReleaseVersionInfo;
   /** 该场次是否有入场者特典（设计 3.2） */
   private Boolean hasBenefits;
+  /**
+   * 影院官方购票页 URL。app 侧点击「购票」时优先打开这个外部链接，
+   * NULL 时回退到自家选座流程（或显示「该场次暂不支持线上购票」）。
+   */
+  private String reservationUrl;
+  /**
+   * 爬虫透传的售票/座位状态：on_sale / few / sold_out / pre_sale / sale_ended / closed / unknown。
+   * 当 seat 表查不到（外部预约场次），app 端用这个字段来渲染座位状态图标。
+   */
+  private String saleStatus;
+  /**
+   * 字幕语言名称列表（来自 language.name，按 subtitle_id 原顺序）。
+   * app 列表卡片用它显示"字幕：English"之类的 chip + tooltip，提示该场次为字幕版（原音 + 字幕）。
+   * 注意与 {@link #subtitle} 的区别：subtitle 是完整 Language 对象（带 id/code），
+   * subtitleNames 只携带显示名，便于列表场景免去逐场 join 的成本。
+   */
+  private List<String> subtitleNames;
 
   public Integer getId() { return id; }
   public void setId(Integer id) { this.id = id; }
@@ -67,4 +84,10 @@ public class ShowTimeInfo {
   public void setReReleaseVersionInfo(String reReleaseVersionInfo) { this.reReleaseVersionInfo = reReleaseVersionInfo; }
   public Boolean getHasBenefits() { return hasBenefits; }
   public void setHasBenefits(Boolean hasBenefits) { this.hasBenefits = hasBenefits; }
+  public String getReservationUrl() { return reservationUrl; }
+  public void setReservationUrl(String reservationUrl) { this.reservationUrl = reservationUrl; }
+  public String getSaleStatus() { return saleStatus; }
+  public void setSaleStatus(String saleStatus) { this.saleStatus = saleStatus; }
+  public List<String> getSubtitleNames() { return subtitleNames; }
+  public void setSubtitleNames(List<String> subtitleNames) { this.subtitleNames = subtitleNames; }
 }

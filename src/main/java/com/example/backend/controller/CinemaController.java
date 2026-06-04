@@ -144,10 +144,15 @@ public class CinemaController {
   private CinemaSpecSpecService cinemaSpecSpecService;
   @Autowired
   private BenefitService benefitService;
+  @Autowired
+  private com.example.backend.service.FavoriteCinemaService favoriteCinemaService;
 
   @PostMapping(ApiPaths.Common.Cinema.LIST)
   public RestBean<List<CinemaResponse>> list(@RequestBody CinemaListQuery query)  {
     Page<CinemaResponse> page = new Page<>(query.getPage(), query.getPageSize());
+
+    // 收藏影院置顶：登录用户注入 userId（未登录为 null，排序不变）
+    query.setUserId(favoriteCinemaService.currentUserIdOrNull());
 
     IPage<CinemaResponse> list = cinemaMapper.cinemaList(query, page);
     List<CinemaResponse> result =  list.getRecords().stream().map(item -> {
@@ -174,12 +179,26 @@ public class CinemaController {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     CinemaResponse result = cinemaMapper.cinemaDetail(id);
-    // 获取影院规格
+    // 获取影院规格（IMAX / 4DX / Dolby / Screen X 等）
     List<com.example.backend.response.Spec> spec = cinemaMapper.getCinemaSpec(result.getId());
-    if (spec != null) {
-      result.setSpec(spec);
+    if (spec == null) {
+      spec = new java.util.ArrayList<>();
+    } else {
+      spec = new java.util.ArrayList<>(spec);
     }
 
+    // 追加 3D 加价：3D 加价存于 cinema_price_config(dimension_type=2)，不在 cinema_spec_spec 表，
+    // 详情页要展示给用户，统一并到 spec 列表里返回（票价计算路径仍走 TicketPriceService，不受影响）。
+    java.math.BigDecimal surcharge3d =
+        cinemaPriceConfigMapper.getSurcharge(result.getId(), 2);
+    if (surcharge3d != null && surcharge3d.signum() > 0) {
+      com.example.backend.response.Spec spec3d = new com.example.backend.response.Spec();
+      spec3d.setName("3D");
+      spec3d.setDescription("3D 放映加价");
+      spec3d.setPlusPrice(surcharge3d.stripTrailingZeros().toPlainString());
+      spec.add(0, spec3d);
+    }
+    result.setSpec(spec);
 
     return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }

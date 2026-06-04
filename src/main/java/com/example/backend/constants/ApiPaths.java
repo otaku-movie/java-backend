@@ -70,6 +70,8 @@ public final class ApiPaths {
             public static final String STAFF = APP_BASE + "/movie/staff";
             /** 场次查询 - POST /api/app/movie/showTime */
             public static final String SHOW_TIME = APP_BASE + "/movie/showTime";
+            /** 场次筛选项（该电影实际出现的字幕/标签）- POST /api/app/movie/showTimeFilters */
+            public static final String SHOW_TIME_FILTERS = APP_BASE + "/movie/showTimeFilters";
             /** 电影重映历史 - GET /api/app/movie/reReleaseHistory?movieId= */
             public static final String RE_RELEASE_HISTORY = APP_BASE + "/movie/reReleaseHistory";
         }
@@ -81,6 +83,10 @@ public final class ApiPaths {
             private Cinema() {}
             /** 影院场次 - POST /api/app/cinema/movie/showTime */
             public static final String MOVIE_SHOW_TIME = APP_BASE + "/cinema/movie/showTime";
+            /** 收藏/取消收藏影院（toggle）- POST /api/app/cinema/favorite/toggle */
+            public static final String FAVORITE_TOGGLE = APP_BASE + "/cinema/favorite/toggle";
+            /** 当前用户收藏的影院 id 列表 - GET /api/app/cinema/favorite/ids */
+            public static final String FAVORITE_IDS = APP_BASE + "/cinema/favorite/ids";
         }
 
         /**

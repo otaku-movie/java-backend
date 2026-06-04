@@ -17,6 +17,13 @@ public class Movie {
   @TableField("cover")
   String cover;
 
+  /**
+   * Cloudflare R2 上的 WebP 海报地址；NULL 表示还没镜像，前端兜底用 cover。
+   * 由 `npm run mirror:images` 脚本写入。
+   */
+  @TableField("cover_url")
+  String coverUrl;
+
   @TableField("name")
   String name;
 
@@ -51,6 +58,14 @@ public class Movie {
 
   @TableField("want_to_see_count")
   Integer wantToSeeCount;
+
+  /**
+   * 内容类型，区分电影与非电影（ODS：演唱会 / 体育 / 舞台 / Live Film 等）。
+   *  - {@code "movie"}（默认）：常规剧场公映片
+   *  - {@code "ods"}：非电影类放映（演唱会、宝塚 / 歌舞伎中継、Live Film…）
+   */
+  @TableField("kind")
+  String kind;
 
   @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")

@@ -9,12 +9,16 @@ public class AppMovieShowTimeResponse {
   private String cinemaTel;
   private Double cinemaLatitude;
   private Double cinemaLongitude;
+  /** 当前登录用户是否已收藏该影院（未登录恒为 false） */
+  private Boolean favorite;
   private Integer totalShowTimes;
   private Double distance;
   private List<ShowTimeInfo> showTimes;
 
   public Integer getCinemaId() { return cinemaId; }
   public void setCinemaId(Integer cinemaId) { this.cinemaId = cinemaId; }
+  public Boolean getFavorite() { return favorite; }
+  public void setFavorite(Boolean favorite) { this.favorite = favorite; }
   public String getCinemaName() { return cinemaName; }
   public void setCinemaName(String cinemaName) { this.cinemaName = cinemaName; }
   public String getCinemaAddress() { return cinemaAddress; }

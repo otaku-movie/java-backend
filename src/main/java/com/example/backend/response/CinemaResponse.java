@@ -26,6 +26,8 @@ public class CinemaResponse {
   private Double latitude;
   private Double longitude;
   private String postalCode;
+  // 当前登录用户是否已收藏该影院（未登录恒为 false）
+  private Boolean favorite;
   // 距离（米），仅在附近查询时返回
   private Double distance;
   // 新增：当前上映的电影列表

@@ -22,6 +22,8 @@ public class getMovieShowTimeQuery extends PaginationQuery {
   Integer regionId;
   Integer prefectureId;
   Integer cityId;
+  /** 品牌筛选：cinema.brand_id IN (...)，多选；空/null 不过滤 */
+  List<Integer> brandId;
   // 附近影院查询（单位：米）
   Double latitude;
   Double longitude;
@@ -34,4 +36,6 @@ public class getMovieShowTimeQuery extends PaginationQuery {
   String startTimeFrom; // 开场时间起始时间（格式：yyyy-MM-dd HH:mm，如 "2025-01-15 09:00" 或 30小时制 "2025-01-15 25:00"）
   String startTimeTo;   // 开场时间结束时间（格式：yyyy-MM-dd HH:mm，如 "2025-01-15 23:00" 或 30小时制 "2025-01-15 29:00"）
   Boolean use30HourFormat; // 是否使用30小时制（24:00-29:59 表示第二天的 00:00-05:59），默认 false（24小时制）
+  // 当前登录用户 id（由 Controller 注入，未登录为 null）。用于「收藏影院置顶」排序。
+  Integer userId;
 }

@@ -251,28 +251,37 @@
     </resultMap>
 
     <select id="StatisticsOfDailyMovieScreenings" resultMap="StatisticsOfDailyMovieScreenings">
-        --- 统计每日上映场次，以及前10名上映电影的场次数
-        WITH daily_total AS (
-            SELECT
-                TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), 'YYYY-MM-DD') AS start_time,
-                COUNT(*) AS total_count
+        -- 统计每日上映场次 + 全周期场次前 10 电影的每日场次
+        -- start_time 是 'YYYY-MM-DD HH24:MI:SS' 文本，前 10 字符就是日期，免去 TO_TIMESTAMP 逐行解析
+        -- base CTE 用 MATERIALIZED 强制只扫一次 movie_show_time（原 SQL 扫 3 次）
+        WITH base AS MATERIALIZED (
+            SELECT LEFT(start_time, 10) AS day_str, movie_id
             FROM movie_show_time
-            WHERE movie_show_time.deleted = 0
-            GROUP BY DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS'))
+            WHERE deleted = 0
+        ),
+        daily_total AS (
+            SELECT day_str AS start_time, COUNT(*) AS total_count
+            FROM base
+            GROUP BY day_str
+        ),
+        top_movies AS (
+            SELECT movie_id, COUNT(*) AS total_movie_count
+            FROM base
+            WHERE movie_id IS NOT NULL
+            GROUP BY movie_id
+            ORDER BY total_movie_count DESC
+            LIMIT 10
         ),
         daily_movie_count AS (
             SELECT
-                TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), 'YYYY-MM-DD') AS start_time,
+                b.day_str AS start_time,
                 movie.name AS movie_name,
                 movie.id AS movie_id,
-                COUNT(*) AS movie_count,
-                ROW_NUMBER() OVER (PARTITION BY TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), 'YYYY-MM-DD') ORDER BY COUNT(*) DESC) AS rn
-            FROM movie_show_time
-            LEFT JOIN
-                movie ON movie_show_time.movie_id = movie.id
-            WHERE
-                movie_show_time.deleted = 0
-            GROUP BY DATE_TRUNC('day', TO_TIMESTAMP(movie_show_time.start_time, 'YYYY-MM-DD HH24:MI:SS')), movie.name, movie.id
+                COUNT(*) AS movie_count
+            FROM base b
+            INNER JOIN top_movies ON top_movies.movie_id = b.movie_id
+            LEFT JOIN movie ON b.movie_id = movie.id
+            GROUP BY b.day_str, movie.name, movie.id
         )
         SELECT
             dt.start_time,
@@ -281,10 +290,7 @@
             dmc.movie_name,
             dmc.movie_count
         FROM daily_total dt
-        LEFT JOIN
-            daily_movie_count dmc ON dt.start_time = dmc.start_time
-        WHERE
-            dmc.rn &lt; 10 OR dmc.rn IS NULL
+        LEFT JOIN daily_movie_count dmc ON dt.start_time = dmc.start_time
         ORDER BY dt.start_time ASC, dmc.movie_count DESC;
     </select>
     <select id="movieShowTimeDetail"  resultMap="movie_show_time_list">

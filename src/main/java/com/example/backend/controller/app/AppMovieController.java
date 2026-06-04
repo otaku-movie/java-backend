@@ -7,7 +7,6 @@ import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ShowTimeState;
 import com.example.backend.mapper.MovieMapper;
-import com.example.backend.mapper.MovieShowTimeMapper;
 import com.example.backend.mapper.ReReleaseMapper;
 import com.example.backend.query.app.AppMovieListQuery;
 import com.example.backend.service.BenefitService;
@@ -38,6 +37,8 @@ public class AppMovieController {
   private ReReleaseMapper reReleaseMapper;
   @Autowired
   private BenefitService benefitService;
+  @Autowired
+  private com.example.backend.service.FavoriteCinemaService favoriteCinemaService;
 
   @GetMapping(ApiPaths.App.Movie.NOW_SHOWING)
   public RestBean<List<NowMovieShowingResponse>> list(
@@ -84,6 +85,24 @@ public class AppMovieController {
         List<com.example.backend.response.movie.HelloMovie> movieHelloMovies = helloMovieMap.getOrDefault(movie.getId(), Collections.emptyList());
         movie.setHelloMovie(movieHelloMovies);
       });
+
+      // 第五步.5：批量获取監督（监督）并按 movieId 分组塞回
+      List<com.example.backend.response.app.MovieDirectorRow> directorRows =
+          movieMapper.getDirectorsByMovieIds(movieIds);
+      Map<Integer, List<com.example.backend.response.Staff>> directorMap = directorRows.stream()
+          .collect(Collectors.groupingBy(
+              com.example.backend.response.app.MovieDirectorRow::getMovieId,
+              Collectors.mapping(row -> {
+                com.example.backend.response.Staff s = new com.example.backend.response.Staff();
+                s.setId(row.getId());
+                s.setName(row.getName());
+                s.setCover(row.getCover());
+                return s;
+              }, Collectors.toList())
+          ));
+      list.getRecords().forEach(movie ->
+          movie.setDirector(directorMap.getOrDefault(movie.getId(), Collections.emptyList()))
+      );
 
       // 普通上映/重映的特典需要区分：普通上映只看 re_release_id 为空；重映看对应 re_release_id
       List<Integer> normalMovieIds = list.getRecords().stream()
@@ -149,8 +168,6 @@ public class AppMovieController {
 //  获取电影的上映场次
   @PostMapping(ApiPaths.App.Movie.SHOW_TIME)
   public RestBean<Object> showTime (@RequestBody getMovieShowTimeQuery query) {
-    Page<MovieShowTimeMapper> page = new Page<>(query.getPage(), query.getPageSize());
-
     // 如果使用30小时制，将时间转换为24小时制
     if (query.getUse30HourFormat() != null && query.getUse30HourFormat()) {
       if (query.getStartTimeFrom() != null && !query.getStartTimeFrom().isEmpty()) {
@@ -175,7 +192,71 @@ public class AppMovieController {
       }
     }
 
-    List<AppBeforeMovieShowTimeResponse> list = movieMapper.getMovieShowTime(query, ShowTimeState.no_started.getCode(), page);
+    // 收藏影院置顶：登录用户注入 userId，SQL 会按 is_favorite DESC 优先排序，
+    // 进而保证「按影院分页」时收藏的影院排在最前。未登录则为 null，排序不变。
+    query.setUserId(favoriteCinemaService.currentUserIdOrNull());
+
+    // 注意：这里 *不* 把 IPage 传给 mapper —— 见 MovieMapper#getMovieShowTime 上的说明。
+    // 详情页"场次列表"是按影院分页（一页 = N 家影院的所有场次），而 mybatis-plus
+    // 的分页插件只能给 SQL 末尾追加 LIMIT N，会把所有名额塞给 cinema.id 最小的那家。
+    List<AppBeforeMovieShowTimeResponse> list = movieMapper.getMovieShowTime(query, ShowTimeState.no_started.getCode());
+
+    // 在做"按影院维度分页切片"之前，先用全量数据计算每个日期的 summary：
+    //   - cinemaCount：当日去重的影院数
+    //   - showTimeCount：当日的场次总数
+    // 这样无论 app 端拉到第几页，顶部摘要条都能展示准确总数，而不是只统计已加载部分。
+    final boolean use30HourForSummary =
+        query.getUse30HourFormat() != null && query.getUse30HourFormat();
+    Map<String, Set<Integer>> dateCinemaIds = new LinkedHashMap<>();
+    Map<String, Integer> dateShowTimeCount = new LinkedHashMap<>();
+    for (AppBeforeMovieShowTimeResponse item : list) {
+      String startTime = item.getStartTime();
+      if (startTime == null || startTime.length() < 10) {
+        continue;
+      }
+      String dateKey;
+      if (use30HourForSummary) {
+        // 30 小时制下 02:00 之类的次日凌晨场归在前一天 26:00；用同一份转换函数保证
+        // 与 result list 的 date 一致，避免摘要与 tab 对不上。
+        String timeToConvert = startTime.length() >= 16 ? startTime.substring(0, 16) : startTime;
+        String converted = Utils.convert24HourTo30Hour(timeToConvert);
+        if (converted == null || converted.length() < 10) continue;
+        dateKey = converted.substring(0, 10);
+      } else {
+        dateKey = startTime.substring(0, 10);
+      }
+      if (item.getCinemaId() != null) {
+        dateCinemaIds.computeIfAbsent(dateKey, k -> new HashSet<>()).add(item.getCinemaId());
+      }
+      dateShowTimeCount.put(dateKey, dateShowTimeCount.getOrDefault(dateKey, 0) + 1);
+    }
+    List<Map<String, Object>> summary = new ArrayList<>();
+    List<String> summaryDates = new ArrayList<>(dateShowTimeCount.keySet());
+    Collections.sort(summaryDates); // yyyy-MM-dd 字典序即日期升序
+    for (String date : summaryDates) {
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("date", date);
+      row.put("cinemaCount",
+          dateCinemaIds.getOrDefault(date, Collections.emptySet()).size());
+      row.put("showTimeCount", dateShowTimeCount.get(date));
+      summary.add(row);
+    }
+
+    // 按影院维度分页：保留 mapper 返回顺序（cinema.id ASC，或距离 ASC——已由 SQL ORDER BY 决定），
+    // 取出前 pageSize 个 cinema_id，再过滤 list 只保留这些影院的场次。
+    int pageNum = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
+    int pageSize = query.getPageSize() == null || query.getPageSize() < 1 ? 10 : query.getPageSize();
+    LinkedHashSet<Integer> orderedCinemaIds = list.stream()
+        .map(AppBeforeMovieShowTimeResponse::getCinemaId)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+    Set<Integer> pagedCinemaIdSet = orderedCinemaIds.stream()
+        .skip((long) (pageNum - 1) * pageSize)
+        .limit(pageSize)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+    list = list.stream()
+        .filter(item -> item.getCinemaId() != null && pagedCinemaIdSet.contains(item.getCinemaId()))
+        .collect(Collectors.toList());
 
     // 如果使用30小时制，先将时间转换为30小时制，然后再分组
     if (query.getUse30HourFormat() != null && query.getUse30HourFormat()) {
@@ -214,7 +295,13 @@ public class AppMovieController {
 
     for (String key : map.keySet()) {
       AppRootMovieShowTimeResponse data = new AppRootMovieShowTimeResponse();
-      Map<Integer, List<AppBeforeMovieShowTimeResponse>> cinema = map.get(key).stream().collect(Collectors.groupingBy(item -> item.getCinemaId()));
+      // 用 LinkedHashMap 保留 mapper 的 SQL 顺序（is_favorite DESC, distance ASC）；
+      // 默认 groupingBy 返回 HashMap 会打乱顺序，导致收藏影院无法置顶。
+      Map<Integer, List<AppBeforeMovieShowTimeResponse>> cinema = map.get(key).stream().collect(
+          Collectors.groupingBy(
+              AppBeforeMovieShowTimeResponse::getCinemaId,
+              LinkedHashMap::new,
+              Collectors.toList()));
 
       List<AppMovieShowTimeResponse> cinemaList = new ArrayList<>();
 
@@ -245,6 +332,13 @@ public class AppMovieController {
           showTime.setVersionCode(item.getVersionCode());
           showTime.setReReleaseId(item.getReReleaseId());
           showTime.setReReleaseVersionInfo(item.getReReleaseVersionInfo());
+          showTime.setReservationUrl(item.getReservationUrl());
+          showTime.setSaleStatus(item.getSaleStatus());
+          // 字幕语言：mapper 已按 subtitle_id 原顺序「、」拼好；这里 split 成 List 供前端 chip 直接渲染
+          showTime.setSubtitleNames(
+              item.getSubtitleNames() != null && !item.getSubtitleNames().isEmpty()
+                  ? Arrays.asList(item.getSubtitleNames().split("、"))
+                  : new ArrayList<>());
           String showDateStr = item.getStartTime() != null && item.getStartTime().length() >= 10
               ? item.getStartTime().substring(0, 10) : null;
           List<Integer> specIds = item.getSpecIds() != null ? item.getSpecIds() : Collections.emptyList();
@@ -271,6 +365,7 @@ public class AppMovieController {
         model.setCinemaTel(first.getCinemaTel());
         model.setCinemaLatitude(first.getCinemaLatitude());  // 设置影院纬度
         model.setCinemaLongitude(first.getCinemaLongitude());  // 设置影院经度
+        model.setFavorite(Boolean.TRUE.equals(first.getFavorite()));  // 是否已收藏
         model.setTotalShowTimes(showTimes.size());  // 设置总场次数
         model.setDistance(first.getDistance());  // 设置距离
         model.setShowTimes(showTimes);
@@ -293,7 +388,12 @@ public class AppMovieController {
 
       return  t1Format.compareTo(t2Format);
     }).toList();
-    return RestBean.success(sorted, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+    // 用 wrapper 同时返回分页后的场次列表（data）和全量 perDate 摘要（summary）。
+    // 前端顶部"X 家影院 · Y 场"用 summary 来展示准确总数，不受分页影响。
+    Map<String, Object> wrapper = new LinkedHashMap<>();
+    wrapper.put("data", sorted);
+    wrapper.put("summary", summary);
+    return RestBean.success(wrapper, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
   }
 
   /** 电影详情页：重映历史（按 movieId 查询） */
@@ -301,6 +401,24 @@ public class AppMovieController {
   public RestBean<List<ReReleaseHistoryResponse>> reReleaseHistory(@RequestParam Integer movieId) {
     List<ReReleaseHistoryResponse> list = reReleaseMapper.historyByMovieId(movieId);
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+  }
+
+  /**
+   * 电影详情页"场次列表"的动态筛选项。
+   *
+   * 返回该电影（含 reReleaseId 区分）所有未来场次实际出现过的 distinct 字幕语言 id
+   * 与上映标签 id；前端据此过滤本地全量字幕/标签字典，只展示这部电影真正有的选项。
+   * 仅按 movieId / reReleaseId 限定，不随地区/规格/版本等其它筛选联动。
+   */
+  @PostMapping(ApiPaths.App.Movie.SHOW_TIME_FILTERS)
+  public RestBean<Object> showTimeFilters(@RequestBody getMovieShowTimeQuery query) {
+    Integer state = ShowTimeState.no_started.getCode();
+    List<Integer> subtitleIds = movieMapper.getMovieShowTimeSubtitleIds(query, state);
+    List<Integer> showTimeTagIds = movieMapper.getMovieShowTimeTagIds(query, state);
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("subtitleIds", subtitleIds);
+    result.put("showTimeTagIds", showTimeTagIds);
+    return RestBean.success(result, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
   }
 
 }

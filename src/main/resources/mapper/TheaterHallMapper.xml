@@ -37,7 +37,7 @@
         <where>
             theater_hall.deleted = 0
             <if test="query.name != null and !query.name.equals('')">
-                AND theater_hall.name LIKE concat('%', #{query.name}, '%')
+                AND theater_hall.name LIKE '%' || #{query.name} || '%'
             </if>
             <if test="query.id != null and !query.id.equals('')">
                 AND theater_hall.id = #{query.id}
@@ -46,6 +46,13 @@
                 AND theater_hall.cinema_id = #{query.cinemaId}
             </if>
         </where>
+        <!--
+          按厅名里出现的第一个数字自然排序，避免「シアター10」排到「シアター2」前面。
+          没有数字的厅名（如「IMAXシアター」）排在最后，再按 name 字典序兜底。
+        -->
+        ORDER BY
+            COALESCE((regexp_match(theater_hall.name, '\d+'))[1]::bigint, 999999999) ASC,
+            theater_hall.name ASC
     </select>
     
     <!-- 查询影厅座位数 -->
