@@ -49,7 +49,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -284,7 +283,8 @@ public class CinemaController {
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
   @GetMapping(ApiPaths.Common.Cinema.SCREENING)
-  public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date) {
+  public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date,
+                                     @RequestParam(value = "use30HourFormat", required = false) Boolean use30HourFormat) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
 
     QueryWrapper<TheaterHall> queryWrapper = new QueryWrapper<>();
@@ -303,7 +303,32 @@ public class CinemaController {
     movieShowTimeListQuery.setCinemaId(id);
     List<MovieShowTimeList> movieShowTimeListList =  movieShowTimeMapper.movieShowTimeList(movieShowTimeListQuery, OrderState.order_succeed.getCode());
 
-    // 组装返回结果
+    // 30 小时制（营业日）：电影院把 0:00~5:59 的午夜场算作「前一天」的营业日尾巴。
+    // 默认按自然日（24h）返回；开启 use30HourFormat 时，以 6:00 为界重组成营业日 D：
+    //   - 保留当天 >=6:00 的场次（含晚间跨午夜的，结束落在次日）；
+    //   - 剔除当天 <6:00 的早场（归 D-1 营业日，会出现在 D-1 那一页）；
+    //   - 并入次日 <6:00 的早场作为午夜尾巴（其 start_time 是次日 00:xx，前端按与本日零点
+    //     的时间差自然落在 24:00-29:59）。
+    if (use30HourFormat != null && use30HourFormat) {
+      String nextDay = currentDate.plusDays(1).format(formatter);
+      MovieShowTimeListQuery nextDayQuery = new MovieShowTimeListQuery();
+      nextDayQuery.setDate(nextDay);
+      nextDayQuery.setCinemaId(id);
+      List<MovieShowTimeList> nextDayList =
+        movieShowTimeMapper.movieShowTimeList(nextDayQuery, OrderState.order_succeed.getCode());
+
+      List<MovieShowTimeList> businessDayList = new ArrayList<>();
+      for (MovieShowTimeList item : movieShowTimeListList) {
+        if (startHourOf(item) >= 6) businessDayList.add(item);
+      }
+      for (MovieShowTimeList item : nextDayList) {
+        if (startHourOf(item) < 6) businessDayList.add(item);
+      }
+      movieShowTimeListList = businessDayList;
+    }
+
+    // 组装返回结果（lambda 捕获需 effectively final，故复制到 final 引用）
+    final List<MovieShowTimeList> screeningList = movieShowTimeListList;
     List<CinemaScreeningResponse> result = theaterHallList.stream().map(item -> {
       CinemaScreeningResponse cinemaScreeningResponse = new CinemaScreeningResponse();
 
@@ -312,7 +337,7 @@ public class CinemaController {
       cinemaScreeningResponse.setDate(today);
 
 
-      List<MovieShowTimeList> screening = movieShowTimeListList
+      List<MovieShowTimeList> screening = screeningList
         .stream()
         .map(movie -> {
           movie.setMovieShowTimeTags(
@@ -334,6 +359,21 @@ public class CinemaController {
 
     return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
+
+  /**
+   * 解析场次开场小时（0~23）。start_time 形如 "yyyy-MM-dd HH:mm:ss"，取第 11~12 位。
+   * 无法解析时返回 6，使其按「白天场」保留，避免误丢数据。
+   */
+  private int startHourOf(MovieShowTimeList item) {
+    String startTime = item.getStartTime();
+    if (startTime == null || startTime.length() < 13) return 6;
+    try {
+      return Integer.parseInt(startTime.substring(11, 13));
+    } catch (NumberFormatException e) {
+      return 6;
+    }
+  }
+
   // 获取影院上映中的电影
   @GetMapping(ApiPaths.Common.Cinema.MOVIE_SHOWING)
   public RestBean<Object> GetMovieShowing(@RequestParam("id") Integer id) {
