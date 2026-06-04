@@ -431,10 +431,10 @@
         AND movie_order.deleted = 0
         AND movie_show_time.deleted = 0
         <if test="query.movieName != null and query.movieName != ''">
-            AND movie.name LIKE CONCAT('%', #{query.movieName}, '%')
+            AND movie.name LIKE '%' || #{query.movieName} || '%'
         </if>
         <if test="query.cinemaName != null and query.cinemaName != ''">
-            AND cinema.name LIKE CONCAT('%', #{query.cinemaName}, '%')
+            AND cinema.name LIKE '%' || #{query.cinemaName} || '%'
         </if>
         ORDER BY movie_order.create_time DESC
     </select>
@@ -474,10 +474,10 @@
         AND movie_order.deleted = 0
         AND movie_show_time.deleted = 0
         <if test="query.movieName != null and query.movieName != ''">
-            AND movie.name LIKE CONCAT('%', #{query.movieName}, '%')
+            AND movie.name LIKE '%' || #{query.movieName} || '%'
         </if>
         <if test="query.cinemaName != null and query.cinemaName != ''">
-            AND cinema.name LIKE CONCAT('%', #{query.cinemaName}, '%')
+            AND cinema.name LIKE '%' || #{query.cinemaName} || '%'
         </if>
         GROUP BY movie_order.id
         ORDER BY MIN(movie_order.create_time) DESC

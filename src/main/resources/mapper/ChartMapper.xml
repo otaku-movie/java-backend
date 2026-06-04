@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  Dashboard 聚合查询。
+
+  约束：
+    - 所有表不带 schema 前缀，依赖应用配置的 currentSchema=crawl。
+    - movie_show_time.start_time 是 character varying，内容统一为
+      'YYYY-MM-DD HH:MM:SS'。原写法用 `start_time::date = CURRENT_DATE`，
+      cast 后无法走 btree 索引，每条都是全表 seq scan ~175ms。
+      改用字符串前缀范围比较 `start_time >= 'YYYY-MM-DD' AND start_time < 下一天`，
+      可以走 idx_crawl_showtime_start（btree on start_time WHERE deleted=0），
+      实测单条 9ms 量级（Index Only Scan）。
+    - PostgreSQL 默认会把未加引号的列别名全部 lowercase，所以采用 snake_case
+      别名 + <resultMap> 显式映射，避免依赖 mybatis 大小写无关推断（与
+      UserMapper.xml 的 loginPlatformStatistics 风格保持一致）。
+-->
+<mapper namespace="com.example.backend.mapper.ChartMapper">
+
+    <!-- 今日时间窗：[today 00:00, tomorrow 00:00) 字符串前缀，能命中 start_time btree 索引 -->
+    <sql id="todayWindow">
+        start_time &gt;= TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+        AND start_time &lt; TO_CHAR(CURRENT_DATE + 1, 'YYYY-MM-DD')
+    </sql>
+
+    <select id="countBrands" resultType="long">
+        SELECT COUNT(*) FROM brand WHERE deleted = 0
+    </select>
+
+    <select id="countTheaterHalls" resultType="long">
+        SELECT COUNT(*) FROM theater_hall WHERE deleted = 0
+    </select>
+
+    <select id="countMoviesWithTmdb" resultType="long">
+        SELECT COUNT(*) FROM movie WHERE deleted = 0 AND tmdb_id IS NOT NULL
+    </select>
+
+    <select id="countTodayShowtimes" resultType="long">
+        SELECT COUNT(*)
+        FROM movie_show_time
+        WHERE deleted = 0
+          AND <include refid="todayWindow"/>
+    </select>
+
+    <resultMap id="dailyShowtimeCount"
+               type="com.example.backend.response.chart.DailyShowtimeCount">
+        <result property="date" column="date"/>
+        <result property="showtimeCount" column="showtime_count"/>
+    </resultMap>
+    <select id="next7DaysShowtimes" resultMap="dailyShowtimeCount">
+        SELECT
+            LEFT(start_time, 10) AS date,
+            COUNT(*)             AS showtime_count
+        FROM movie_show_time
+        WHERE deleted = 0
+          AND start_time &gt;= TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+          AND start_time &lt; TO_CHAR(CURRENT_DATE + 7, 'YYYY-MM-DD')
+        GROUP BY LEFT(start_time, 10)
+        ORDER BY LEFT(start_time, 10)
+    </select>
+
+    <resultMap id="brandShowtimeStatistics"
+               type="com.example.backend.response.chart.BrandShowtimeStatistics">
+        <result property="brandId" column="brand_id"/>
+        <result property="brandName" column="brand_name"/>
+        <result property="showtimeCount" column="showtime_count"/>
+    </resultMap>
+    <select id="todayBrandShowtimes" resultMap="brandShowtimeStatistics">
+        SELECT
+            b.id          AS brand_id,
+            b.name        AS brand_name,
+            COUNT(st.id)  AS showtime_count
+        FROM movie_show_time st
+                 INNER JOIN cinema c ON c.id = st.cinema_id AND c.deleted = 0
+                 INNER JOIN brand  b ON b.id = c.brand_id   AND b.deleted = 0
+        WHERE st.deleted = 0
+          AND st.start_time &gt;= TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+          AND st.start_time &lt; TO_CHAR(CURRENT_DATE + 1, 'YYYY-MM-DD')
+        GROUP BY b.id, b.name
+        ORDER BY COUNT(st.id) DESC
+    </select>
+
+    <resultMap id="topCinemaShowtime"
+               type="com.example.backend.response.chart.TopCinemaShowtime">
+        <result property="cinemaId" column="cinema_id"/>
+        <result property="cinemaName" column="cinema_name"/>
+        <result property="brandName" column="brand_name"/>
+        <result property="showtimeCount" column="showtime_count"/>
+    </resultMap>
+    <select id="todayTopCinemas" resultMap="topCinemaShowtime">
+        SELECT
+            c.id          AS cinema_id,
+            c.name        AS cinema_name,
+            b.name        AS brand_name,
+            COUNT(st.id)  AS showtime_count
+        FROM movie_show_time st
+                 INNER JOIN cinema c ON c.id = st.cinema_id AND c.deleted = 0
+                 LEFT  JOIN brand  b ON b.id = c.brand_id   AND b.deleted = 0
+        WHERE st.deleted = 0
+          AND st.start_time &gt;= TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+          AND st.start_time &lt; TO_CHAR(CURRENT_DATE + 1, 'YYYY-MM-DD')
+        GROUP BY c.id, c.name, b.name
+        ORDER BY COUNT(st.id) DESC
+        LIMIT 10
+    </select>
+
+    <resultMap id="movieDataQuality"
+               type="com.example.backend.response.chart.MovieDataQuality">
+        <result property="totalMovies" column="total_movies"/>
+        <result property="withTmdb" column="with_tmdb"/>
+        <result property="withDescription" column="with_description"/>
+        <result property="withReleaseDate" column="with_release_date"/>
+        <result property="withHomePage" column="with_home_page"/>
+        <result property="withMovieRate" column="with_movie_rate"/>
+        <result property="withLevel" column="with_level"/>
+    </resultMap>
+    <resultMap id="prefectureShowtimeStatistics"
+               type="com.example.backend.response.chart.PrefectureShowtimeStatistics">
+        <result property="prefectureId" column="prefecture_id"/>
+        <result property="prefectureName" column="prefecture_name"/>
+        <result property="regionName" column="region_name"/>
+        <result property="showtimeCount" column="showtime_count"/>
+    </resultMap>
+    <select id="todayPrefectureShowtimes" resultMap="prefectureShowtimeStatistics">
+        SELECT
+            pref.id        AS prefecture_id,
+            pref.name      AS prefecture_name,
+            region.name    AS region_name,
+            COUNT(st.id)   AS showtime_count
+        FROM movie_show_time st
+                 INNER JOIN cinema c     ON c.id = st.cinema_id  AND c.deleted = 0
+                 INNER JOIN areas  pref  ON pref.id = c.prefecture_id
+                 LEFT  JOIN areas  region ON region.id = pref.parent_id
+        WHERE st.deleted = 0
+          AND st.start_time &gt;= TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+          AND st.start_time &lt; TO_CHAR(CURRENT_DATE + 1, 'YYYY-MM-DD')
+          AND pref.parent_id BETWEEN 1 AND 8
+        GROUP BY pref.id, pref.name, region.name
+        ORDER BY COUNT(st.id) DESC
+    </select>
+
+    <select id="movieDataQuality" resultMap="movieDataQuality">
+        SELECT
+            COUNT(*)                                                              AS total_movies,
+            COUNT(*) FILTER (WHERE tmdb_id IS NOT NULL)                           AS with_tmdb,
+            COUNT(*) FILTER (WHERE description IS NOT NULL AND description &lt;&gt; '') AS with_description,
+            COUNT(*) FILTER (WHERE release_date IS NOT NULL)                      AS with_release_date,
+            COUNT(*) FILTER (WHERE home_page IS NOT NULL AND home_page &lt;&gt; '')     AS with_home_page,
+            COUNT(*) FILTER (WHERE movie_rate IS NOT NULL)                        AS with_movie_rate,
+            COUNT(*) FILTER (WHERE level_id IS NOT NULL)                          AS with_level
+        FROM movie
+        WHERE deleted = 0
+    </select>
+
+    <resultMap id="chartKpiTrends" type="com.example.backend.response.chart.ChartKpiTrends">
+        <result property="todayShowTimeChangePercent" column="showtime_change_percent"/>
+        <result property="movieCountChange" column="movie_count_change"/>
+        <result property="cinemaCountChange" column="cinema_count_change"/>
+    </resultMap>
+    <select id="kpiTrends" resultMap="chartKpiTrends">
+        SELECT
+            CASE
+                WHEN st.yesterday_cnt &gt; 0 THEN
+                    ROUND(((st.today_cnt - st.yesterday_cnt)::numeric / st.yesterday_cnt) * 100, 1)
+                ELSE NULL
+            END AS showtime_change_percent,
+            (SELECT COUNT(*) FROM movie
+             WHERE deleted = 0 AND create_time::date = CURRENT_DATE
+               AND EXISTS (
+                 SELECT 1 FROM movie m2
+                 WHERE m2.deleted = 0 AND m2.create_time::date &lt; CURRENT_DATE
+               )) AS movie_count_change,
+            (SELECT COUNT(*) FROM cinema
+             WHERE deleted = 0 AND create_time::date = CURRENT_DATE
+               AND EXISTS (
+                 SELECT 1 FROM cinema c2
+                 WHERE c2.deleted = 0 AND c2.create_time::date &lt; CURRENT_DATE
+               )) AS cinema_count_change
+        FROM (
+            SELECT
+                (SELECT COUNT(*) FROM movie_show_time
+                 WHERE deleted = 0
+                   AND start_time &gt;= TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+                   AND start_time &lt; TO_CHAR(CURRENT_DATE + 1, 'YYYY-MM-DD'))     AS today_cnt,
+                (SELECT COUNT(*) FROM movie_show_time
+                 WHERE deleted = 0
+                   AND start_time &gt;= TO_CHAR(CURRENT_DATE - 1, 'YYYY-MM-DD')
+                   AND start_time &lt; TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD'))         AS yesterday_cnt
+        ) st
+    </select>
+
+</mapper>
