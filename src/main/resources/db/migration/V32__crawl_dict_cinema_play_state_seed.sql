@@ -11,8 +11,8 @@
 -- 名称最终由 i18n 按 locale 翻译，这里存的 JP 名仅作兜底。
 --
 -- 幂等：dict.code 与 dict_item.(dict_id, code) 已存在则跳过。
--- 注意：crawl.dict 会被 import:data TRUNCATE 后重建，importer 同步加了
---       cinemaPlayState 的重种逻辑（import-data-pg.ts auxDicts）。
+-- 注意：crawl.dict 会被 import:data TRUNCATE 后重建，importer 会通过
+--       syncDictsFromPublic 从 public.dict / public.dict_item 通用同步。
 -- ============================================================
 
 SET timezone = 'Asia/Tokyo';
