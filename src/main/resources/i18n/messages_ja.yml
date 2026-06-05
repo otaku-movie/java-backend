@@ -7,6 +7,7 @@ success:
   uploadSuccess: "アップロード成功"
   success: "成功"
   send: "送信成功"
+  action: "操作に成功しました"
 error:
   systemError: "システムエラー"
   userNotFound: "ユーザーが見つかりません"
@@ -125,6 +126,9 @@ validator:
     content:
       required: "コメント内容は空にできません"
       max: "コメント内容は1000文字を超えることはできません"
+    rate:
+      min: "コメント評価は0.1以上である必要があります"
+      max: "コメント評価は10以下である必要があります"
   movieReply:
     movieCommentId:
       required: "movieCommentIdは空にできません"
@@ -335,7 +339,7 @@ dict:
     item:
       "1": "2D"
       "2": "3D"
-  presale_delivery_type:
+  presaleDeliveryType:
     name: "前売券交付方式"
     item:
       "1": "デジタル"

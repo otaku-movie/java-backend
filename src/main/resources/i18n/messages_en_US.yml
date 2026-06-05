@@ -7,6 +7,7 @@ success:
   uploadSuccess: "Upload successful"
   success: "Success"
   send: "Send successful"
+  action: "Operation successful"
 error:
   systemError: "System error"
   userNotFound: "User not found"
@@ -125,6 +126,9 @@ validator:
     content:
       required: "Comment content cannot be empty"
       max: "Comment content cannot exceed 1000 characters"
+    rate:
+      min: "Comment rating must be at least 0.1"
+      max: "Comment rating must be at most 10"
   movieReply:
     movieCommentId:
       required: "movieCommentId cannot be empty"
@@ -335,7 +339,7 @@ dict:
     item:
       "1": "2D"
       "2": "3D"
-  presale_delivery_type:
+  presaleDeliveryType:
     name: "Presale Delivery Type"
     item:
       "1": "Virtual"
