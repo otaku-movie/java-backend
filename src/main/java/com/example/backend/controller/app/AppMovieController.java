@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -147,19 +149,53 @@ public class AppMovieController {
 
     IPage<MovieComingSoonResponse> list = movieMapper.getMovieComingSoon(query, page);
 
-    // 合并未来重映（仅第 1 页）
+    // 合并未来重映（仅第 1 页）。与主列表「名字相同」的条目跳过，避免同一部电影
+    // 出现两次且重映行可能带着院线小缩略图 cover。
     if (query.getPage() != null && query.getPage() == 1) {
       String today = LocalDate.now().toString();
       List<MovieComingSoonResponse> reReleases = reReleaseMapper.upcomingComingSoon(today);
       if (reReleases != null && !reReleases.isEmpty()) {
-        List<MovieComingSoonResponse> merged = new ArrayList<>();
-        merged.addAll(reReleases);
-        if (list.getRecords() != null) merged.addAll(list.getRecords());
-        if (query.getPageSize() != null && merged.size() > query.getPageSize()) {
-          merged = merged.subList(0, query.getPageSize());
+        Set<Integer> existingMovieIds = new HashSet<>();
+        Set<String> existingNames = new HashSet<>();
+        if (list.getRecords() != null) {
+          for (MovieComingSoonResponse m : list.getRecords()) {
+            if (m.getId() != null) {
+              existingMovieIds.add(m.getId());
+            }
+            String norm = normalizeMovieNameKey(m.getName());
+            if (norm != null) {
+              existingNames.add(norm);
+            }
+          }
         }
-        list.setRecords(merged);
-        list.setTotal(list.getTotal() + reReleases.size());
+        List<MovieComingSoonResponse> extraReleases = reReleases.stream()
+            .filter(rr -> rr.getId() == null || !existingMovieIds.contains(rr.getId()))
+            .filter(rr -> {
+              String norm = normalizeMovieNameKey(rr.getName());
+              return norm == null || !existingNames.contains(norm);
+            })
+            .collect(Collectors.toList());
+        if (!extraReleases.isEmpty()) {
+          List<MovieComingSoonResponse> merged = new ArrayList<>();
+          merged.addAll(extraReleases);
+          if (list.getRecords() != null) {
+            merged.addAll(list.getRecords());
+          }
+          // 重映与主列表混在一起后必须按「上映日」重新整体排序，否则重映行会一直
+          // 堆在最前，出现「上一组 7/3、下一组 6/4」这种乱序。排序键与主查询
+          // getMovieComingSoon 的 ORDER BY 保持一致：空日期排最后，其余按
+          // loose_release_to_date 折算的代表日升序（解析不出的按 9999 排最后）。
+          merged.sort(Comparator
+              .comparingInt((MovieComingSoonResponse m) ->
+                  (m.getStartDate() == null || m.getStartDate().trim().isEmpty()) ? 1 : 0)
+              .thenComparing(m -> looseReleaseSortKey(m.getStartDate())));
+          // 不再截断回 pageSize：之前 subList(0, pageSize) 会把原本属于第 1 页末尾的
+          // 正片挤掉，而第 2 页从 DB offset=pageSize 开始，被挤掉的那几部就永远不
+          // 出现（中间缺一段）。这里让第 1 页带着这几条重映多出来即可，第 2 页照常
+          // 衔接，不丢片。重复 id 由客户端按 id 去重。
+          list.setRecords(merged);
+          list.setTotal(list.getTotal() + extraReleases.size());
+        }
       }
     }
 
@@ -419,6 +455,88 @@ public class AppMovieController {
     result.put("subtitleIds", subtitleIds);
     result.put("showTimeTagIds", showTimeTagIds);
     return RestBean.success(result, MessageUtils.getMessage(MessageKeys.App.Movie.GET_SUCCESS));
+  }
+
+  /** 片名去空白、小写，用于「即将上映」主列表与重映合并时的同名去重。 */
+  private static String normalizeMovieNameKey(String name) {
+    if (name == null) {
+      return null;
+    }
+    String trimmed = name.trim();
+    return trimmed.isEmpty() ? null : trimmed.toLowerCase(Locale.ROOT);
+  }
+
+  /**
+   * 把 start_date（可能是精确日期或日式模糊标签 `2026年秋` 等）折算成可排序的代表日，
+   * 逻辑与 DB 函数 crawl.loose_release_to_date 对齐，用于合并重映后对整页统一排序。
+   * 解析不出的（含 null/空）返回 LocalDate.MAX，对应 SQL 里的 9999-12-31（排最后）。
+   */
+  private static LocalDate looseReleaseSortKey(String startDate) {
+    if (startDate == null) {
+      return LocalDate.MAX;
+    }
+    String v = startDate.trim();
+    if (v.isEmpty()) {
+      return LocalDate.MAX;
+    }
+    try {
+      // ISO / 斜杠：完整、年月、年
+      if (v.matches("^\\d{4}-\\d{2}-\\d{2}.*")) {
+        return LocalDate.parse(v.substring(0, 10));
+      }
+      Matcher isoYm = Pattern.compile("^(\\d{4})-(\\d{1,2})$").matcher(v);
+      if (isoYm.matches()) {
+        return LocalDate.of(Integer.parseInt(isoYm.group(1)), Integer.parseInt(isoYm.group(2)), 1);
+      }
+      Matcher slash = Pattern.compile("^(\\d{4})/(\\d{1,2})/(\\d{1,2})").matcher(v);
+      if (slash.find()) {
+        return LocalDate.of(Integer.parseInt(slash.group(1)),
+            Integer.parseInt(slash.group(2)), Integer.parseInt(slash.group(3)));
+      }
+      Matcher slashYm = Pattern.compile("^(\\d{4})/(\\d{1,2})").matcher(v);
+      if (slashYm.find()) {
+        return LocalDate.of(Integer.parseInt(slashYm.group(1)),
+            Integer.parseInt(slashYm.group(2)), 1);
+      }
+      if (v.matches("^\\d{4}$")) {
+        return LocalDate.of(Integer.parseInt(v), 1, 1);
+      }
+
+      // 以下只处理 `YYYY年...` 的日式写法
+      Matcher yearJp = Pattern.compile("^(\\d{4})年").matcher(v);
+      if (!yearJp.find()) {
+        return LocalDate.MAX;
+      }
+      int y = Integer.parseInt(yearJp.group(1));
+
+      Matcher ymd = Pattern.compile("^\\d{4}年(\\d{1,2})月(\\d{1,2})日").matcher(v);
+      if (ymd.find()) {
+        return LocalDate.of(y, Integer.parseInt(ymd.group(1)), Integer.parseInt(ymd.group(2)));
+      }
+      Matcher ym = Pattern.compile("^\\d{4}年(\\d{1,2})月").matcher(v);
+      if (ym.find()) {
+        return LocalDate.of(y, Integer.parseInt(ym.group(1)), 1);
+      }
+
+      // YYYY年 + 季节/时期 → 代表月 1 日（顺序与 SQL 一致，先匹配更具体的）
+      if (v.matches(".*(正月|年始|年明け).*")) return LocalDate.of(y, 1, 1);
+      if (v.matches(".*(初春|早春).*")) return LocalDate.of(y, 2, 1);
+      if (v.matches(".*(ゴールデンウィーク|ＧＷ|GW).*")) return LocalDate.of(y, 5, 1);
+      if (v.contains("春")) return LocalDate.of(y, 4, 1);
+      if (v.matches(".*(初夏|梅雨).*")) return LocalDate.of(y, 6, 1);
+      if (v.contains("お盆")) return LocalDate.of(y, 8, 1);
+      if (v.matches(".*(盛夏|真夏|夏).*")) return LocalDate.of(y, 7, 1);
+      if (v.contains("初秋")) return LocalDate.of(y, 9, 1);
+      if (v.contains("晩秋")) return LocalDate.of(y, 11, 1);
+      if (v.contains("秋")) return LocalDate.of(y, 10, 1);
+      if (v.matches(".*(初冬|年末).*")) return LocalDate.of(y, 12, 1);
+      if (v.contains("冬")) return LocalDate.of(y, 12, 1);
+
+      // 只有 YYYY年 → 当年 1/1
+      return LocalDate.of(y, 1, 1);
+    } catch (Exception e) {
+      return LocalDate.MAX;
+    }
   }
 
 }

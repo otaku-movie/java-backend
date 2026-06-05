@@ -335,33 +335,31 @@
             movie.deleted = 0
           AND movie.kind = 'movie'
           AND (
+                <!--
+                  start_date 既可能是精确日期，也可能是模糊日式标签（2026年秋 / 2026年 /
+                  2026年7月）。统一用 crawl.loose_release_to_date 折算成代表日；解析不出来的
+                  （未知）按 9999 处理 → 仍保留在列表里（排最后）。用严格大于：当天已上映的
+                  归「上映中」，「即将上映」只含今天之后。
+                  注意：这里及 ORDER BY 不能用 SQL 单行注释 `- -`，因为 MyBatis-Plus 分页会
+                  在 SQL 末尾追加 LIMIT/OFFSET，行尾注释会把追加的 `LIMIT ?` 一起注释掉，
+                  导致占位符与参数数量不一致而报错。统一改用 XML 注释。
+                -->
                 movie.start_date IS NULL
                 OR movie.start_date = ''
-                OR TO_DATE(
-                     CASE
-                         WHEN movie.start_date LIKE '____-__-__' THEN movie.start_date  -- 完整日期
-                         WHEN movie.start_date LIKE '____-__' THEN movie.start_date || '-01'  -- 补充日期
-                         WHEN movie.start_date LIKE '____' THEN movie.start_date || '-01-01'  -- 补充年月日
-                         ELSE '1900-01-01'  -- 默认值
-                         END, 'YYYY-MM-DD'
-                       ) >= CURRENT_DATE  -- 筛选发布日期大于今天
+                OR COALESCE(crawl.loose_release_to_date(movie.start_date), DATE '9999-12-31') > CURRENT_DATE
             )
-        GROUP BY movie.id, movie.name, movie.cover, movie.start_date, movie.time, movie.original_name, 
+        GROUP BY movie.id, movie.name, movie.cover, movie.cover_url, movie.start_date, movie.time, movie.original_name, 
                  movie.description, movie.level_id, movie.status, movie.deleted, movie.create_time, 
                  movie.update_time, level.name, presale.id
         ORDER BY
+            <!-- 没有上映日（NULL/空）的排到最后 -->
             CASE
-                WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1  -- 如果没有日期数据，排到最后
-                ELSE 0  -- 有日期数据的排在前面
+                WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1
+                ELSE 0
                 END,
-            TO_DATE(
-              CASE
-                  WHEN movie.start_date LIKE '____-__-__' THEN movie.start_date  -- 完整日期
-                  WHEN movie.start_date LIKE '____-__' THEN movie.start_date || '-01'  -- 补充日期
-                  WHEN movie.start_date LIKE '____' THEN movie.start_date || '-01-01'  -- 补充年月日
-                  ELSE '1900-01-01'  -- 默认值
-                  END, 'YYYY-MM-DD'
-                ) ASC
+            COALESCE(crawl.loose_release_to_date(movie.start_date), DATE '9999-12-31') ASC,
+            <!-- 稳定排序：同一上映日有大量电影时加 id 兜底，避免分页 OFFSET/LIMIT 在并列行上重复或漏页 -->
+            movie.id ASC
     </select>
     <select id="movieDetail" resultMap="movieList">
         SELECT

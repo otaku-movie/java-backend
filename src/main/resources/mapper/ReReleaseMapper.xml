@@ -51,7 +51,7 @@
         SELECT
             movie.id AS id,
             COALESCE(NULLIF(re_release.display_name_override, ''), movie.name) AS name,
-            COALESCE(NULLIF(re_release.poster_override, ''), movie.cover) AS cover,
+            COALESCE(movie.cover_url, NULLIF(re_release.poster_override, ''), movie.cover) AS cover,
             level.name AS levelName,
             movie.start_date AS startDate,
             TRUE AS isReRelease,
@@ -79,14 +79,16 @@
             -- 只要存在未开始且公开的排片场次，就在“正在上映”里可见（不再依赖 start_date/end_date 门槛）
             AND mst.id IS NOT NULL
         GROUP BY
-            movie.id, re_release.id, level.name, presale.id
+            movie.id, movie.cover, movie.cover_url, re_release.id, re_release.display_name_override,
+            re_release.poster_override, movie.name, movie.start_date, re_release.version_info,
+            level.name, presale.id
     </select>
 
     <select id="upcomingComingSoon" resultType="com.example.backend.response.app.MovieComingSoonResponse">
         SELECT
             movie.id AS id,
             COALESCE(NULLIF(re_release.display_name_override, ''), movie.name) AS name,
-            COALESCE(NULLIF(re_release.poster_override, ''), movie.cover) AS cover,
+            COALESCE(movie.cover_url, NULLIF(re_release.poster_override, ''), movie.cover) AS cover,
             TO_CHAR(re_release.start_date, 'YYYY-MM-DD') AS startDate,
             COALESCE(re_release.time_override, movie.time) AS time,
             movie.original_name AS originalName,
@@ -123,7 +125,7 @@
             -- start_date 在今天之后视为“即将上映”
             AND re_release.start_date > TO_DATE(#{today}, 'YYYY-MM-DD')
         GROUP BY
-            movie.id, movie.name, movie.cover, re_release.start_date, movie.time, movie.original_name,
+            movie.id, movie.name, movie.cover, movie.cover_url, re_release.start_date, movie.time, movie.original_name,
             movie.description, movie.level_id, movie.status, movie.deleted, movie.create_time,
             movie.update_time, level.name, presale.id,
             re_release.id, re_release.display_name_override, re_release.poster_override, re_release.time_override, re_release.version_info
