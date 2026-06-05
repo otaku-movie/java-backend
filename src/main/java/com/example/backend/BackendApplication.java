@@ -41,9 +41,10 @@ public class BackendApplication {
 		// 通过 Environment 取激活的 Profile
 		String[] profiles = ctx.getEnvironment().getActiveProfiles();
 		var log = org.slf4j.LoggerFactory.getLogger(BackendApplication.class);
+		var successLog = org.slf4j.LoggerFactory.getLogger("com.example.backend.SUCCESS");
 		log.info("Active Profiles: {}", Arrays.toString(profiles));
 		var cfg = SaManager.getConfig();
-		log.info(
+		successLog.info(
 			"启动成功，Sa-Token: tokenName={}, timeout={}s, concurrent={}, share={}",
 			cfg.getTokenName(),
 			cfg.getTimeout(),

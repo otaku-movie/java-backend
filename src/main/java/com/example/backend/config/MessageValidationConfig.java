@@ -53,10 +53,13 @@ public class MessageValidationConfig implements CommandLineRunner {
             if (missingKeys.isEmpty()) {
                 log.info("✅ 所有消息键验证通过！");
             } else {
-                log.warn("⚠️ 发现缺失的消息键：");
+                int totalMissing = missingKeys.values().stream().mapToInt(List::size).sum();
+                log.warn("⚠️ 发现 {} 个 MessageKeys 常量在 YAML 中缺失（开启 DEBUG 查看明细）", totalMissing);
                 missingKeys.forEach((locale, keys) -> {
-                    log.warn("  语言环境: {}", locale);
-                    keys.forEach(key -> log.warn("    - {}", key));
+                    log.warn("  语言环境 {} 缺失 {} 个消息键", locale, keys.size());
+                    if (log.isDebugEnabled()) {
+                        keys.stream().sorted().forEach(key -> log.debug("    - {}", key));
+                    }
                 });
                 log.warn("请检查 YAML 文件，确保所有消息键都已定义");
             }
@@ -137,9 +140,11 @@ public class MessageValidationConfig implements CommandLineRunner {
                 extraKeys.removeAll(messageKeys);
                 
                 if (!extraKeys.isEmpty()) {
-                    log.warn("⚠️ 语言环境 {} 的 YAML 文件中有 {} 个未在 MessageKeys 中定义的键：", 
+                    log.warn("⚠️ 语言环境 {} 的 YAML 文件中有 {} 个未在 MessageKeys 中定义的键（开启 DEBUG 查看明细）",
                             locale.toString(), extraKeys.size());
-                    extraKeys.forEach(key -> log.warn("    - {}", key));
+                    if (log.isDebugEnabled()) {
+                        extraKeys.stream().sorted().forEach(key -> log.debug("    - {}", key));
+                    }
                     log.warn("建议：将这些键添加到 MessageKeys 类中，以保持一致性");
                 }
             } catch (Exception e) {

@@ -1,23 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    
-    <!-- 控制台输出配置 -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+
+    <!--
+      自定义转换器：%boldRed(...) 用 ANSI 加粗亮红整段染色，比内置 {red} 更醒目。
+      ESC 转义码在 Java 里用 \u001b 输出，避免 XML 不能写控制字符的问题。
+    -->
+    <conversionRule conversionWord="boldRed"
+                    converterClass="com.example.backend.config.BoldRedLogConverter"/>
+
+    <!--
+      %cex：按级别整段染色的异常堆栈（ERROR 红 / WARN 黄 / 其它不染色）。
+      它本身是 logback 识别的异常处理器，放顶层既能染色堆栈，又不会重复补一段堆栈。
+      所有需要给堆栈上色的 pattern 用 %cex 代替 %throwable。
+    -->
+    <conversionRule conversionWord="cex"
+                    converterClass="com.example.backend.config.ColorThrowableConverter"/>
+
+    <!-- 普通控制台输出：INFO/DEBUG 等保持终端默认色。WARN/ERROR 由下面两个专用 appender 整行染色。 -->
+    <appender name="CONSOLE_NORMAL" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <charset>UTF-8</charset>
             <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level){ERROR=red blink, WARN=yellow, INFO=green, DEBUG=cyan, TRACE=magenta} %clr(%logger{36}){cyan} - %msg%n</pattern>
+                <pattern>%d{HH:mm:ss.SSS} %-5level %logger{30} - %msg%n</pattern>
+            </layout>
+        </encoder>
+    </appender>
+
+    <!-- WARN 整行黄色。 -->
+    <appender name="CONSOLE_WARN" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <charset>UTF-8</charset>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <!-- %cex 顶层：堆栈整段染黄，且 logback 不会重复补一段堆栈。 -->
+                <pattern>%clr(%d{HH:mm:ss.SSS} %-5level %logger{30} - %msg){yellow}%n%cex</pattern>
+            </layout>
+        </encoder>
+    </appender>
+
+    <!-- ERROR 整行红色。 -->
+    <appender name="CONSOLE_ERROR" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <charset>UTF-8</charset>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <!-- %cex 顶层：堆栈整段染红，且 logback 不会重复补一段堆栈。 -->
+                <pattern>%boldRed(%d{HH:mm:ss.SSS} %-5level %logger{30} - %msg)%n%cex</pattern>
+            </layout>
+        </encoder>
+    </appender>
+
+    <!-- 成功类业务提示：保留 INFO 级别，但整行绿色。 -->
+    <appender name="CONSOLE_SUCCESS" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <charset>UTF-8</charset>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>%clr(%d{HH:mm:ss.SSS} SUCCESS %logger{30} - %msg){green}%n%cex</pattern>
             </layout>
         </encoder>
     </appender>
     
-    <!-- 简化的控制台输出配置（用于性能日志，只显示日志级别和消息内容） -->
-    <appender name="CONSOLE_SIMPLE" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- 简化格式（性能日志）：同样按级别上色，INFO 不染色 / WARN 黄 / ERROR 红。 -->
+    <appender name="CONSOLE_SIMPLE_NORMAL" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <charset>UTF-8</charset>
             <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%clr(%-5level){ERROR=red blink, WARN=yellow, INFO=green, DEBUG=cyan, TRACE=magenta} - %msg%n</pattern>
+                <pattern>%-5level - %msg%n</pattern>
+            </layout>
+        </encoder>
+    </appender>
+
+    <appender name="CONSOLE_SIMPLE_WARN" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <charset>UTF-8</charset>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>%clr(%-5level - %msg){yellow}%n%cex</pattern>
+            </layout>
+        </encoder>
+    </appender>
+
+    <appender name="CONSOLE_SIMPLE_ERROR" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <charset>UTF-8</charset>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>%boldRed(%-5level - %msg)%n%cex</pattern>
             </layout>
         </encoder>
     </appender>
@@ -58,33 +163,49 @@
     <!-- 开发环境配置 -->
     <springProfile name="dev">
         <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="CONSOLE_NORMAL"/>
+            <appender-ref ref="CONSOLE_WARN"/>
+            <appender-ref ref="CONSOLE_ERROR"/>
             <appender-ref ref="FILE"/>
             <appender-ref ref="ERROR_FILE"/>
         </root>
-        <logger name="com.example.backend" level="DEBUG"/>
-        <logger name="org.springframework.web" level="DEBUG"/>
-        <logger name="org.hibernate" level="DEBUG"/>
-        <logger name="com.zaxxer.hikari" level="DEBUG"/>
-        <!-- p6spy SQL 日志输出（输出完整的 SQL，参数已填充） -->
-        <logger name="p6spy" level="INFO"/>
+        <logger name="com.example.backend" level="INFO"/>
+        <logger name="org.springframework.web" level="INFO"/>
+        <logger name="org.hibernate" level="WARN"/>
+        <logger name="com.zaxxer.hikari" level="INFO"/>
+        <!-- 本地未启动 RabbitMQ 时会持续重连刷屏；需要排查 MQ 时临时改回 WARN/INFO。 -->
+        <logger name="org.springframework.amqp.rabbit.connection.CachingConnectionFactory" level="OFF"/>
+        <logger name="org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer" level="OFF"/>
+        <!-- p6spy SQL 日志：默认 OFF（完全不打印 SQL），排查 SQL 时临时改回 INFO -->
+        <logger name="p6spy" level="OFF"/>
         <!-- 关闭 MyBatis 默认的 SQL 输出（使用 p6spy 输出） -->
         <logger name="org.mybatis" level="WARN"/>
         <logger name="org.apache.ibatis" level="WARN"/>
         <logger name="com.baomidou.mybatisplus" level="WARN"/>
+        <logger name="com.example.backend.SUCCESS" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE_SUCCESS"/>
+            <appender-ref ref="FILE"/>
+        </logger>
         <!-- 性能日志使用简化格式（只显示消息内容，不显示时间戳、线程等） -->
         <logger name="com.example.backend.config.WebConfig" level="INFO" additivity="false">
-            <appender-ref ref="CONSOLE_SIMPLE"/>
+            <appender-ref ref="CONSOLE_SIMPLE_NORMAL"/>
+            <appender-ref ref="CONSOLE_SIMPLE_WARN"/>
+            <appender-ref ref="CONSOLE_SIMPLE_ERROR"/>
         </logger>
-        <logger name="com.example.backend.config.SqlPerformanceInterceptor" level="INFO" additivity="false">
-            <appender-ref ref="CONSOLE_SIMPLE"/>
+        <!-- 默认 WARN：不再打印每条 SQL 的【SQL执行】INFO，仅保留慢查询 WARN / 执行失败 ERROR。需要逐条 SQL 耗时时临时改回 INFO。 -->
+        <logger name="com.example.backend.config.SqlPerformanceInterceptor" level="WARN" additivity="false">
+            <appender-ref ref="CONSOLE_SIMPLE_NORMAL"/>
+            <appender-ref ref="CONSOLE_SIMPLE_WARN"/>
+            <appender-ref ref="CONSOLE_SIMPLE_ERROR"/>
         </logger>
     </springProfile>
     
     <!-- 测试环境配置 -->
     <springProfile name="test">
         <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="CONSOLE_NORMAL"/>
+            <appender-ref ref="CONSOLE_WARN"/>
+            <appender-ref ref="CONSOLE_ERROR"/>
             <appender-ref ref="FILE"/>
             <appender-ref ref="ERROR_FILE"/>
         </root>

@@ -25,7 +25,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        log.info("start update fill ....");
+        log.debug("start update fill ....");
         this.strictUpdateFill(metaObject, "updateTime", Date.class, new Date());
     }
 }

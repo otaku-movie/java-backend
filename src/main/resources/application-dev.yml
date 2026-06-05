@@ -1,4 +1,8 @@
 spring:
+  output:
+    ansi:
+      # IDE 调试控制台有时不会被识别为支持 ANSI；强制开启，保证 logback 彩色输出生效。
+      enabled: always
   datasource:
     # 使用 PostgreSQL 官方 JDBC 驱动（42.7.3，支持 PostgreSQL 17）
     driver-class-name: org.postgresql.Driver
@@ -79,20 +83,22 @@ app:
 logging:
   level:
     root: INFO
-    com.example.backend: DEBUG
+    com.example.backend: INFO
     org.springframework: INFO
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
     org.springframework.boot: INFO
     org.springframework.context: INFO
-    org.hibernate: DEBUG
-    com.zaxxer.hikari: DEBUG
-    # p6spy SQL 日志输出（输出完整的 SQL，参数已填充）
-    p6spy: INFO
+    org.hibernate: WARN
+    com.zaxxer.hikari: INFO
+    # 本地未启动 RabbitMQ 时会持续重连刷屏；需要排查 MQ 时临时改回 WARN/INFO。
+    org.springframework.amqp.rabbit.connection.CachingConnectionFactory: OFF
+    org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer: OFF
+    # p6spy SQL 日志：默认 OFF（完全不打印 SQL），排查 SQL 时临时改回 INFO
+    p6spy: OFF
     # 关闭 MyBatis 默认的 SQL 输出（使用 p6spy 输出）
     org.mybatis: WARN
     org.apache.ibatis: WARN
     com.baomidou.mybatisplus: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  # 控制台 / 文件输出格式统一由 logback-spring.xml 控制（含彩色），此处不再覆盖 console pattern，
+  # 否则无色的 console pattern 会盖掉 logback 里的彩色配置。
   exception-conversion-word: "%wEx"
