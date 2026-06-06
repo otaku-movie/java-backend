@@ -129,6 +129,13 @@ validator:
     rate:
       min: "Comment rating must be at least 0.1"
       max: "Comment rating must be at most 10"
+  movieRate:
+    movieId:
+      required: "movieId cannot be empty"
+    rate:
+      required: "Rating is required"
+      min: "Rating must be at least 0.1"
+      max: "Rating must be at most 10"
   movieReply:
     movieCommentId:
       required: "movieCommentId cannot be empty"

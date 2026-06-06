@@ -837,6 +837,15 @@ public final class ApiPaths {
             /** 同步点赞和点踩 - POST /api/movie/comment/syncLikeAndDislikeToDatabase */
             public static final String SYNC_LIKE_DISLIKE = COMMON_BASE + "/movie/comment/syncLikeAndDislikeToDatabase";
         }
+
+        /**
+         * 通用 - 评分模块
+         */
+        public static final class Rate {
+            private Rate() {}
+            /** 保存/更新评分 - POST /api/movie/rate/save */
+            public static final String SAVE = COMMON_BASE + "/movie/rate/save";
+        }
         
         /**
          * 通用 - 回复模块

@@ -19,6 +19,7 @@ import com.example.backend.response.movie.MovieVersionResponse;
 import com.example.backend.service.MovieService;
 import com.example.backend.service.MovieVersionService;
 import com.example.backend.utils.MessageUtils;
+import cn.dev33.satoken.stp.StpUtil;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,8 @@ public class MovieController {
   private MovieSpecMapper movieSpecMapper;
   @Autowired
   private SpecMapper specMapper;
+  @Autowired
+  private MovieRateMapper movieRateMapper;
 
   @PostMapping(ApiPaths.Common.Movie.LIST)
   public RestBean<List<MovieResponse>> list(@RequestBody MovieListQuery query)  {
@@ -110,6 +113,20 @@ public class MovieController {
     if (data != null) {
       result.setRate(data.getRate());
       result.setTotalRatings(data.getTotalRatings());
+    }
+
+    if (StpUtil.isLogin()) {
+      MovieRate userRate = movieRateMapper.selectOne(
+          Wrappers.<MovieRate>lambdaQuery()
+              .eq(MovieRate::getUserId, StpUtil.getLoginIdAsInt())
+              .eq(MovieRate::getMovieId, id)
+              .last("LIMIT 1"));
+      if (userRate != null) {
+        result.setRated(true);
+        result.setUserRate(userRate.getRate());
+      } else {
+        result.setRated(false);
+      }
     }
 
     List<Tags> tags = movieMapper.getMovieTags(result.getId());

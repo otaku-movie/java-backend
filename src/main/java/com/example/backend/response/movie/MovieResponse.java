@@ -40,6 +40,10 @@ public class MovieResponse {
   String levelDescription;
   double rate;
   Integer totalRatings;
+  /** 当前登录用户是否已对该电影评分 */
+  Boolean rated;
+  /** 当前登录用户对该电影的评分（未登录或未评分时为 null） */
+  Double userRate;
 
   /** 关联的预售券 id，有则可在 C 端跳转预售券详情 */
   Integer presaleId;

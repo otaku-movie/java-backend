@@ -13,6 +13,7 @@
         <result property="like" column="like"/>
         <result property="dislikeCount" column="dislike_count"/>
         <result property="replyCount" column="reply_count"/>
+        <result property="rate" column="rate"/>
         <result property="likeCount" column="like_count"/>
         <result property="dislikeCount" column="dislike_count"/>
         <result property="createTime" column="create_time"/>
@@ -30,6 +31,7 @@
             movie_comment.update_time as update_time,
             users.name as comment_user_name,
             users.cover as comment_user_avatar,
+            movie_rate.rate as rate,
             (
                 SELECT
                     COUNT(*)
@@ -40,6 +42,8 @@
             ) AS reply_count
         FROM movie_comment
             LEFT JOIN users ON movie_comment.comment_user_id = users.id
+            LEFT JOIN movie_rate ON movie_rate.user_id = movie_comment.comment_user_id
+                AND movie_rate.movie_id = movie_comment.movie_id
         WHERE
             movie_comment.deleted = 0 AND movie_comment.movie_id = #{query.movieId}
         ORDER BY movie_comment.update_time DESC
@@ -57,6 +61,7 @@
             movie_comment.update_time as update_time,
             users.name as comment_user_name,
             users.cover as comment_user_avatar,
+            movie_rate.rate as rate,
             (
                 SELECT
                     COUNT(*)
@@ -67,6 +72,8 @@
             ) AS reply_count
         FROM movie_comment
                  LEFT JOIN users ON movie_comment.comment_user_id = users.id
+                 LEFT JOIN movie_rate ON movie_rate.user_id = movie_comment.comment_user_id
+                     AND movie_rate.movie_id = movie_comment.movie_id
         WHERE
             movie_comment.deleted = 0
             AND movie_comment.id = #{id}

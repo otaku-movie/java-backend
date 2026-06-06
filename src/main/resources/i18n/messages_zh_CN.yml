@@ -133,6 +133,13 @@ validator:
     rate:
       min: "评论最低分为 0.1 分"
       max: "评论最高分为 10 分"
+  movieRate:
+    movieId:
+      required: "movieId 不能为空"
+    rate:
+      required: "评分不能为空"
+      min: "评分最低为 0.1 分"
+      max: "评分最高为 10 分"
   # 电影回复
   movieReply:
     movieCommentId:

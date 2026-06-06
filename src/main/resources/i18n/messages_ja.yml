@@ -129,6 +129,13 @@ validator:
     rate:
       min: "コメント評価は0.1以上である必要があります"
       max: "コメント評価は10以下である必要があります"
+  movieRate:
+    movieId:
+      required: "movieIdは空にできません"
+    rate:
+      required: "評価は空にできません"
+      min: "評価は0.1以上である必要があります"
+      max: "評価は10以下である必要があります"
   movieReply:
     movieCommentId:
       required: "movieCommentIdは空にできません"

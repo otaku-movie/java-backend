@@ -1,7 +1,6 @@
 package com.example.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -10,13 +9,11 @@ import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.MovieComment;
-import com.example.backend.entity.MovieRate;
 import com.example.backend.entity.MovieReply;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.CommentEnumType;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.MovieCommentMapper;
-import com.example.backend.mapper.MovieRateMapper;
 import com.example.backend.mapper.MovieReplyMapper;
 import com.example.backend.query.MovieCommentListQuery;
 import com.example.backend.query.MovieReplyListQuery;
@@ -53,11 +50,6 @@ class MovieCommentSaveQuery {
 
   @NotNull(message = "{validator.movieComment.movieId.required}")
   Integer movieId;
-
-
-  @DecimalMin(value = "0.1", message = "{validator.movieComment.rate.min}")
-  @DecimalMax(value = "10.0", message = "{validator.movieComment.rate.max}")
-  Double rate;
 }
 
 @Data
@@ -77,9 +69,6 @@ public class MovieCommentController {
 
   @Autowired
   MovieCommentService movieCommentService;
-
-  @Autowired
-  MovieRateMapper movieRateMapper;
 
   @Resource
   RedisTemplate redisTemplate;
@@ -140,39 +129,20 @@ public class MovieCommentController {
   @PostMapping(ApiPaths.Common.Comment.SAVE)
   public RestBean<List<Object>> save(@RequestBody @Validated MovieCommentSaveQuery query) {
     MovieComment data = new MovieComment();
-    MovieRate movieRate = new MovieRate();
     data.setMovieId(query.getMovieId());
     data.setContent(query.getContent());
     data.setCommentUserId(Utils.getUserId());
 
-    movieRate.setMovieId(query.getMovieId());
-    movieRate.setUserId(Utils.getUserId());
-    movieRate.setRate(query.getRate());
-
-    QueryWrapper movieRateQueryWrapper = new QueryWrapper();
-    movieRateQueryWrapper.eq("user_id", Utils.getUserId());
-    movieRateQueryWrapper.eq("movie_id", query.getMovieId());
-
-    MovieRate movieRateResult = movieRateMapper.selectOne(movieRateQueryWrapper);
-
-    if (movieRateResult != null) {
-      return RestBean.error(ResponseCode.ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Common.Movie.Comment.USER_RATED));
-    }
-
     if (query.getId() == null) {
       movieCommentMapper.insert(data);
-      movieRateMapper.insert(movieRate);
-
-      return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
-    } else {
-      data.setId(query.getId());
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
-      updateQueryWrapper.eq("id", query.getId());
-
-      movieCommentMapper.update(data, updateQueryWrapper);
-
       return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
     }
+
+    data.setId(query.getId());
+    UpdateWrapper<MovieComment> updateQueryWrapper = new UpdateWrapper<>();
+    updateQueryWrapper.eq("id", query.getId());
+    movieCommentMapper.update(data, updateQueryWrapper);
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
   @SaCheckLogin
   @PostMapping(ApiPaths.Common.Comment.LIKE)
