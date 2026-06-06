@@ -309,57 +309,95 @@
         ORDER BY movie_staff.movie_id, movie_staff.staff_id
     </select>
     <select id="getMovieComingSoon" resultType="com.example.backend.response.app.MovieComingSoonResponse">
-        SELECT
-            movie.id, movie.name, movie.original_name, movie.description,
-            COALESCE(movie.cover_url, movie.cover) AS cover,
-            movie.level_id, movie.status, movie.start_date, movie.end_date,
-            movie.time, movie.watched_count, movie.want_to_see_count,
-            level.name AS levelName,
-            COUNT(DISTINCT movie_show_time.id) AS presaleShowTimeCount,
-            MIN(movie_show_time.start_time::timestamp) AS earliestShowTime,
-            presale.id AS presaleId,
-            (presale.id IS NOT NULL) AS hasPresaleTicket,
-            (EXISTS (
-                SELECT 1 FROM presale_specification ps
-                WHERE ps.presale_id = presale.id
-                  AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
-            )) AS hasBonus
-        FROM "movie"
-        LEFT JOIN level ON movie.level_id = level.id
-        LEFT JOIN movie_show_time ON movie.id = movie_show_time.movie_id 
-            AND movie_show_time.deleted = 0 
-            AND movie_show_time.open = TRUE
-            AND movie_show_time.start_time::timestamp > CURRENT_TIMESTAMP
-        LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
-        WHERE
-            movie.deleted = 0
-          AND movie.kind = 'movie'
-          AND (
+        WITH candidate AS (
+            SELECT
+                movie.id, movie.name, movie.original_name, movie.description,
+                COALESCE(movie.cover_url, movie.cover) AS cover,
+                movie.level_id, movie.status, movie.start_date, movie.end_date,
+                movie.time, movie.watched_count, movie.want_to_see_count,
+                level.name AS levelName,
+                COUNT(DISTINCT movie_show_time.id) AS presaleShowTimeCount,
+                MIN(movie_show_time.start_time::timestamp) AS earliestShowTime,
+                presale.id AS presaleId,
+                (presale.id IS NOT NULL) AS hasPresaleTicket,
+                (EXISTS (
+                    SELECT 1 FROM presale_specification ps
+                    WHERE ps.presale_id = presale.id
+                      AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
+                )) AS hasBonus,
+                CASE
+                    WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1
+                    ELSE 0
+                    END AS start_date_empty_order,
+                COALESCE(crawl.loose_release_to_date(movie.start_date), DATE '9999-12-31') AS start_date_order,
                 <!--
-                  start_date 既可能是精确日期，也可能是模糊日式标签（2026年秋 / 2026年 /
-                  2026年7月）。统一用 crawl.loose_release_to_date 折算成代表日；解析不出来的
-                  （未知）按 9999 处理 → 仍保留在列表里（排最后）。用严格大于：当天已上映的
-                  归「上映中」，「即将上映」只含今天之后。
-                  注意：这里及 ORDER BY 不能用 SQL 单行注释 `- -`，因为 MyBatis-Plus 分页会
-                  在 SQL 末尾追加 LIMIT/OFFSET，行尾注释会把追加的 `LIMIT ?` 一起注释掉，
-                  导致占位符与参数数量不一致而报错。统一改用 XML 注释。
+                  首页即将上映只做展示层去重，不删除底层 movie：
+                  - 去掉空白/标点差异；
+                  - 去掉尾部「通常 / 通常上映」这类版本说明；
+                  - 去掉省略号后的截断残段。
+                  这样同一上映日的 `KPOP ガールズ` / `KPOPガールズ` / `... 通常`
+                  会只展示一张代表卡，场次和购票关联仍保留原 movie_id。
                 -->
-                movie.start_date IS NULL
-                OR movie.start_date = ''
-                OR COALESCE(crawl.loose_release_to_date(movie.start_date), DATE '9999-12-31') > CURRENT_DATE
-            )
-        GROUP BY movie.id, movie.name, movie.cover, movie.cover_url, movie.start_date, movie.time, movie.original_name, 
-                 movie.description, movie.level_id, movie.status, movie.deleted, movie.create_time, 
-                 movie.update_time, level.name, presale.id
+                regexp_replace(
+                  regexp_replace(
+                    regexp_replace(lower(movie.name), '(?:通常上映?|\\s通常)\\s*$', '', 'g'),
+                    '(?:\\.\\.\\.|…).*$', '', 'g'
+                  ),
+                  '[\\s　・·!！?？.,．、，;:：。''"()（）\\[\\]［］{}「」『』〈〉【】_／/\\\\—–&lt;&gt;＜＞&amp;＆-]+',
+                  '',
+                  'g'
+                ) AS dedupe_key
+            FROM "movie"
+            LEFT JOIN level ON movie.level_id = level.id
+            LEFT JOIN movie_show_time ON movie.id = movie_show_time.movie_id
+                AND movie_show_time.deleted = 0
+                AND movie_show_time.open = TRUE
+                AND movie_show_time.start_time::timestamp > CURRENT_TIMESTAMP
+            LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
+            WHERE
+                movie.deleted = 0
+              AND movie.kind = 'movie'
+              AND (
+                    <!--
+                      start_date 既可能是精确日期，也可能是模糊日式标签（2026年秋 / 2026年 /
+                      2026年7月）。统一用 crawl.loose_release_to_date 折算成代表日；解析不出来的
+                      （未知）按 9999 处理 → 仍保留在列表里（排最后）。用严格大于：当天已上映的
+                      归「上映中」，「即将上映」只含今天之后。
+                    -->
+                    movie.start_date IS NULL
+                    OR movie.start_date = ''
+                    OR COALESCE(crawl.loose_release_to_date(movie.start_date), DATE '9999-12-31') > CURRENT_DATE
+                )
+            GROUP BY movie.id, movie.name, movie.cover, movie.cover_url, movie.start_date, movie.time, movie.original_name,
+                     movie.description, movie.level_id, movie.status, movie.deleted, movie.create_time,
+                     movie.update_time, level.name, presale.id
+        ),
+        ranked AS (
+            SELECT
+                candidate.*,
+                ROW_NUMBER() OVER (
+                    PARTITION BY candidate.start_date_order, candidate.dedupe_key
+                    ORDER BY
+                        CASE WHEN candidate.cover IS NULL OR candidate.cover = '' THEN 1 ELSE 0 END,
+                        CASE WHEN candidate.name ~ '(\\.\\.\\.|…)' THEN 1 ELSE 0 END,
+                        CASE WHEN candidate.name ~ '\\s通常(?:上映)?\\s*$' THEN 1 ELSE 0 END,
+                        char_length(candidate.name) DESC,
+                        candidate.id ASC
+                ) AS rn
+            FROM candidate
+        )
+        SELECT
+            id, name, original_name, description, cover,
+            level_id, status, start_date, end_date,
+            time, watched_count, want_to_see_count,
+            levelName, presaleShowTimeCount, earliestShowTime,
+            presaleId, hasPresaleTicket, hasBonus
+        FROM ranked
+        WHERE rn = 1
         ORDER BY
-            <!-- 没有上映日（NULL/空）的排到最后 -->
-            CASE
-                WHEN movie.start_date IS NULL OR movie.start_date = '' THEN 1
-                ELSE 0
-                END,
-            COALESCE(crawl.loose_release_to_date(movie.start_date), DATE '9999-12-31') ASC,
-            <!-- 稳定排序：同一上映日有大量电影时加 id 兜底，避免分页 OFFSET/LIMIT 在并列行上重复或漏页 -->
-            movie.id ASC
+            start_date_empty_order ASC,
+            start_date_order ASC,
+            id ASC
     </select>
     <select id="movieDetail" resultMap="movieList">
         SELECT
