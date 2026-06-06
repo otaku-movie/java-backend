@@ -79,9 +79,9 @@ storage:
 app:
   splash:
     image-url: ${APP_SPLASH_IMAGE_URL:}
-    title-en: ${APP_SPLASH_TITLE_EN:Otaku Movie}
-    title-zh: ${APP_SPLASH_TITLE_ZH:Otaku Movie}
-    title-ja: ${APP_SPLASH_TITLE_JA:Otaku Movie}
+    title-en: ${APP_SPLASH_TITLE_EN:シネコ}
+    title-zh: ${APP_SPLASH_TITLE_ZH:シネコ}
+    title-ja: ${APP_SPLASH_TITLE_JA:シネコ}
     subtitle-en: ${APP_SPLASH_SUBTITLE_EN:Anime movies, in one tap}
     subtitle-zh: ${APP_SPLASH_SUBTITLE_ZH:动漫电影，一键直达}
     subtitle-ja: ${APP_SPLASH_SUBTITLE_JA:アニメ映画をワンタップで}
