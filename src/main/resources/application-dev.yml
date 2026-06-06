@@ -3,6 +3,14 @@ spring:
     ansi:
       # IDE 调试控制台有时不会被识别为支持 ANSI；强制开启，保证 logback 彩色输出生效。
       enabled: always
+  devtools:
+    restart:
+      # DevTools restart 会重建 Spring 容器；第三方库/手写线程池若未绑定销毁逻辑，
+      # 长时间开发会累积旧线程并耗尽 JVM 原生内存。默认关闭，可按需用环境变量打开。
+      enabled: ${SPRING_DEVTOOLS_RESTART_ENABLED:false}
+    livereload:
+      # 关闭 LiveReload Server 线程；后端接口开发一般不依赖它，需要时可用环境变量打开。
+      enabled: ${SPRING_DEVTOOLS_LIVERELOAD_ENABLED:false}
   datasource:
     # 使用 PostgreSQL 官方 JDBC 驱动（42.7.3，支持 PostgreSQL 17）
     driver-class-name: org.postgresql.Driver

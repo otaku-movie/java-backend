@@ -17,11 +17,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.annotation.PreDestroy;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -57,13 +61,15 @@ public class ChartController {
    *  4) 应用启动后立即预热一次 + 每 45s 后台定时刷新，让前端访问基本永远命中。
    */
   private static final Duration CACHE_TTL = Duration.ofSeconds(60);
-  private static final Executor CHART_EXECUTOR = Executors.newFixedThreadPool(
-      Math.min(20, Runtime.getRuntime().availableProcessors() * 2),
-      r -> {
-        Thread t = new Thread(r, "chart-aggregator");
-        t.setDaemon(true);
-        return t;
-      });
+  /**
+   * 实例级线程池（不再用 static）：static 池不会随 Spring 容器销毁而关闭，配合 DevTools
+   * 自动重启会每次泄漏一批 chart-aggregator 线程，长时间运行最终耗尽原生内存导致 JVM 崩溃。
+   * 改为实例字段 + {@link #shutdownExecutor()} 的 @PreDestroy，容器（含 DevTools 重启）关闭时一并回收。
+   *
+   * <p>同时用「核心线程也允许 60s 空闲超时 + SynchronousQueue」：19 条 SQL 短时并发跑完后，
+   * 空闲线程会自动退出，不再常驻 20 个线程。最大并发仍限制在 20，刚好不超过 HikariCP 池大小。
+   */
+  private final ExecutorService chartExecutor = buildChartExecutor();
   private final AtomicReference<CachedChart> cache = new AtomicReference<>();
   // 保证同一时间只有一个后台 refresh 在跑，避免缓存到期时多个请求同时触发重算
   private final java.util.concurrent.atomic.AtomicBoolean refreshing =
@@ -106,7 +112,7 @@ public class ChartController {
       } finally {
         refreshing.set(false);
       }
-    }, CHART_EXECUTOR);
+    }, chartExecutor);
   }
 
   /**
@@ -185,8 +191,32 @@ public class ChartController {
     return r;
   }
 
-  private static <T> CompletableFuture<T> async (Supplier<T> supplier) {
-    return CompletableFuture.supplyAsync(supplier, CHART_EXECUTOR);
+  private <T> CompletableFuture<T> async (Supplier<T> supplier) {
+    return CompletableFuture.supplyAsync(supplier, chartExecutor);
+  }
+
+  /**
+   * 核心线程也允许空闲超时的线程池：跑完聚合后空闲 60s 自动回收，不常驻线程。
+   * 最大并发 20（与 HikariCP 池大小对齐），队列用 SynchronousQueue 保证任务直接交给线程而非排队。
+   */
+  private static ExecutorService buildChartExecutor () {
+    int max = Math.min(20, Runtime.getRuntime().availableProcessors() * 2);
+    ThreadPoolExecutor executor = new ThreadPoolExecutor(
+        max, max, 60L, TimeUnit.SECONDS,
+        new SynchronousQueue<>(),
+        r -> {
+          Thread t = new Thread(r, "chart-aggregator");
+          t.setDaemon(true);
+          return t;
+        });
+    executor.allowCoreThreadTimeOut(true);
+    return executor;
+  }
+
+  /** 容器销毁（含 DevTools 重启）时关闭线程池，避免线程泄漏耗尽原生内存。 */
+  @PreDestroy
+  public void shutdownExecutor () {
+    chartExecutor.shutdownNow();
   }
 
   private static final class CachedChart {
