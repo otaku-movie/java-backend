@@ -29,8 +29,7 @@ CREATE SCHEMA IF NOT EXISTS crawl;
 
 CREATE TABLE IF NOT EXISTS crawl.movie_manual_extras (
   movie_key     VARCHAR(160) PRIMARY KEY,
-  -- Display name override; importer never overwrites a non-empty
-  -- crawl.movie.name from this column unless the existing name is empty.
+  -- Display name override; non-empty admin/manual value wins over crawler name.
   name          VARCHAR(255),
   original_name VARCHAR(255),
   cover         VARCHAR(255),

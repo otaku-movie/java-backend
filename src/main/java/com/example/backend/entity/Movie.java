@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import org.springframework.context.annotation.Primary;
 
 import java.util.Date;
 
@@ -13,6 +12,9 @@ import java.util.Date;
 public class Movie {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;
+
+  @TableField("movie_key")
+  String movieKey;
 
   @TableField("cover")
   String cover;
@@ -66,6 +68,9 @@ public class Movie {
    */
   @TableField("kind")
   String kind;
+
+  @TableField("credits_locked")
+  Boolean creditsLocked;
 
   @JsonIgnore
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")

@@ -13,12 +13,28 @@ import com.example.backend.response.MovieStaffResponse;
 import com.example.backend.response.movie.Tags;
 import org.apache.ibatis.annotations.Mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 
 @Mapper
 public interface MovieMapper extends BaseMapper<Movie> {
+    void lockMovieCredits(@Param("movieId") Integer movieId);
+
+    void upsertMovieManualExtras(
+      @Param("movieKey") String movieKey,
+      @Param("name") String name,
+      @Param("originalName") String originalName,
+      @Param("cover") String cover,
+      @Param("description") String description,
+      @Param("runtimeMin") Integer runtimeMin,
+      @Param("levelId") Integer levelId,
+      @Param("homePage") String homePage,
+      @Param("startDate") String startDate,
+      @Param("endDate") String endDate
+    );
+
     Integer getAllCinemaCount(Integer movieId);
     Integer getAllTheaterCount(Integer movieId);
     Integer getMovieCommentCount(Integer movieId);

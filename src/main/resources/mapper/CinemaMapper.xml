@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.example.backend.mapper.CinemaMapper">
+    <update id="addManualLockedFields">
+        UPDATE cinema
+        SET manual_locked_fields = (
+            SELECT ARRAY(
+                SELECT DISTINCT field
+                FROM unnest(
+                    COALESCE(manual_locked_fields, ARRAY[]::TEXT[])
+                    ||
+                    ARRAY[
+                    <foreach collection="fields" item="field" separator=",">
+                        #{field}
+                    </foreach>
+                    ]::TEXT[]
+                ) AS field
+                WHERE field IS NOT NULL AND field &lt;&gt; ''
+                ORDER BY field
+            )
+        ),
+        update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
     <resultMap id="cinemaList" type="com.example.backend.response.CinemaResponse">
         <id property="id" column="id"></id>
         <result property="id" column="id"></result>

@@ -5,14 +5,12 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.*;
-import com.example.backend.entity.Character;
 import com.example.backend.enumerate.DubbingVersionEnum;
 import com.example.backend.enumerate.MovieReleaseState;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.*;
 import com.example.backend.query.SaveMovieQuery;
 import com.example.backend.utils.MessageUtils;
-import com.example.backend.query.CharacterSaveQuery;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -76,15 +75,21 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
 
   @Transactional
   public void saveMovie(Movie movie, SaveMovieQuery query) {
+    Movie before = query.getId() == null ? null : movieMapper.selectById(query.getId());
+
     if (query.getId() == null) {
       movieMapper.insert(movie);
 
     } else  {
-      UpdateWrapper updateQueryWrapper = new UpdateWrapper();
+      UpdateWrapper<Movie> updateQueryWrapper = new UpdateWrapper<>();
       updateQueryWrapper.eq("id", query.getId());
       movieMapper.update(movie, updateQueryWrapper);
     }
     int movieId = query.getId() == null ? movie.getId() : query.getId();
+    syncMovieManualExtras(movieId, before, query);
+    if (query.getStaffList() != null || query.getCharacterList() != null || query.getVersions() != null) {
+      movieMapper.lockMovieCredits(movieId);
+    }
 
     if (query.getSpec() != null) {
       movieSpecMapper.deleteSpec(movieId);
@@ -246,6 +251,63 @@ public class MovieService extends ServiceImpl<MovieMapper, Movie> {
     }
 
   }
+
+  private void syncMovieManualExtras(Integer movieId, Movie before, SaveMovieQuery query) {
+    Movie saved = movieMapper.selectById(movieId);
+    if (saved == null || isBlank(saved.getMovieKey())) {
+      return;
+    }
+
+    String name = changedString(before == null ? null : before.getName(), query.getName());
+    String originalName = changedString(before == null ? null : before.getOriginalName(), query.getOriginalName());
+    String cover = changedString(before == null ? null : before.getCover(), query.getCover());
+    String description = changedString(before == null ? null : before.getDescription(), query.getDescription());
+    Integer runtimeMin = changedValue(before == null ? null : before.getTime(), query.getTime());
+    Integer levelId = changedValue(before == null ? null : before.getLevelId(), query.getLevelId());
+    String homePage = changedString(before == null ? null : before.getHomePage(), query.getHomePage());
+    String startDate = changedString(before == null ? null : before.getStartDate(), query.getStartDate());
+    String endDate = changedString(before == null ? null : before.getEndDate(), query.getEndDate());
+
+    if (name == null && originalName == null && cover == null && description == null
+      && runtimeMin == null && levelId == null && homePage == null
+      && startDate == null && endDate == null) {
+      return;
+    }
+
+    movieMapper.upsertMovieManualExtras(
+      saved.getMovieKey(),
+      name,
+      originalName,
+      cover,
+      description,
+      runtimeMin,
+      levelId,
+      homePage,
+      startDate,
+      endDate
+    );
+  }
+
+  private String changedString(String oldValue, String newValue) {
+    String normalizedOld = blankToNull(oldValue);
+    String normalizedNew = blankToNull(newValue);
+    return Objects.equals(normalizedOld, normalizedNew) ? null : normalizedNew;
+  }
+
+  private <T> T changedValue(T oldValue, T newValue) {
+    return Objects.equals(oldValue, newValue) ? null : newValue;
+  }
+
+  private String blankToNull(String value) {
+    if (value == null) return null;
+    String trimmed = value.trim();
+    return trimmed.isEmpty() ? null : trimmed;
+  }
+
+  private boolean isBlank(String value) {
+    return value == null || value.trim().isEmpty();
+  }
+
   public RestBean<Object> save(SaveMovieQuery query) {
     Movie movie = new Movie();
     String name = query.getOriginalName() == null ? query.getName() : query.getOriginalName();

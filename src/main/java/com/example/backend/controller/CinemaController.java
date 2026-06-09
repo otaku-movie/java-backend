@@ -32,6 +32,7 @@ import com.example.backend.response.cinema.CinemaScreeningResponse;
 import com.example.backend.response.cinema.MovieShowingResponse;
 import com.example.backend.service.BenefitService;
 import com.example.backend.service.CinemaSpecSpecService;
+import com.example.backend.utils.ManualFieldLockUtils;
 import com.example.backend.utils.MessageUtils;
 import com.example.backend.utils.Utils;
 import jakarta.validation.constraints.NotEmpty;
@@ -388,6 +389,7 @@ public class CinemaController {
   @Transactional
   public void saveCinema(SaveCinemaQuery query) {
     Cinema cinema = new Cinema();
+    Cinema before = query.getId() == null ? null : cinemaMapper.selectById(query.getId());
 
     cinema.setName(query.getName());
     cinema.setAddress(query.getAddress());
@@ -412,6 +414,7 @@ public class CinemaController {
       cinema.setId(query.getId());
       cinemaMapper.updateById(cinema);
     }
+    lockCinemaFields(cinema.getId(), before, query);
 
     if (query.getSpec() != null) {
       List<CinemaSpecSpec> spec = query.getSpec().stream().map(item -> {
@@ -468,6 +471,28 @@ public class CinemaController {
       }
     }
   }
+
+  private void lockCinemaFields(Integer cinemaId, Cinema before, SaveCinemaQuery query) {
+    if (cinemaId == null) return;
+
+    List<String> fields = new ArrayList<>();
+    ManualFieldLockUtils.addIfChanged(fields, "name", before == null ? null : before.getName(), query.getName());
+    ManualFieldLockUtils.addIfChanged(fields, "address", before == null ? null : before.getAddress(), query.getAddress());
+    ManualFieldLockUtils.addIfChanged(fields, "home_page", before == null ? null : before.getHomePage(), query.getHomePage());
+    ManualFieldLockUtils.addIfChanged(fields, "tel", before == null ? null : before.getTel(), query.getTel());
+    ManualFieldLockUtils.addIfChanged(fields, "description", before == null ? null : before.getDescription(), query.getDescription());
+    ManualFieldLockUtils.addIfChanged(fields, "max_select_seat_count", before == null ? null : before.getMaxSelectSeatCount(), query.getMaxSelectSeatCount());
+    ManualFieldLockUtils.addIfChanged(fields, "brand_id", before == null ? null : before.getBrandId(), query.getBrandId());
+    ManualFieldLockUtils.addIfChanged(fields, "region_id", before == null ? null : before.getRegionId(), query.getRegionId());
+    ManualFieldLockUtils.addIfChanged(fields, "prefecture_id", before == null ? null : before.getPrefectureId(), query.getPrefectureId());
+    ManualFieldLockUtils.addIfChanged(fields, "city_id", before == null ? null : before.getCityId(), query.getCityId());
+    ManualFieldLockUtils.addIfChanged(fields, "full_address", before == null ? null : before.getFullAddress(), query.getFullAddress());
+
+    if (!fields.isEmpty()) {
+      cinemaMapper.addManualLockedFields(cinemaId, fields);
+    }
+  }
+
   @SaCheckLogin
   @CheckPermission(code = "cinema.save")
   @Transactional

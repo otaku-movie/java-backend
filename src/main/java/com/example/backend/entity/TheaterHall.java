@@ -15,6 +15,9 @@ public class TheaterHall {
   @TableField("name")
   String name;
 
+  @TableField("crawl_name")
+  String crawlName;
+
   @TableField("seat_naming_rules")
   String seatNamingRules;
 

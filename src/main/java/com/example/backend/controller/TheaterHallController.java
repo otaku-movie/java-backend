@@ -124,6 +124,7 @@ public class TheaterHallController {
       modal.setRowCount(query.getRowCount());
       modal.setColumnCount(query.getColumnCount());
       modal.setSeatNamingRules("{alphabet}-{columnNumber}");
+      modal.setCrawlName(query.getName());
     }
 
     if (query.getId() == null) {

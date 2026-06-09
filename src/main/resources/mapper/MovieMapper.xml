@@ -1,6 +1,46 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.example.backend.mapper.MovieMapper">
+    <update id="lockMovieCredits">
+        UPDATE movie
+        SET credits_locked = TRUE,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{movieId}
+    </update>
+
+    <insert id="upsertMovieManualExtras">
+        INSERT INTO movie_manual_extras
+          (movie_key, name, original_name, cover, description, runtime_min,
+           level_id, home_page, start_date, end_date, note)
+        VALUES
+          (#{movieKey},
+           NULLIF(BTRIM(#{name}), ''),
+           NULLIF(BTRIM(#{originalName}), ''),
+           NULLIF(BTRIM(#{cover}), ''),
+           NULLIF(BTRIM(#{description}), ''),
+           CASE
+             WHEN #{runtimeMin} BETWEEN 30 AND 600 THEN #{runtimeMin}::smallint
+             ELSE NULL
+           END,
+           #{levelId},
+           NULLIF(BTRIM(#{homePage}), ''),
+           NULLIF(BTRIM(#{startDate}), ''),
+           NULLIF(BTRIM(#{endDate}), ''),
+           'admin movie edit')
+        ON CONFLICT (movie_key) DO UPDATE SET
+          name          = COALESCE(EXCLUDED.name, movie_manual_extras.name),
+          original_name = COALESCE(EXCLUDED.original_name, movie_manual_extras.original_name),
+          cover         = COALESCE(EXCLUDED.cover, movie_manual_extras.cover),
+          description   = COALESCE(EXCLUDED.description, movie_manual_extras.description),
+          runtime_min   = COALESCE(EXCLUDED.runtime_min, movie_manual_extras.runtime_min),
+          level_id      = COALESCE(EXCLUDED.level_id, movie_manual_extras.level_id),
+          home_page     = COALESCE(EXCLUDED.home_page, movie_manual_extras.home_page),
+          start_date    = COALESCE(EXCLUDED.start_date, movie_manual_extras.start_date),
+          end_date      = COALESCE(EXCLUDED.end_date, movie_manual_extras.end_date),
+          note          = COALESCE(movie_manual_extras.note, EXCLUDED.note),
+          update_time   = CURRENT_TIMESTAMP
+    </insert>
+
     <resultMap id="movieList" type="com.example.backend.response.movie.MovieResponse">
         <id property="id" column="id"></id>
         <result property="id" column="id"></result>
