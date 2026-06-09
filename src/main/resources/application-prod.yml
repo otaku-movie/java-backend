@@ -1,0 +1,134 @@
+# 生产环境配置（profile=prod）
+# 激活方式：docker-compose.prod.yml 里 SPRING_PROFILES_ACTIVE=prod。
+# 公共配置（mybatis / sa-token / flyway / springdoc / order 等）在 application.yml，
+# 本文件只覆盖与「生产环境/部署」相关的项。
+#
+# 凭证策略：
+# - 数据库 / Redis / RabbitMQ：由 docker-compose.prod.yml 注入对应 SPRING_* 环境变量；
+#   这里给空默认（:），避免直接 java -jar 跑时占位符无法解析，绝不内置弱口令。
+# - 对象存储 storage.*：生产必须通过环境变量注入独立、最小权限凭证；
+#   不在配置文件里提交 access-key / secret-key 默认值。
+spring:
+  output:
+    ansi:
+      # 生产日志一般落文件 / 被采集，关闭 ANSI 颜色避免日志里混入转义码。
+      enabled: never
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    # 默认指向 compose 内的 postgres 服务、public schema；compose 会用 SPRING_DATASOURCE_URL 覆盖。
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/prod_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=crawl}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      # 生产并发更高，连接池比 dev 略大；按实例 CPU/DB 上限再调。
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:30}
+      minimum-idle: ${HIKARI_MIN_IDLE:10}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT:600000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME:1800000}
+      keepalive-time: ${HIKARI_KEEPALIVE_TIME:300000}
+      # 慢 SQL / 连接泄漏排查阈值（毫秒），0 表示关闭。
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION:0}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: ${SPRING_DATA_REDIS_DATABASE:0}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:3000ms}
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE:16}
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_POOL_MIN_IDLE:2}
+          max-wait: ${REDIS_POOL_MAX_WAIT:2000ms}
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+  servlet:
+    multipart:
+      max-request-size: -1
+      max-file-size: -1
+
+server:
+  port: 8080
+  address: 0.0.0.0
+  # 反向代理（Nginx 等）后面部署时，让 Tomcat 识别 X-Forwarded-* 头，拿到真实协议/IP。
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS:native}
+  tomcat:
+    max-swallow-size: -1
+    max-http-form-post-size: -1
+    threads:
+      max: ${TOMCAT_MAX_THREADS:200}
+      min-spare: ${TOMCAT_MIN_SPARE_THREADS:20}
+    accept-count: ${TOMCAT_ACCEPT_COUNT:100}
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:10000}
+
+# 对象存储（R2 / S3 兼容）。生产请用环境变量覆盖凭证为独立、最小权限的 key。
+storage:
+  endpoint: ${STORAGE_ENDPOINT:https://fc57c8ebc7f4ac0ad80e7f84cb52fd1d.r2.cloudflarestorage.com}
+  access-key: ${STORAGE_ACCESS_KEY:}
+  secret-key: ${STORAGE_SECRET_KEY:}
+  region: ${STORAGE_REGION:auto}
+  bucket: ${STORAGE_BUCKET:test-movie}
+  public-url: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
+  path-style-access: ${STORAGE_PATH_STYLE:false}
+
+# 兼容历史 MinioConfiguration bean（已弃用，实际上传走 storage.*）；复用 storage 的环境变量。
+minio:
+  endpoint: ${STORAGE_ENDPOINT:}
+  accessKey: ${STORAGE_ACCESS_KEY:}
+  secretKey: ${STORAGE_SECRET_KEY:}
+  bucket: ${STORAGE_BUCKET:test-movie}
+  previewURL: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
+
+# 第三方登录：生产必须配置正式的 Client ID（逗号分隔），否则会跳过 aud 校验存在安全风险。
+oauth:
+  google:
+    client-ids: ${OAUTH_GOOGLE_CLIENT_IDS:}
+  apple:
+    client-ids: ${OAUTH_APPLE_CLIENT_IDS:}
+
+# App 启动页：运营可用环境变量改图换文案。
+app:
+  splash:
+    image-url: ${APP_SPLASH_IMAGE_URL:}
+    title-en: ${APP_SPLASH_TITLE_EN:シネコ}
+    title-zh: ${APP_SPLASH_TITLE_ZH:シネコ}
+    title-ja: ${APP_SPLASH_TITLE_JA:シネコ}
+    subtitle-en: ${APP_SPLASH_SUBTITLE_EN:Anime movies, in one tap}
+    subtitle-zh: ${APP_SPLASH_SUBTITLE_ZH:动漫电影，一键直达}
+    subtitle-ja: ${APP_SPLASH_SUBTITLE_JA:アニメ映画をワンタップで}
+    min-duration-ms: ${APP_SPLASH_MIN_MS:1500}
+    max-duration-ms: ${APP_SPLASH_MAX_MS:3500}
+    tap-action: ${APP_SPLASH_TAP_ACTION:}
+
+# 生产日志：业务 INFO，框架 WARN，关闭 SQL 打印。文件输出/滚动由 logback-spring.xml 控制。
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.example.backend: ${LOG_LEVEL_APP:INFO}
+    org.springframework: WARN
+    org.springframework.web: WARN
+    org.springframework.boot: INFO
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    org.springframework.amqp.rabbit.connection.CachingConnectionFactory: WARN
+    org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer: WARN
+    # 生产关闭 SQL 明文输出（含敏感数据 & 性能开销）。
+    p6spy: OFF
+    org.mybatis: WARN
+    org.apache.ibatis: WARN
+    com.baomidou.mybatisplus: WARN
+  exception-conversion-word: "%wEx"
+
+# 生产环境是否暴露 Swagger / API 文档。默认关闭更安全；
+# 注意：docker-compose.prod.yml 的 healthcheck 当前用 /swagger-ui/index.html 探活，
+# 若关闭 Swagger，请把 healthcheck 改成其它存活端点（如某个 /api 健康接口），否则容器会判 unhealthy。
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
