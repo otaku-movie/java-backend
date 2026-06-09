@@ -30,6 +30,7 @@
 - 本地保留：`BACKUP_RETENTION_DAYS` 天（默认 30）。每次备份后清理超过保留天数的本地文件。
 - 远端保留：建议通过 S3/MinIO 的 lifecycle 规则管理，避免在容器里做不可靠的远端 list+delete。
 - 备份内容：默认不含权限（`--no-owner --no-privileges`），便于跨实例恢复。
+- 执行记录：默认把每次备份写进所备份库的 `public.db_backup_log` 表（开始 `running` → 结束 `success`/`failed`），含文件名、字节数、R2 key、起止时间，便于在后台用 SQL 查询和告警；写库失败不影响备份本身。可用 `BACKUP_LOG_TO_DB=false` 关闭。
 
 ## 配置（环境变量）
 
@@ -44,6 +45,9 @@
 | `BACKUP_RETENTION_DAYS`    | `30`            | 本地保留天数 |
 | `BACKUP_RUN_ON_START`      | `false`         | 启动时是否立即跑一次（用于验证） |
 | `BACKUP_DIR`               | `/backups`      | 容器内备份目录（宿主机挂载到这里） |
+| `BACKUP_LOG_DIR`           | `/var/log/pg-backup` | 容器内日志目录（compose 挂载到 `./backups/pg/logs`） |
+| `BACKUP_LOG_TO_DB`         | `true`          | 是否把执行记录写进 `public.db_backup_log` 表 |
+| `HEALTHCHECK_MAX_AGE_HOURS`| `26`            | 健康检查阈值：最新备份超过该小时数判定 unhealthy |
 | `S3_ENDPOINT`              | -               | S3/MinIO endpoint；走 AWS 公网时留空 |
 | `S3_BUCKET`                | -               | S3 桶名；留空则跳过远端上传 |
 | `S3_PREFIX`                | `pg-backup`     | S3 key 前缀 |
@@ -67,8 +71,11 @@ docker compose --env-file .env.backup \
 docker compose --env-file .env.backup \
   -f docker-compose.dev.yml -f docker-compose.backup.yml up -d pg-backup
 
-# 看日志
+# 看实时日志（Docker stdout）
 docker logs -f movie-pg-backup
+
+# 看宿主机持久化日志
+tail -f ./backups/pg/logs/pg-backup.log
 ```
 
 ## 立即手动触发一次备份
@@ -100,7 +107,8 @@ docker compose -f docker-compose.backup.yml exec pg-backup \
 
 ## 监控建议
 
-- **看日志**：容器把 cron 日志输到 stdout，由 docker logs 抓即可。生产建议接入日志聚合（Loki / ELK 等）。
+- **看日志**：容器把 cron 日志写到 `/var/log/pg-backup/pg-backup.log`，并通过 `tail -F` 同步到 stdout。compose 默认挂载到宿主机 `./backups/pg/logs/pg-backup.log`，也可用 `docker logs` 实时查看。生产建议接入日志聚合（Loki / ELK 等）。
+- **健康检查**：容器内置 `pg-backup-health`，检查最新备份是否在 `HEALTHCHECK_MAX_AGE_HOURS`（默认 26h）内；compose 已配 healthcheck，可用 `docker inspect --format '{{.State.Health.Status}}' movie-pg-backup` 或 `docker ps` 的 STATUS 列查看 healthy/unhealthy。手动执行：`docker compose ... exec pg-backup pg-backup-health`。
 - **关键告警**：监控 `pg-backup` 容器的健康度（异常退出）、最新备份文件 mtime（超过 26h 没新文件就报警）、最新备份大小（突降 > 50% 触发告警）。
 - **演练恢复**：定期（建议每月）跑一次"备份 → 新库恢复 → 关键表对账"，避免只有备份没法用。
 

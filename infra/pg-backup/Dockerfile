@@ -22,7 +22,8 @@ ENV TZ=Asia/Tokyo \
 COPY entrypoint.sh /entrypoint.sh
 COPY backup.sh /usr/local/bin/pg-backup
 COPY restore.sh /usr/local/bin/pg-restore-from-dump
-RUN chmod +x /entrypoint.sh /usr/local/bin/pg-backup /usr/local/bin/pg-restore-from-dump
+COPY healthcheck.sh /usr/local/bin/pg-backup-health
+RUN chmod +x /entrypoint.sh /usr/local/bin/pg-backup /usr/local/bin/pg-restore-from-dump /usr/local/bin/pg-backup-health
 
 WORKDIR /backups
 VOLUME ["/backups"]
