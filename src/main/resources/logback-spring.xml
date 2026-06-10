@@ -32,7 +32,8 @@
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <charset>UTF-8</charset>
             <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%d{HH:mm:ss.SSS} %-5level %logger{30} - %msg%n</pattern>
+                <!-- %clr 让普通 INFO/DEBUG 行也彩色：时间灰、级别按等级自动上色、logger 青色。 -->
+                <pattern>%clr(%d{HH:mm:ss.SSS}){faint} %clr(%-5level) %clr(%logger{30}){cyan} %clr(-){faint} %msg%n</pattern>
             </layout>
         </encoder>
     </appender>
@@ -94,7 +95,8 @@
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <charset>UTF-8</charset>
             <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%-5level - %msg%n</pattern>
+                <!-- 简化格式也按级别自动上色（INFO 普通行不再纯文本无色）。 -->
+                <pattern>%clr(%-5level) %clr(-){faint} %msg%n</pattern>
             </layout>
         </encoder>
     </appender>
