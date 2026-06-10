@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
 import javax.management.ReflectionException;
 import java.io.IOException;
@@ -94,6 +95,19 @@ public class GlobalExceptionHandler {
     log.error("运行时异常: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
     String message = MessageUtils.getMessage(MessageKeys.Error.SYSTEM);
     return RestBean.error(ResponseCode.ERROR.getCode(), message);
+  }
+
+  /**
+   * 处理客户端提前断开连接（broken pipe / 连接被中止）。
+   *
+   * <p>典型场景：浏览器/App 在服务端写出响应前取消请求或网络中断，此时
+   * ServletOutputStream 已不可用（flush 抛 IOException）。这属于客户端行为而非
+   * 服务端故障，且连接已断、无法再写任何响应体，因此仅记录 debug，不打 ERROR 堆栈，
+   * 也不返回响应。若仍走兜底的 {@code Exception} 处理器会刷屏并误报为系统错误。
+   */
+  @ExceptionHandler(AsyncRequestNotUsableException.class)
+  public void handleClientAbort(AsyncRequestNotUsableException ex) {
+    log.debug("客户端提前断开连接，忽略响应写出失败: {}", ex.getMessage());
   }
 
   /**
