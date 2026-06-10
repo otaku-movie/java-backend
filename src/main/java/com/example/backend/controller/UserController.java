@@ -305,6 +305,11 @@ public class UserController {
         .eq("id", userId)
         .eq("deleted", 0)
         .select("id", "cover", "name", "email", "create_time", "password"));
+    if (result == null) {
+      // token 指向已删用户或跨库旧会话时，避免 BeanUtils 抛出 "Source must not be null"。
+      StpUtil.logout();
+      return RestBean.error(ResponseCode.ERROR.getCode(), messageUtils.getMessage(MessageKeys.Common.User.NOT_FOUND));
+    }
     UserDetail userDetail = new UserDetail();
     BeanUtils.copyProperties(result, userDetail);
     userDetail.setOrderCount(userMapper.countDistinctMovieOrders(userId));
@@ -349,16 +354,18 @@ public class UserController {
   @PostMapping(ApiPaths.Common.User.DELETE_ACCOUNT)
   public RestBean<Null> deleteAccount() {
     int userId = StpUtil.getLoginIdAsInt();
-    String anonymizedEmail = "deleted_" + userId + "_" + System.currentTimeMillis() + "@deleted.local";
 
+    // 注销只做软删除：仅置 deleted=1，保留 email/name/cover/password 原值。
+    // 原因：1) 这些字段的覆盖只是脱敏，不是唯一约束需要（idx_users_email 是
+    //          partial 非唯一索引 WHERE deleted=0，软删后不会与新注册冲突）；
+    //       2) 硬覆盖不可逆，一旦误操作原始资料无法找回。保留原值后，万一
+    //          管理员误注销，只需把 users + user_oauth_binding 两处 deleted 改回 0 即可复原。
+    // 登录安全性不受影响：下面同时软删 user_oauth_binding，第三方登录按
+    // (provider, subject, deleted=0) 匹配，注销账号不会再被复用。
     userMapper.update(
         null,
         new UpdateWrapper<User>()
             .set("deleted", 1)
-            .set("email", anonymizedEmail)
-            .set("name", "Deleted User")
-            .set("cover", null)
-            .set("password", null)
             .eq("id", userId)
             .eq("deleted", 0)
     );
@@ -408,6 +415,7 @@ public class UserController {
 
     if (user == null) {
       user = new User();
+      // X 等 provider 不返回邮箱，email 允许为 null（见 V53 迁移去掉 NOT NULL）。
       user.setEmail(profile.getEmail());
       user.setName(resolveOAuthDisplayName(profile));
       user.setCover(profile.getPicture());
