@@ -71,6 +71,22 @@ public class PresaleServiceImpl implements PresaleService {
     if (query.getMovieId() != null) {
       wrapper.eq(Presale::getMovieId, query.getMovieId());
     }
+    // 券种存储在 presale_specification.ticket_type，一个预售可有多个不同券种的规格，
+    // 故按「存在该券种规格」的 presale_id 集合过滤。
+    if (query.getMubitikeType() != null) {
+      List<Integer> matchedPresaleIds = presaleSpecificationMapper.selectList(
+          Wrappers.<PresaleSpecification>lambdaQuery()
+            .select(PresaleSpecification::getPresaleId)
+            .eq(PresaleSpecification::getTicketType, query.getMubitikeType())
+        ).stream()
+        .map(PresaleSpecification::getPresaleId)
+        .distinct()
+        .toList();
+      if (matchedPresaleIds.isEmpty()) {
+        return new Page<>(page.getCurrent(), page.getSize(), 0);
+      }
+      wrapper.in(Presale::getId, matchedPresaleIds);
+    }
     wrapper.orderByDesc(Presale::getUpdateTime).orderByDesc(Presale::getId);
 
     IPage<Presale> result = presaleMapper.selectPage(page, wrapper);
@@ -108,7 +124,14 @@ public class PresaleServiceImpl implements PresaleService {
       }
       item.setCover(p.getCover());
       item.setGallery(p.getGallery());
-      item.setSpecifications(specMap.getOrDefault(p.getId(), Collections.emptyList()));
+      List<PresaleDetailResponse.SpecItem> specs = specMap.getOrDefault(p.getId(), Collections.emptyList());
+      item.setSpecifications(specs);
+      // 列表的券种取首个规格的 ticket_type（presale 表本身无券种列），避免前端默认成「在线券」。
+      specs.stream()
+        .map(PresaleDetailResponse.SpecItem::getTicketType)
+        .filter(java.util.Objects::nonNull)
+        .findFirst()
+        .ifPresent(item::setMubitikeType);
       return item;
     });
   }
@@ -276,6 +299,7 @@ public class PresaleServiceImpl implements PresaleService {
     r.setPickupNotes(p.getPickupNotes());
     r.setCover(p.getCover());
     r.setGallery(p.getGallery());
+    r.setSourceUrl(p.getSourceUrl());
     return r;
   }
 

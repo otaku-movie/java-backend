@@ -75,6 +75,10 @@ public class Presale {
   @TableField(value = "gallery", typeHandler = StringArrayTypeHandler.class)
   private List<String> gallery;
 
+  /** 源站（MOVIE WALKER STORE）商品详情页 URL，用于 C 端跳转官网购买 */
+  @TableField("source_url")
+  private String sourceUrl;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   private Date createTime;

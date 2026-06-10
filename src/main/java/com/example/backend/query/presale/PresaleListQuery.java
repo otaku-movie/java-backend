@@ -13,4 +13,6 @@ public class PresaleListQuery extends PaginationQuery {
   private String code;
   /** 按适用电影ID */
   private Integer movieId;
+  /** 按券种筛选（dict_item.code，presaleMubitikeType：1=网络券 2=卡券 3=套票 4=电影票预售券），匹配存在该券种规格的预售 */
+  private Integer mubitikeType;
 }

@@ -35,6 +35,8 @@ public class PresaleDetailResponse {
   private String pickupNotes;
   private String cover;
   private List<String> gallery;
+  /** 源站商品详情页 URL，用于 C 端跳转官网购买 */
+  private String sourceUrl;
   private List<SpecItem> specifications;
 
   @Data
