@@ -15,7 +15,7 @@ spring:
       enabled: never
   datasource:
     driver-class-name: org.postgresql.Driver
-    # 默认指向 compose 内的 postgres 服务、public schema；compose 会用 SPRING_DATASOURCE_URL 覆盖。
+    # 业务运行时使用 crawl schema。
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/prod_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=crawl}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:}
@@ -29,6 +29,12 @@ spring:
       keepalive-time: ${HIKARI_KEEPALIVE_TIME:300000}
       # 慢 SQL / 连接泄漏排查阈值（毫秒），0 表示关闭。
       leak-detection-threshold: ${HIKARI_LEAK_DETECTION:0}
+  flyway:
+    # Flyway 必须在 public schema 跑：V1 创建 public.*，V3 再用 LIKE public.* 镜像出 crawl.*。
+    # 业务 datasource 仍使用 currentSchema=crawl。
+    url: ${SPRING_FLYWAY_URL:jdbc:postgresql://postgres:5432/prod_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public}
+    user: ${SPRING_FLYWAY_USER:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${SPRING_FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:redis}
@@ -69,11 +75,11 @@ server:
 # 对象存储（R2 / S3 兼容）。生产请用环境变量覆盖凭证为独立、最小权限的 key。
 storage:
   endpoint: ${STORAGE_ENDPOINT:https://fc57c8ebc7f4ac0ad80e7f84cb52fd1d.r2.cloudflarestorage.com}
-  access-key: ${STORAGE_ACCESS_KEY:}
-  secret-key: ${STORAGE_SECRET_KEY:}
+  access-key: ${STORAGE_ACCESS_KEY:c01d0fd45cabc81cecd05d0470dc76c3}
+  secret-key: ${STORAGE_SECRET_KEY:8e109b2fbe65feda9a7dfe79179de4fa499ec0837deb9ce3cd01f3d8b972e51b}
   region: ${STORAGE_REGION:auto}
-  bucket: ${STORAGE_BUCKET:test-movie}
-  public-url: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
+  bucket: ${STORAGE_BUCKET:prod-movie}
+  public-url: ${STORAGE_PUBLIC_URL:https://static.otaku-movie.com}
   path-style-access: ${STORAGE_PATH_STYLE:false}
 
 # 兼容历史 MinioConfiguration bean（已弃用，实际上传走 storage.*）；复用 storage 的环境变量。
@@ -82,12 +88,13 @@ minio:
   accessKey: ${STORAGE_ACCESS_KEY:}
   secretKey: ${STORAGE_SECRET_KEY:}
   bucket: ${STORAGE_BUCKET:test-movie}
-  previewURL: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
+  previewURL: ${STORAGE_PUBLIC_URL:https://static.otaku-movie.com}
 
 # 第三方登录：生产必须配置正式的 Client ID（逗号分隔），否则会跳过 aud 校验存在安全风险。
 oauth:
   google:
-    client-ids: ${OAUTH_GOOGLE_CLIENT_IDS:}
+    # 与 app AuthConfig.googleWebClientId（cineko-8b899 Web OAuth client）一致
+    client-ids: ${OAUTH_GOOGLE_CLIENT_IDS:807320750051-d8nkip913h8tgor8dnim1f3khlk9rsnf.apps.googleusercontent.com}
   apple:
     client-ids: ${OAUTH_APPLE_CLIENT_IDS:}
 

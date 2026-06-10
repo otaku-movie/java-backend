@@ -1,8 +1,9 @@
-# prod_movie 上线方案（最小化迁移）
+# prod_movie 上线数据迁移 Runbook
 
-> **最终决策**：只迁 6 张影院相关表（`areas`/`brand`/`cinema`/`cinema_spec`/`cinema_spec_spec`/`theater_hall`，
-> 因含后台人工编辑），其余数据**不迁**。
-> 生产库从空开始，靠「迁移这 6 张表 + Flyway 种子 + 爬虫重建 + 后台重配 + 新建管理员」拉起。
+> **最终决策（已在本地 `prod_movie` 验证）**：
+> 不再用 Flyway 从空库冷启动出生产 schema。当前迁移链与真实 dev 库 / 实体已经分叉，空跑 Flyway 会产出与应用不一致的表结构。
+>
+> 正式生产库结构以 `test_movie` 的真实 schema 为准：先克隆结构，再回填 Flyway 历史、载入种子数据、迁影院相关数据，最后跑校验和序列推进。
 
 ---
 
@@ -10,211 +11,315 @@
 
 | 项 | 决策 |
 |---|---|
-| 目标库 | `prod_movie`（全新空库） |
-| Schema | `crawl` |
-| **影院 / 品牌 / 地区**：`brand`/`areas`/`cinema`/`cinema_spec`/`cinema_spec_spec`/`theater_hall` | **要迁**（含后台人工编辑，保留原 id） |
-| 电影 / 演职员 / 场次 | **不迁**，上线后爬虫重建 |
-| 权限 / 菜单 / 字典 / 协议 / 语言 / 等级 | **不迁**，Flyway 种子自动写入 |
-| 座位 / 票价 / 促销 / 特典 / 预售 | **不迁**（数据是假的，功能用时后台重配） |
-| 管理员账号 | **不迁**，生产新建强密码管理员；停用种子里的测试账号 |
-| 交易 / 评论 / 收藏 / OAuth 绑定等用户数据 | **不迁**，上线后自然产生 |
+| 目标库 | `prod_movie` |
+| 业务 schema | `crawl`（后端 `currentSchema=crawl`） |
+| schema 来源 | 克隆 `test_movie` 的真实结构（`public` + `crawl`） |
+| Flyway 历史 | 回填已验证的 `public.flyway_schema_history`，避免重跑已分叉的历史脚本 |
+| 种子数据 | 从 `test_movie.crawl` 导入权限、菜单、字典、协议、语言、等级、`cinema_spec`、`movie_manual_extras` 等基础数据 |
+| 影院数据 | 迁 `areas`、`brand`、`cinema`、`theater_hall`、`cinema_spec_spec` |
+| id 策略 | `brand`/`cinema`/`theater_hall` 生产重新自增；`areas` 保留原 id；`cinema_spec` 作为种子保留原 id |
+| 电影 / 演职员 / 场次 | 不迁，上线后爬虫重建 |
+| 座位 / 票价 / 促销 / 特典 / 预售 | 不迁，功能用到时后台重配 |
+| 用户交易 / 评论 / 收藏 / OAuth | 不迁，上线后自然产生 |
 
-→ 结论：**只迁 6 张影院相关表（保留人工编辑），其余靠种子 / 爬虫 / 后台重建。**
+本地验证后的核心结果：
 
-> 为什么这 6 张要迁：影院信息、影厅改名（`theater_hall.crawl_name` vs `name`）、
-> 字段锁（`cinema.manual_locked_fields`）等都是后台人工修正，重爬不会还原。
-> 保留原 id 迁过去后，爬虫仍能靠 `cinema_key` / `(cinema_id, crawl_name)` 匹配更新，不产生重复。
+| 表 | 行数 | id 策略 |
+|---|---:|---|
+| `areas` | 327 | 保留原 id（1-352，行政区字典） |
+| `brand` | 8 | 生产自增，1-8 |
+| `cinema` | 298 | 生产自增，1-298 |
+| `theater_hall` | 2672 | 生产自增，1-2672 |
+| `cinema_spec_spec` | 441 | 只迁能映射到现存影院的有效行 |
+
+`cinema_spec_spec` 源库有 31470 行，但其中大量行引用历史旧影院 id；迁移脚本只迁能通过 `cinema_key` 映射到现存影院的行，本地验证结果为 441 行，完整性检查通过。
 
 ---
 
-## 三类数据的来源
+## 为什么不能纯跑 Flyway 建库
 
-### 1. Flyway 启动自动种子（建库即有）
+已对「全新 Flyway 产物」和 `test_movie.crawl` 做过列级 diff，发现多张表与当前实体 / dev 真实库不一致，例如：
 
-| 内容 | 种子脚本 |
+- `theater_hall`：Flyway 产物缺 `seat_count`、`cinema_spec_id`、`row_count`、`column_count`、`seat_naming_rules`，实体实际使用这些列。
+- `movie_comment`：Flyway 产物是 `user_id/rating` 风格，真实库和实体使用 `comment_user_id/like_count/unlike_count` 风格。
+- `promotion_*`：Flyway 产物与实体几乎是两套设计。
+
+因此生产结构必须以真实可运行的 `test_movie` schema 为基准。克隆后已验证 `prod.crawl` 与 `test.crawl` 逐列完全一致。
+
+---
+
+## 文件说明
+
+| 文件 | 用途 |
 |---|---|
-| RBAC：`role`/`menu`/`button`/`api`/`role_menu`/`role_button` | `V11` |
-| 管理员账号 `users` + `user_role` | `V11`（⚠️ 见下方安全处理） |
-| `areas` 地区 | `V12` |
-| `agreement` 协议 | `V23` |
-| `language` | `V15` |
-| `level` | `V7` |
-| 各类 `dict` / `dict_item` | `V16`/`V22`/`V32` |
-| `movie_manual_extras` 种子 | `V10` |
-
-### 2. 爬虫重建（上线跑一遍）
-
-`movie`、`movie_version`、`movie_show_time`、`movie_show_time_tag`、
-`staff`、`position`、`movie_staff`、`character`、`movie_character`、
-`movie_version_character`、`movie_version_character_staff`、`re_release`、
-`crawl_movie_master*`
-
-> 注：`cinema`/`theater_hall`/`brand`/`areas` 虽然爬虫也会写，但因含人工编辑改为**先迁后爬**
-> （见下方「需要迁移的 6 张表」）。爬虫在已迁数据基础上更新，不会重复。
-
-### 3. 后台手动配置（用到对应功能时再配）
-
-座位 `seat`/`seat_area`/`seat_aisle`、票价 `cinema_price_config`/`cinema_price_rules_config`、
-支付 `payment_method`/`payment_methods`、促销 `promotion*`/`pricing_rule`、
-特典 `benefit*`、预售 `presale*`
+| `01_prepare_cinema_staging.sql` | 在 `prod_movie` 创建 `staging` schema 和 5 张 staging 表 |
+| `02_migrate_cinema_from_staging.sql` | 按业务键迁影院数据，不保留旧 id |
+| `03_verify_cinema_migration.sql` | 迁移前后校验重复键、引用缺失、行数 |
+| `04_fix_sequences.sql` | 根据当前最大 id 推进所有序列，包含共享序列 `public.auto_increment` |
+| `audit_entity_schema.py` | 审计实体期望列与实际数据库列是否匹配 |
 
 ---
 
-## ⚠️ 安全处理：种子管理员账号
+## 正式执行步骤
 
-`V11` 种子里的账号（`diy4869`、`123478` 等）密码哈希**明文存在于仓库**，
-生产**绝不能直接用**。上线后立刻执行：
+以下命令示例默认从一台能同时访问旧库 `test_movie` 和新库 `prod_movie` 的机器执行。生产环境中建议先对 `prod_movie` 做一次完整备份。
+
+### 1. 导出结构和 Flyway 历史
+
+```bash
+# 从已验证的 prod_movie 保存 Flyway 历史；正式执行前也可以从本地验证库导出。
+pg_dump -h <prod_host> -U postgres -d prod_movie \
+  --data-only --column-inserts \
+  -t public.flyway_schema_history \
+  > prod_flyway_hist.sql
+
+# 从 test_movie 导出真实结构（public + crawl，含序列、函数、索引、视图，不含数据）。
+pg_dump -h <old_host> -U postgres -d test_movie \
+  --schema-only --no-owner --no-privileges \
+  > full_schema.sql
+```
+
+> 注意：`prod_flyway_hist.sql` 要来自已经对齐当前迁移脚本 checksum 的库。若直接在正式生产新库执行，需先确保这份历史包含当前仓库已存在的迁移版本。
+
+### 2. 导出种子数据
+
+```bash
+pg_dump -h <old_host> -U postgres -d test_movie \
+  --data-only --disable-triggers --column-inserts \
+  -t crawl.role \
+  -t crawl.menu \
+  -t crawl.button \
+  -t crawl.api \
+  -t crawl.role_menu \
+  -t crawl.role_button \
+  -t crawl.users \
+  -t crawl.user_role \
+  -t crawl.agreement \
+  -t crawl.language \
+  -t crawl.level \
+  -t crawl.dict \
+  -t crawl.dict_item \
+  -t crawl.movie_manual_extras \
+  -t crawl.cinema_spec \
+  > crawl_seed.sql
+```
+
+本地验证的种子行数：
+
+| 表 | 行数 |
+|---|---:|
+| `role` | 4 |
+| `menu` | 56 |
+| `button` | 79 |
+| `api` | 31 |
+| `role_menu` | 150 |
+| `role_button` | 197 |
+| `users` | 7 |
+| `user_role` | 2 |
+| `agreement` | 27 |
+| `language` | 10 |
+| `level` | 4 |
+| `dict` | 18 |
+| `dict_item` | 66 |
+| `movie_manual_extras` | 5 |
+| `cinema_spec` | 13 |
+
+### 3. 重建生产库结构
+
+```bash
+psql -h <prod_host> -U postgres -d prod_movie -v ON_ERROR_STOP=1 <<'SQL'
+DROP SCHEMA IF EXISTS crawl CASCADE;
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+SQL
+
+psql -h <prod_host> -U postgres -d prod_movie \
+  -v ON_ERROR_STOP=1 \
+  -f full_schema.sql
+```
+
+结构导入成功后应至少确认：
+
+```sql
+SELECT COUNT(*) FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+
+SELECT COUNT(*) FROM information_schema.tables
+WHERE table_schema = 'crawl' AND table_type = 'BASE TABLE';
+
+SELECT COUNT(*) FROM information_schema.views
+WHERE table_schema = 'crawl';
+```
+
+本地验证结果：`public` 73 表、`crawl` 84 表、`crawl` 2 个视图。
+
+### 4. 回填 Flyway 历史并导入种子
+
+```bash
+psql -h <prod_host> -U postgres -d prod_movie \
+  -v ON_ERROR_STOP=1 \
+  -f prod_flyway_hist.sql
+
+psql -h <prod_host> -U postgres -d prod_movie \
+  -v ON_ERROR_STOP=1 \
+  -f crawl_seed.sql
+```
+
+导入后推进所有序列：
+
+```bash
+psql -h <prod_host> -U postgres -d prod_movie \
+  -f infra/db-migrate/04_fix_sequences.sql
+```
+
+`04_fix_sequences.sql` 会解析 `crawl` 下所有 `nextval(...)` 默认值，对每个序列按当前最大 id 统一 `setval`。这一步很重要，因为 `test_movie` 的部分表共享 `public.auto_increment`，仅靠普通 `pg_get_serial_sequence` 会漏掉共享序列。
+
+### 5. 迁影院数据
+
+先准备 staging：
+
+```bash
+psql -h <prod_host> -U postgres -d prod_movie \
+  -f infra/db-migrate/01_prepare_cinema_staging.sql
+```
+
+导出旧库影院相关源数据：
+
+```bash
+pg_dump -h <old_host> -U postgres -d test_movie \
+  --data-only --column-inserts \
+  -t crawl.areas \
+  -t crawl.brand \
+  -t crawl.cinema \
+  -t crawl.theater_hall \
+  -t crawl.cinema_spec_spec \
+  > cinema_src.sql
+```
+
+导入 staging：
+
+```bash
+sed 's/crawl\./staging./g' cinema_src.sql | \
+  psql -h <prod_host> -U postgres -d prod_movie -v ON_ERROR_STOP=1
+```
+
+如果希望 `cinema` / `theater_hall` id 从 1 开始，执行一次独立序列转换：
+
+```sql
+CREATE SEQUENCE IF NOT EXISTS crawl.cinema_id_seq OWNED BY crawl.cinema.id;
+ALTER TABLE crawl.cinema ALTER COLUMN id SET DEFAULT nextval('crawl.cinema_id_seq');
+SELECT setval('crawl.cinema_id_seq', 1, false);
+
+CREATE SEQUENCE IF NOT EXISTS crawl.theater_hall_id_seq OWNED BY crawl.theater_hall.id;
+ALTER TABLE crawl.theater_hall ALTER COLUMN id SET DEFAULT nextval('crawl.theater_hall_id_seq');
+SELECT setval('crawl.theater_hall_id_seq', 1, false);
+```
+
+迁移并校验：
+
+```bash
+# 迁移前校验：所有 issue 查询应返回 0 行
+psql -h <prod_host> -U postgres -d prod_movie \
+  -f infra/db-migrate/03_verify_cinema_migration.sql
+
+# 执行业务键迁移
+psql -h <prod_host> -U postgres -d prod_movie \
+  -v ON_ERROR_STOP=1 \
+  -f infra/db-migrate/02_migrate_cinema_from_staging.sql
+
+# 推进序列，避免显式 id / 共享序列导致后续插入冲突
+psql -h <prod_host> -U postgres -d prod_movie \
+  -f infra/db-migrate/04_fix_sequences.sql
+
+# 迁移后校验：所有 issue 查询仍应返回 0 行
+psql -h <prod_host> -U postgres -d prod_movie \
+  -f infra/db-migrate/03_verify_cinema_migration.sql
+```
+
+确认无误后清理 staging：
+
+```bash
+psql -h <prod_host> -U postgres -d prod_movie \
+  -c "DROP SCHEMA IF EXISTS staging CASCADE;"
+```
+
+### 6. 结构一致性审计
+
+导出 `prod_movie.crawl` 实际列：
+
+```bash
+psql -h <prod_host> -U postgres -d prod_movie \
+  -tA -F'|' \
+  -c "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema='crawl' ORDER BY 1,2;" \
+  > prod_crawl_cols.txt
+```
+
+运行实体审计：
+
+```bash
+python infra/db-migrate/audit_entity_schema.py \
+  src/main/java/com/example/backend/entity \
+  prod_crawl_cols.txt
+```
+
+还应直接比对 `test_movie.crawl` 与 `prod_movie.crawl`：
+
+```bash
+psql -h <old_host> -U postgres -d test_movie \
+  -tA -F'|' \
+  -c "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema='crawl' ORDER BY 1,2;" \
+  > test_crawl_cols.txt
+
+comm -23 test_crawl_cols.txt prod_crawl_cols.txt
+comm -13 test_crawl_cols.txt prod_crawl_cols.txt
+```
+
+两条 `comm` 都无输出，表示 `prod.crawl` 与 `test.crawl` 逐列一致。本地已验证通过。
+
+---
+
+## 管理员账号安全处理
+
+种子里的账号（如 `diy4869`、`123478` 等）不能直接作为生产管理员使用。上线后应新建生产管理员，并停用种子测试账号。
 
 ```sql
 -- 1) 新建生产管理员（密码哈希按后端实际加密算法生成，勿用明文）
 INSERT INTO crawl.users (name, password, email, data_scope, deleted, create_time, update_time)
 VALUES ('你的管理员名', '<后端算法生成的密码哈希>', 'admin@yourdomain.com', 'platform', 0, now(), now());
 
--- 2) 给新管理员绑定 system 角色（role id 64 = system，由 V11 种子提供）
+-- 2) 给新管理员绑定 system 角色（role id 64 = system，来自种子数据）
 INSERT INTO crawl.user_role (user_id, role_id, create_time, update_time, deleted)
 SELECT u.id, 64, now(), now(), 0
 FROM crawl.users u
 WHERE u.name = '你的管理员名';
 
--- 3) 停用 V11 种子里的测试账号（软删除，避免被登录）
+-- 3) 停用种子里的测试账号
 UPDATE crawl.users
 SET deleted = 1, update_time = now()
 WHERE name IN ('diy4869', '123478', '111111', '123456', '234234', 'last_order', 'aaaaaa');
 ```
 
-> 密码哈希生成方式需对齐后端登录校验逻辑（确认是 MD5 / BCrypt / 自定义）。
-> 最稳妥：上线后用后台「新增用户」功能创建管理员，再用上面的 SQL 停用种子账号。
+密码哈希生成方式需对齐后端登录校验逻辑。最稳妥方式是在后台创建管理员，再执行停用测试账号的 SQL。
 
 ---
 
-## 需要迁移的 6 张表（影院相关，保留人工编辑）
+## 上线顺序
 
-迁移对象（均在 `crawl` schema）：
-`areas`、`brand`、`cinema`、`cinema_spec`、`cinema_spec_spec`、`theater_hall`
-
-**时机**：在 prod backend 跑完 Flyway（表已建好）之后、**首次爬虫之前**执行。
-这样爬虫会在已迁数据上更新，不会插重复。
-
-### 步骤 1：从旧库导出（保留原 id，幂等）
-
-```bash
-# 在能连到 test_movie 的机器上执行；同实例 / 不同实例都适用（产物是 SQL 文件）
-pg_dump \
-  -h <旧库host> -p 5432 -U postgres -d test_movie \
-  --data-only --column-inserts --on-conflict-do-nothing \
-  -t crawl.areas -t crawl.brand -t crawl.cinema \
-  -t crawl.cinema_spec -t crawl.cinema_spec_spec -t crawl.theater_hall \
-  > cinema_seed_data.sql
-```
-
-- `--column-inserts`：逐行 INSERT 且带列名，**保留原始 id**。
-- `--on-conflict-do-nothing`：和 Flyway 种子（如 `areas` 由 `V12` 预置）撞 id 时跳过，不报错。
-
-### 步骤 2：导入新库
-
-```bash
-psql -h <新库host> -p 5432 -U postgres -d prod_movie -f cinema_seed_data.sql
-```
-
-### 步骤 3：重置 identity 序列（必做）
-
-`areas`/`brand`/`cinema`/`theater_hall` 是 identity 主键，导入后必须把序列推到 `max(id)+1`，
-否则后台/爬虫新增会从 1 起撞already存在的 id。`cinema_spec`/`cinema_spec_spec` 是联合主键、无序列，跳过。
-
-```sql
--- 连到 prod_movie 执行
-SELECT setval(pg_get_serial_sequence('crawl.areas','id'),        COALESCE((SELECT MAX(id) FROM crawl.areas),0)+1,        false);
-SELECT setval(pg_get_serial_sequence('crawl.brand','id'),        COALESCE((SELECT MAX(id) FROM crawl.brand),0)+1,        false);
-SELECT setval(pg_get_serial_sequence('crawl.cinema','id'),       COALESCE((SELECT MAX(id) FROM crawl.cinema),0)+1,       false);
-SELECT setval(pg_get_serial_sequence('crawl.theater_hall','id'), COALESCE((SELECT MAX(id) FROM crawl.theater_hall),0)+1, false);
-```
-
-> 备份容器镜像自带 `psql`/`pg_dump`，也可在 `movie-pg-backup` 容器里执行这些命令。
-
----
-
-## 唯一性 / 防冲突保证（重要）
-
-迁移后「Flyway 种子 + 迁移影院数据 + 爬虫」三方合并，冲突只可能出现在 3 个层面，逐一封堵：
-
-### A. 主键 id 冲突（硬报错）
-
-| 表 | 是否与种子重叠 | 处理 |
-|---|---|---|
-| `areas` | ⚠️ 由 `V12` 种子预置同 id | `--on-conflict-do-nothing` 跳过，保留种子行（种子本就源自 test_movie，内容一致） |
-| `brand`/`cinema`/`cinema_spec`/`cinema_spec_spec`/`theater_hall` | 否，新库为空 | 直接插入，无冲突 |
-
-→ 导出命令已带 `--on-conflict-do-nothing`，**不会因 id 重复报错**。
-
-### B. 自然键重复（爬虫插出第二行 = 业务重复）⚠️ 最易踩
-
-爬虫靠自然键 upsert：`cinema.cinema_key`、`theater_hall (cinema_id, crawl_name)`。
-**迁移的行必须带齐这些键**，否则爬虫匹配不到会插重复。迁移前在 test_movie 自查：
-
-```sql
--- 1) cinema 是否有 cinema_key 为空（这些行爬虫会插重复）
-SELECT id, name FROM crawl.cinema WHERE deleted = 0 AND cinema_key IS NULL;
-
--- 2) theater_hall 是否有 crawl_name 为空（V43 应已回填，残留的需补）
-SELECT id, cinema_id, name FROM crawl.theater_hall WHERE deleted = 0 AND crawl_name IS NULL;
-
--- 3) 同一影院下 crawl_name 是否已存在重复（迁过去会撞唯一索引）
-SELECT cinema_id, crawl_name, COUNT(*) FROM crawl.theater_hall
-WHERE deleted = 0 AND crawl_name IS NOT NULL
-GROUP BY cinema_id, crawl_name HAVING COUNT(*) > 1;
-```
-
-- 查询 1/2 若有结果：先在旧库补键（`theater_hall` 可 `UPDATE ... SET crawl_name = name`），再导出。
-- 查询 3 若有结果：旧库本身就有重复影厅，需先清理，否则 `psql` 导入会因 `uk_crawl_theater_hall_cinema_crawl_name` 报错。
-
-### C. 序列冲突（未来新增撞已存在 id）
-
-`areas`/`brand`/`cinema`/`theater_hall` 必须按上方步骤 3 重置序列到 `max(id)+1`。
-
-### 导入后最终校验（在 prod_movie 执行，应全部返回 0 行）
-
-```sql
-SELECT 'dup cinema_key' t, cinema_key FROM crawl.cinema
-  WHERE cinema_key IS NOT NULL AND deleted=0
-  GROUP BY cinema_key HAVING COUNT(*)>1
-UNION ALL
-SELECT 'dup hall', cinema_id::text||'/'||crawl_name FROM crawl.theater_hall
-  WHERE crawl_name IS NOT NULL AND deleted=0
-  GROUP BY cinema_id, crawl_name HAVING COUNT(*)>1;
-```
-
----
-
-## 上线步骤（最小化）
-
-```bash
-# 1) 起生产栈（首次会自动建空库 prod_movie，backend 启动跑 Flyway 建表 + 种子）
-docker compose --env-file .env.prod \
-  -f docker-compose.prod.yml up -d --build
-
-# 2) 确认 Flyway 迁移成功（看 backend 日志，无 migration 报错）
-docker logs -f movie-backend-prod
-
-# 3) 处理管理员账号安全（见上方 SQL），并验证后台能用新账号登录
-
-# 4) 迁移 6 张影院相关表（见上方「需要迁移的 6 张表」：导出 → 导入 → 重置序列）
-#    必须在首次爬虫之前完成
-
-# 5) 启动爬虫，重建电影 / 场次数据，并在已迁影院数据上更新
-#    （按 cinema-crawler 的部署方式运行 crawl:all 或定时任务）
-
-# 6) 起备份服务（叠加 backup overlay）
-docker compose --env-file .env.backup \
-  -f docker-compose.prod.yml -f docker-compose.backup.yml up -d --build pg-backup
-
-# 7) 按需在后台重配座位 / 票价 / 促销 / 特典 / 预售
-```
+1. 准备 `prod_movie` 数据库，按本 runbook 完成结构克隆、种子导入、影院迁移、校验和序列推进。
+2. 启动生产后端，确认 Flyway 校验通过。当前历史回填到 V45，仓库里的 V46/V47 可在首启时幂等补跑。
+3. 新建生产管理员并停用种子测试账号。
+4. 启动爬虫，重建电影、演职员、场次、上映版本等可重爬数据。
+5. 启动备份服务，确认 R2 上传与备份健康检查正常。
+6. 按需在后台重配座位、票价、促销、特典、预售等人工配置。
 
 ---
 
 ## 注意事项
 
-- **schema 一致性**：生产已统一 `currentSchema=crawl`（`application-prod.yml` + `docker-compose.prod.yml`）。
-- **序列 reset**：仅迁移的 6 张表中 `areas`/`brand`/`cinema`/`theater_hall` 需手动重置序列（见步骤 3）；其余表无手动塞 id，序列从种子 `max(id)+1` 起（V11 末尾已推进），不会冲突。
-- **迁移时机**：6 张影院表必须在「Flyway 建表后、首次爬虫前」迁移，否则爬虫会先插入新 id 的影院，再迁旧 id 就可能重复。
-- **R2 凭证**：生产建议把图片存储和数据库备份各用一把最小权限 key，详见 `infra/pg-backup/README.md`。
+- **不要在正式生产空库上直接依赖 Flyway 冷启动 schema**：历史迁移链已与当前实体 / dev 真实库分叉。
+- **迁影院数据必须在首次爬虫前完成**：这样爬虫会基于已迁影院更新，不会先插入一批缺少人工编辑信息的新影院。
+- **`areas` 保留旧 id**：`cinema.area_id/prefecture_id/region_id` 直接沿用旧值。
+- **`cinema_spec` 作为种子导入**：`cinema_spec_spec.spec_id` 直接沿用旧值。
+- **`cinema_spec_spec` 行数少于源库是正常的**：只迁能映射到现存影院的有效行，过滤历史孤儿数据。
+- **序列推进必须执行**：尤其是 `public.auto_increment` 这种共享序列，否则种子显式 id 载入后，后续新增可能主键冲突。
+- **R2 凭证**：图片存储和数据库备份建议使用不同的最小权限 key，详见 `infra/pg-backup/README.md`。

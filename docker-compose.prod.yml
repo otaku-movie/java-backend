@@ -79,6 +79,9 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-prod_movie}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=crawl
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_FLYWAY_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-prod_movie}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public
+      - SPRING_FLYWAY_USER=${POSTGRES_USER:-postgres}
+      - SPRING_FLYWAY_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD:-}
@@ -87,6 +90,7 @@ services:
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER:-guest}
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - JAVA_OPTS=-Xms1024m -Xmx2048m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+      - OAUTH_GOOGLE_CLIENT_IDS=${OAUTH_GOOGLE_CLIENT_IDS:-807320750051-d8nkip913h8tgor8dnim1f3khlk9rsnf.apps.googleusercontent.com}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
@@ -106,12 +110,46 @@ services:
       retries: 3
       start_period: 90s
 
+  # 爬虫调度器
+  # 生产环境走 Docker 常驻调度；本地/开发可继续用 cinema-crawler 的 PM2 或 npm run schedule。
+  crawler-scheduler:
+    build:
+      context: ../cinema-crawler
+      dockerfile: Dockerfile
+    container_name: movie-crawler-scheduler-prod
+    env_file:
+      - ../cinema-crawler/.env.production
+    environment:
+      - NODE_ENV=production
+      - CRAWLER_ENV=production
+      - CRAWLER_PG_HOST=postgres
+      - CRAWLER_PG_PORT=5432
+      - CRAWLER_PG_DATABASE=${POSTGRES_DB:-prod_movie}
+      - CRAWLER_PG_USER=${POSTGRES_USER:-postgres}
+      - CRAWLER_PG_PASSWORD=${POSTGRES_PASSWORD}
+      - CRAWLER_SCHEDULE_CRON=${CRAWLER_SCHEDULE_CRON:-0 * * * *}
+      - CRAWLER_SCHEDULE_INTERVAL_HOURS=${CRAWLER_SCHEDULE_INTERVAL_HOURS:-1}
+      - CRAWLER_MOVIES_CRON=${CRAWLER_MOVIES_CRON:-30 4 * * *}
+      - CRAWLER_MUBITIKE_CRON=${CRAWLER_MUBITIKE_CRON:-30 5 * * *}
+      - CRAWLER_TZ=${CRAWLER_TZ:-Asia/Tokyo}
+      - CRAWLER_LOG_RETENTION=${CRAWLER_LOG_RETENTION:-48}
+    volumes:
+      - crawler_prod_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - movie-network
+    restart: always
+
 volumes:
   postgres_prod_data:
     driver: local
   redis_prod_data:
     driver: local
   rabbitmq_prod_data:
+    driver: local
+  crawler_prod_data:
     driver: local
 
 networks:

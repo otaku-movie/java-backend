@@ -66,8 +66,8 @@ minio:
 # - access-key / secret-key：仅通过环境变量传入，不写入文件
 storage:
   endpoint: ${STORAGE_ENDPOINT:https://fc57c8ebc7f4ac0ad80e7f84cb52fd1d.r2.cloudflarestorage.com}
-  access-key: ${STORAGE_ACCESS_KEY:352312287d2794bd1803567b457ac343}
-  secret-key: ${STORAGE_SECRET_KEY:5824d818abe4ea0eb7dc744581e53dfea94b94fb4cd27500c1cc98644cd1e487}
+  access-key: ${STORAGE_ACCESS_KEY:019bca19125bbe5b6f400fbd6bdba3c4}
+  secret-key: ${STORAGE_SECRET_KEY:6a183957f2d7c466376322b351b2e3fb3c033c7a591c0d0063f42a9b507e451b}
   region: ${STORAGE_REGION:auto}
   bucket: ${STORAGE_BUCKET:test-movie}
   public-url: ${STORAGE_PUBLIC_URL:https://images.otaku-movie.com}
