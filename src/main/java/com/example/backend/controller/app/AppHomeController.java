@@ -35,55 +35,48 @@ public class AppHomeController {
   private static final int HIGHLIGHT_FETCH_BATCH = 24;
 
   /**
-   * 首屏精选海报：优先「上映中 + 有海报 + 想看人数高」，不够时按 want_to_see_count 兜底
+   * 首屏精选海报：优先「热门排片」（未来场次最多 + 有海报），
+   * 不够时依次按「上映中 / 即将上映 / 任意有海报」的想看人数兜底。
    */
   @GetMapping(ApiPaths.App.Home.HIGHLIGHTS)
   public RestBean<List<HomeHighlightItem>> highlights() {
     List<Movie> candidates = new ArrayList<>();
 
-    // 1) 上映中 + 有 cover
-    candidates.addAll(fetchMovies(new QueryWrapper<Movie>()
-        .eq("status", 2)
-        .isNotNull("cover")
-        .ne("cover", "")
-        .orderByDesc("want_to_see_count")
-        .last("limit " + HIGHLIGHT_FETCH_BATCH)));
+    // 1) 热门排片：未来已公开场次最多的电影（多取一批，后续 Java 层再过滤/截断）
+    candidates.addAll(movieMapper.homeHighlightByShowTime(HIGHLIGHT_FETCH_BATCH));
 
-    // 2) 不够则补「即将上映」
+    // 2) 不够则补「上映中 + 有 cover」
     if (presentableCount(candidates) < HIGHLIGHT_LIMIT) {
-      List<Integer> excluded = candidates.stream()
-          .map(Movie::getId)
-          .collect(Collectors.toList());
-      QueryWrapper<Movie> q = new QueryWrapper<Movie>()
+      candidates.addAll(fetchMovies(excludeExisting(candidates, new QueryWrapper<Movie>()
+          .eq("status", 2)
+          .isNotNull("cover")
+          .ne("cover", "")
+          .orderByDesc("want_to_see_count")
+          .last("limit " + HIGHLIGHT_FETCH_BATCH))));
+    }
+
+    // 3) 不够则补「即将上映」
+    if (presentableCount(candidates) < HIGHLIGHT_LIMIT) {
+      candidates.addAll(fetchMovies(excludeExisting(candidates, new QueryWrapper<Movie>()
           .eq("status", 1)
           .isNotNull("cover")
           .ne("cover", "")
           .orderByDesc("want_to_see_count")
-          .last("limit " + HIGHLIGHT_FETCH_BATCH);
-      if (!excluded.isEmpty()) {
-        q.notIn("id", excluded);
-      }
-      candidates.addAll(fetchMovies(q));
+          .last("limit " + HIGHLIGHT_FETCH_BATCH))));
     }
 
-    // 3) 仍不够则任意有 cover
+    // 4) 仍不够则任意有 cover
     if (presentableCount(candidates) < HIGHLIGHT_LIMIT) {
-      List<Integer> excluded = candidates.stream()
-          .map(Movie::getId)
-          .collect(Collectors.toList());
-      QueryWrapper<Movie> q = new QueryWrapper<Movie>()
+      candidates.addAll(fetchMovies(excludeExisting(candidates, new QueryWrapper<Movie>()
           .isNotNull("cover")
           .ne("cover", "")
           .orderByDesc("want_to_see_count")
-          .last("limit " + HIGHLIGHT_FETCH_BATCH);
-      if (!excluded.isEmpty()) {
-        q.notIn("id", excluded);
-      }
-      candidates.addAll(fetchMovies(q));
+          .last("limit " + HIGHLIGHT_FETCH_BATCH))));
     }
 
     List<Movie> picked = candidates.stream()
         .filter(this::isPresentable)
+        .filter(distinctById())
         .limit(HIGHLIGHT_LIMIT)
         .collect(Collectors.toList());
 
@@ -101,6 +94,21 @@ public class AppHomeController {
 
   private List<Movie> fetchMovies(QueryWrapper<Movie> query) {
     return movieMapper.selectList(query);
+  }
+
+  /** 给查询补上「排除已入选 id」条件，避免兜底阶段重复取到同一部电影 */
+  private QueryWrapper<Movie> excludeExisting(List<Movie> existing, QueryWrapper<Movie> query) {
+    List<Integer> ids = existing.stream().map(Movie::getId).collect(Collectors.toList());
+    if (!ids.isEmpty()) {
+      query.notIn("id", ids);
+    }
+    return query;
+  }
+
+  /** 按 id 去重的过滤器（保留首次出现，维持原排序） */
+  private java.util.function.Predicate<Movie> distinctById() {
+    java.util.Set<Integer> seen = new java.util.HashSet<>();
+    return m -> m != null && m.getId() != null && seen.add(m.getId());
   }
 
   private long presentableCount(List<Movie> movies) {

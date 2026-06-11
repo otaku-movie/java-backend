@@ -35,6 +35,13 @@ public interface MovieMapper extends BaseMapper<Movie> {
       @Param("endDate") String endDate
     );
 
+    /**
+     * 首页精选：按「未来排片量」热度取片。
+     * 仅统计未删除、已公开、start_time 在当前时间之后的场次，按 distinct 场次数倒序，
+     * 场次数相同再按想看人数倒序。只返回有封面的 kind='movie'，limit 控制条数。
+     */
+    List<Movie> homeHighlightByShowTime(@Param("limit") int limit);
+
     Integer getAllCinemaCount(Integer movieId);
     Integer getAllTheaterCount(Integer movieId);
     Integer getMovieCommentCount(Integer movieId);

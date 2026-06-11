@@ -111,6 +111,44 @@
         GROUP BY
             movie_comment.movie_id
     </select>
+    <!-- 首页精选：按未来排片量（热门排片）取片，口径与 nowMovieShowing 一致 -->
+    <select id="homeHighlightByShowTime" resultType="com.example.backend.entity.Movie">
+        SELECT
+            movie.id,
+            movie.movie_key,
+            movie.cover,
+            movie.cover_url,
+            movie.name,
+            movie.original_name,
+            movie.description,
+            movie.level_id,
+            movie.home_page,
+            movie.start_date,
+            movie.end_date,
+            movie.status,
+            movie.time,
+            movie.watched_count,
+            movie.want_to_see_count,
+            movie.kind,
+            movie.credits_locked
+        FROM movie_show_time
+                 LEFT JOIN movie ON movie_show_time.movie_id = movie.id
+        WHERE movie_show_time.deleted = 0
+          AND movie_show_time.open = TRUE
+          AND movie_show_time.start_time::timestamp &gt;= CURRENT_TIMESTAMP
+          AND movie.deleted = 0
+          AND movie.kind = 'movie'
+          AND movie.cover IS NOT NULL
+          AND movie.cover != ''
+        GROUP BY movie.id, movie.movie_key, movie.cover, movie.cover_url, movie.name,
+                 movie.original_name, movie.description, movie.level_id, movie.home_page,
+                 movie.start_date, movie.end_date, movie.status, movie.time,
+                 movie.watched_count, movie.want_to_see_count, movie.kind, movie.credits_locked
+        ORDER BY COUNT(DISTINCT movie_show_time.id) DESC,
+                 movie.want_to_see_count DESC NULLS LAST
+        LIMIT #{limit}
+    </select>
+
     <!--    获取电影所有上映的影院数量 -->
     <select id="getAllCinemaCount" resultType="integer">
         SELECT
