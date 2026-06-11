@@ -10,8 +10,8 @@
 -- 全部用 WHERE NOT EXISTS 保证幂等。
 
 -- 1) api 权限码目录
-INSERT INTO crawl.api (name, code)
-SELECT v.name, v.code
+INSERT INTO crawl.api (name, code, create_time, update_time)
+SELECT v.name, v.code, now(), now()
 FROM (VALUES
   ('保存应用版本', 'appVersion.save'),
   ('删除应用版本', 'appVersion.remove'),
@@ -24,8 +24,8 @@ WHERE NOT EXISTS (SELECT 1 FROM crawl.api a WHERE a.code = v.code);
 
 -- 2) button（按菜单 path_name 关联，菜单不存在则跳过，避免 menu_id 外键报错）
 --    i18n_key 必须用 button.* 翻译键（前端按钮 label = common(i18nKey)，否则会显示原始码）
-INSERT INTO crawl.button (name, menu_id, api_code, i18n_key)
-SELECT v.name, m.id, v.api_code, v.i18n_key
+INSERT INTO crawl.button (name, menu_id, api_code, i18n_key, create_time, update_time)
+SELECT v.name, m.id, v.api_code, v.i18n_key, now(), now()
 FROM (VALUES
   ('保存应用版本', 'appVersionList',   'appVersion.save',   'button.save'),
   ('删除应用版本', 'appVersionList',   'appVersion.remove', 'button.remove'),
@@ -44,8 +44,8 @@ UPDATE crawl.button SET i18n_key = 'button.remove'
  WHERE api_code = 'presale.remove' AND i18n_key = 'presale.remove';
 
 -- 3) 绑定到 system 超管角色
-INSERT INTO crawl.role_button (role_id, button_id)
-SELECT r.id, b.id
+INSERT INTO crawl.role_button (role_id, button_id, create_time, update_time)
+SELECT r.id, b.id, now(), now()
 FROM crawl.role r
 JOIN crawl.button b
   ON b.api_code IN (
