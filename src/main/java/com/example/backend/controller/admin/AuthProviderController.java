@@ -1,7 +1,9 @@
 package com.example.backend.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.AuthProviderConfig;
 import com.example.backend.entity.RestBean;
@@ -31,6 +33,7 @@ public class AuthProviderController {
   @Autowired
   private AuthProviderConfigMapper authProviderConfigMapper;
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.AuthProvider.LIST)
   public RestBean<List<AuthProviderConfig>> list() {
     List<AuthProviderConfig> list = authProviderConfigMapper.selectList(
@@ -42,6 +45,8 @@ public class AuthProviderController {
     return RestBean.success(list, MessageUtils.getMessage("message.get.success"));
   }
 
+  @SaCheckLogin
+  @CheckPermission(code = "authProvider.save")
   @PostMapping(ApiPaths.Admin.AuthProvider.SAVE)
   public RestBean<Object> save(@RequestBody AuthProviderSaveQuery query) {
     if (query == null || query.getId() == null) {

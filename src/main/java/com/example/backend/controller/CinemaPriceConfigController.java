@@ -59,6 +59,7 @@ public class CinemaPriceConfigController {
     @Autowired
     private MessageUtils messageUtils;
 
+    @SaCheckLogin
     @PostMapping(ApiPaths.Admin.Cinema.PRICE_CONFIG_LIST)
     public RestBean<List<CinemaPriceConfigResponse>> list(@RequestBody @Validated CinemaPriceConfigListQuery query) {
         QueryWrapper<CinemaPriceConfig> qw = new QueryWrapper<>();

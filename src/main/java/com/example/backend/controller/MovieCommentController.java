@@ -164,6 +164,7 @@ public class MovieCommentController {
 
     return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Success.ACTION));
   }
+  @SaCheckLogin
   @PostMapping(ApiPaths.Common.Comment.SYNC_LIKE_DISLIKE)
   public RestBean<Null> syncLikeAndDislikeToDatabase() {
     movieCommentService.syncCommentLikeAndDislike();

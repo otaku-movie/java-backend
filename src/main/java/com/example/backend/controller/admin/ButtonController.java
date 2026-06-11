@@ -58,6 +58,7 @@ public class ButtonController {
   @Autowired
   private ButtonMapper buttonMapper;
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.Button.LIST)
   public RestBean<List<ButtonResponse>> list(@RequestBody ButtonListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
@@ -68,6 +69,7 @@ public class ButtonController {
 
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.Button.DETAIL)
   public RestBean<Button> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));

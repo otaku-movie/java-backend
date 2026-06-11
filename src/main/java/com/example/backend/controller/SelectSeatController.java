@@ -273,6 +273,7 @@ public class SelectSeatController {
         return RestBean.success(result, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
     }
 
+    @SaCheckLogin
     @GetMapping(ApiPaths.Common.ShowTime.SELECT_SEAT_LIST)
     public RestBean<Object> selectSeatList(
             @RequestParam("movieShowTimeId") Integer movieShowTimeId,

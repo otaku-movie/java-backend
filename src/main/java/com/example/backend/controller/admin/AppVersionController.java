@@ -1,9 +1,11 @@
 package com.example.backend.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.backend.annotation.CheckPermission;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.AppVersion;
 import com.example.backend.entity.RestBean;
@@ -60,6 +62,7 @@ public class AppVersionController {
   private AppVersionMapper appVersionMapper;
 
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.AppVersion.LIST)
   public RestBean<List<AppVersion>> list(@RequestBody AppVersionListQuery query) {
     QueryWrapper<AppVersion> wrapper = new QueryWrapper<>();
@@ -79,6 +82,7 @@ public class AppVersionController {
     return RestBean.success(result.getRecords(), query.getPage(), result.getTotal(), query.getPageSize());
   }
 
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.AppVersion.DETAIL)
   public RestBean<AppVersion> detail(@ModelAttribute AppVersionDetailQuery query) {
     AppVersion data = appVersionMapper.selectOne(new QueryWrapper<AppVersion>()
@@ -88,6 +92,8 @@ public class AppVersionController {
     return RestBean.success(data, MessageUtils.getMessage("message.get.success"));
   }
 
+  @SaCheckLogin
+  @CheckPermission(code = "appVersion.save")
   @PostMapping(ApiPaths.Admin.AppVersion.SAVE)
   public RestBean<Object> save(@RequestBody AppVersionSaveQuery query) {
     if (!StringUtils.hasText(query.getPlatform())) {
@@ -156,6 +162,8 @@ public class AppVersionController {
     return RestBean.success(null, MessageUtils.getMessage("message.save.success"));
   }
 
+  @SaCheckLogin
+  @CheckPermission(code = "appVersion.remove")
   @DeleteMapping(ApiPaths.Admin.AppVersion.REMOVE)
   public RestBean<Object> remove(@ModelAttribute AppVersionDetailQuery query) {
     appVersionMapper.update(
@@ -168,6 +176,8 @@ public class AppVersionController {
     return RestBean.success(null, MessageUtils.getMessage("message.remove.success"));
   }
 
+  @SaCheckLogin
+  @CheckPermission(code = "appVersion.save")
   @PostMapping(ApiPaths.Admin.AppVersion.SET_LATEST)
   public RestBean<Object> setLatest(@RequestBody AppVersionSetLatestQuery query) {
     if (query.getId() == null) {

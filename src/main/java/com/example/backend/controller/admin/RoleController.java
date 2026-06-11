@@ -93,6 +93,7 @@ public class RoleController {
   @Autowired
   private RoleButtonService roleButtonService;
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.Role.LIST)
   public RestBean<List<Role>> list(@RequestBody RoleListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
@@ -104,6 +105,7 @@ public class RoleController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.Role.PERMISSION_LIST)
   public RestBean<List<ButtonResponse>> permissionList(@RequestParam @Validated  Integer id)  {
     if (id == null) {
@@ -115,6 +117,7 @@ public class RoleController {
 
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.Role.PERMISSION)
   public RestBean<List<ButtonResponse>> permission(@RequestParam @Validated @NotNull(message = "{validator.error.get}") Integer id)  {
     QueryWrapper wrapper = new QueryWrapper<>();
@@ -166,6 +169,7 @@ public class RoleController {
 
     return RestBean.success(null, messageUtils.getMessage(MessageKeys.Admin.Movie.SAVE_SUCCESS));
   }
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.Role.DETAIL)
   public RestBean<Role> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));

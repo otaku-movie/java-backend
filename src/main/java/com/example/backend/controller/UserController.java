@@ -31,7 +31,6 @@ import com.example.backend.utils.PasswordUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
@@ -55,9 +54,6 @@ class UserLoginQuery {
 
 @Data
 class UpdateUserInfoQuery {
-  @NotNull
-  Integer id;
-
   @NotEmpty(message = "{validator.login.email.required}")
   @Email(message = "{validator.login.email.notEmail}")
   String email;
@@ -229,13 +225,15 @@ public class UserController {
     }
     if (sb.length() > 0) profile.setName(sb.toString());
   }
+  @SaCheckLogin
   @PostMapping(ApiPaths.Common.User.UPDATE_INFO)
   public RestBean<Null> updateUserInfo(@RequestBody @Validated UpdateUserInfoQuery query){
     User modal = new User();
 
     modal.setCover(query.getCover());
     modal.setName(query.getUsername());
-    modal.setId(query.getId());
+    // 防越权：只允许改自己，强制用登录态 id，忽略请求体里的 query.getId()
+    modal.setId(StpUtil.getLoginIdAsInt());
 
     userMapper.updateById(modal);
 

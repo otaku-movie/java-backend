@@ -1,5 +1,6 @@
 package com.example.backend.controller.dev;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.entity.RestBean;
 import com.example.backend.utils.MessageKeysChecker;
@@ -23,6 +24,7 @@ public class DevToolsController {
      * 检查消息键一致性
      * GET /api/dev/check-message-keys
      */
+    @SaCheckLogin
     @GetMapping(ApiPaths.Dev.CHECK_MESSAGE_KEYS)
     public RestBean<String> checkMessageKeys() {
         try {
@@ -40,6 +42,7 @@ public class DevToolsController {
      * 生成消息键一致性报告
      * GET /api/dev/message-keys-report
      */
+    @SaCheckLogin
     @GetMapping(ApiPaths.Dev.MESSAGE_KEYS_REPORT)
     public RestBean<String> generateMessageKeysReport() {
         try {

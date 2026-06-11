@@ -136,6 +136,6 @@ logging:
 # 若关闭 Swagger，请把 healthcheck 改成其它存活端点（如某个 /api 健康接口），否则容器会判 unhealthy。
 springdoc:
   api-docs:
-    enabled: ${SPRINGDOC_ENABLED:true}
+    enabled: ${SPRINGDOC_ENABLED:false}
   swagger-ui:
-    enabled: ${SPRINGDOC_ENABLED:true}
+    enabled: ${SPRINGDOC_ENABLED:false}

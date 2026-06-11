@@ -1,5 +1,6 @@
 package com.example.backend.controller.scheduledTasks;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
@@ -37,6 +38,7 @@ public class ScheduledTasksController {
    * 定时任务：更新电影上映日期状态。
    * 根据电影的 startDate/endDate 将状态更新为「上映中」或「已结束」，每天 00:00 执行。
    */
+  @SaCheckLogin
   @PostMapping(ApiPaths.Scheduled.UPDATE_MOVIE_STATE)
   @Scheduled(cron = "0 0 0 * * ?")
   public RestBean<Object> updateMovieState() {
@@ -54,6 +56,7 @@ public class ScheduledTasksController {
    * 定时任务：更新场次放映状态。
    * 根据场次 start_time/end_time 将状态更新为「未上映」「上映中」或「已结束」，每分钟执行。
    */
+  @SaCheckLogin
   @PostMapping(ApiPaths.Scheduled.UPDATE_MOVIE_SCREENING_STATE)
   @Scheduled(cron = "0 * * * * ?")
   public RestBean<Object> updateMovieScreeningState() {
@@ -71,6 +74,7 @@ public class ScheduledTasksController {
    * 定时任务：更新场次定时公开与可购票状态。
    * 到达 publish_at 时自动将 open 置为 true；根据 sale_open_at 维护 can_sale。每分钟执行。
    */
+  @SaCheckLogin
   @PostMapping(ApiPaths.Scheduled.UPDATE_SHOWTIME_PUBLISH_STATE)
   @Scheduled(cron = "0 * * * * ?")
   public RestBean<Object> updateShowTimePublishState() {
@@ -97,6 +101,7 @@ public class ScheduledTasksController {
    * 定时任务：订单超时兜底。
    * 扫描仍为「已创建」且已超过支付超时时间的订单，置为超时并释放 Redis 选座及 DB 选座状态；与 RabbitMQ 超时消费者互补。每分钟执行。
    */
+  @SaCheckLogin
   @PostMapping(ApiPaths.Scheduled.UPDATE_MOVIE_ORDER_STATE)
   @Scheduled(cron = "0 * * * * ?")
   public void updateMovieOrderState() {

@@ -242,6 +242,7 @@ public class AdminUserController {
     return false;
   }
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.User.LIST)
   public RestBean<List<UserListResponse>> list(@RequestBody @Validated  UserListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();

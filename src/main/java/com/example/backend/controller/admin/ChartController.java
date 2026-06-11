@@ -1,5 +1,6 @@
 package com.example.backend.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
@@ -75,6 +76,7 @@ public class ChartController {
   private final java.util.concurrent.atomic.AtomicBoolean refreshing =
       new java.util.concurrent.atomic.AtomicBoolean(false);
 
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.Chart.DATA)
   public RestBean<ChartResponse> chart () {
     ChartResponse chartResponse = loadCached();

@@ -166,6 +166,7 @@ public class MovieOrderController {
     return RestBean.success(order, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.Order.LIST)
   public RestBean<List<OrderListResponse>> orderList(@RequestBody MovieOrderListQuery query) {
     // 初始化分页对象
@@ -285,6 +286,7 @@ public class MovieOrderController {
     
     return RestBean.success(result.getRecords(), query.getPage(), result.getTotal(), query.getPageSize());
   }
+  @SaCheckLogin
   @GetMapping(ApiPaths.Common.Order.GENERATOR_QR_CODE)
   public ResponseEntity<ByteArrayResource> generatorQRcode() {
     QrConfig config = new QrConfig(300, 300);

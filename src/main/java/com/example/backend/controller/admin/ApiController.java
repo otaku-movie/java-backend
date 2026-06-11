@@ -53,6 +53,7 @@ public class ApiController {
   @Autowired
   private ApiMapper apiMapper;
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.Api.LIST)
   public RestBean<List<Object>> list(@RequestBody ApiListQuery query)  {
     QueryWrapper wrapper = new QueryWrapper<>();
@@ -64,6 +65,7 @@ public class ApiController {
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.Api.DETAIL)
   public RestBean<Api> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Error.PARAMETER));

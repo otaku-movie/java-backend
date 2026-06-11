@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
@@ -42,6 +43,7 @@ public class UploadController {
     this.storage = storage;
   }
 
+  @SaCheckLogin
   @PostMapping(value = ApiPaths.Upload.UPLOAD, consumes = "multipart/form-data")
   public RestBean<UploadResponse> upload(MultipartFile file) throws IOException {
     try {
@@ -71,6 +73,7 @@ public class UploadController {
   }
 
 
+  @SaCheckLogin
   @DeleteMapping(ApiPaths.Upload.DELETE)
   public RestBean<Null> delete(@Validated @RequestParam @NotEmpty(message = "path 不能为空") String path ) {
     if (!StringUtils.hasText(path)) {

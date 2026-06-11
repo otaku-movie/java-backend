@@ -67,6 +67,7 @@ public class MenuController {
   @Autowired
   private MenuMapper menuMapper;
 
+  @SaCheckLogin
   @PostMapping(ApiPaths.Admin.Menu.LIST)
   public RestBean<List<Menu>> list(@RequestBody MenuListQuery query)  {
     QueryWrapper<Menu> wrapper = new QueryWrapper<>();
@@ -88,6 +89,7 @@ public class MenuController {
 
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
+  @SaCheckLogin
   @GetMapping(ApiPaths.Admin.Menu.DETAIL)
   public RestBean<Menu> detail (@RequestParam Integer id) {
     if(id == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), messageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));

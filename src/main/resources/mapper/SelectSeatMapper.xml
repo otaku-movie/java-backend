@@ -113,10 +113,10 @@
                     seat.x_axis = select_seat.x AND
                     seat.y_axis = select_seat.y AND
                     select_seat.deleted = 0 AND
-                    select_seat.movie_show_time_id = ${movieShowTimeId}
+                    select_seat.movie_show_time_id = #{movieShowTimeId}
                  LEFT JOIN seat_area ON seat.seat_area_id = seat_area.id
         WHERE
-            seat.theater_hall_id=${theaterHallId} AND
+            seat.theater_hall_id = #{theaterHallId} AND
             seat.deleted = 0
         ORDER BY seat.x_axis ASC, seat.y_axis ASC
     </select>
