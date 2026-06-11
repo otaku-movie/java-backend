@@ -156,7 +156,7 @@
         </where>
     </select>
     <select id="getMovieShowTimeTags" resultType="com.example.backend.entity.MovieShowTimeTag">
-        SELECT id, name
+        SELECT id, name, name_zh AS nameZh, name_en AS nameEn
         FROM movie_show_time_tag
         <where>
             <if test="tagsId != null and tagsId.size() > 0">

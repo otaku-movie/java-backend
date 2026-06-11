@@ -12,6 +12,7 @@ import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.mapper.MovieShowTimeTagMapper;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.TagI18nUtils;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import org.apache.ibatis.jdbc.Null;
@@ -62,7 +63,10 @@ public class MovieShowTimeTagController {
     }
     wrapper.orderByDesc("update_time");
 
-    IPage list = showTimeTagMapper.selectPage(page, wrapper);
+    IPage<MovieShowTimeTag> list = showTimeTagMapper.selectPage(page, wrapper);
+
+    // 按 Accept-Language 把日文原名替换成对应译名（译名为空时回退日文）。
+    TagI18nUtils.translateShowTimeTags(list.getRecords());
 
     return RestBean.success(list.getRecords(), query.getPage(), list.getTotal(), query.getPageSize());
   }

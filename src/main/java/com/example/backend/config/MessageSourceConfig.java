@@ -33,6 +33,19 @@ public class MessageSourceConfig {
 
     private static final String BASENAME = "i18n/messages";
     private static final String DEFAULT_ENCODING = "UTF-8";
+
+    /**
+     * 语言 → 实际存在的资源文件后缀映射。
+     * 资源文件命名并不统一（messages_ja.yml / messages_zh_CN.yml / messages_en_US.yml），
+     * 而客户端传来的 Accept-Language 可能是 zh、zh-CN、zh-（甚至畸形）、ja-JP 等多种形态。
+     * 这里只按「语言」归一化到固定文件，彻底规避 country 带不带、带得对不对导致找不到文件、
+     * 回退默认语言的问题（这正是 App 切换语言后字典不变的根因）。
+     */
+    private static final Map<String, String> LANG_TO_FILE_SUFFIX = Map.of(
+        "zh", "zh_CN",
+        "ja", "ja",
+        "en", "en_US"
+    );
     
     // 缓存已加载的 Properties，key 为 locale.toString()
     private static final Map<String, Properties> propertiesCache = new ConcurrentHashMap<>();
@@ -88,11 +101,16 @@ public class MessageSourceConfig {
         return cached;
       }
       
-      // 构建文件名
+      // 构建文件名：优先按「语言」归一化到实际存在的文件后缀（zh→zh_CN、ja→ja、en→en_US）；
+      // 未在映射表中的语言才退回「语言[_国家]」的原始拼法，保持向后兼容。
       String language = locale.getLanguage();
       String country = locale.getCountry();
-      String lang = language.split(";")[0];
-      String yamlFileName = String.format("%s_%s%s.yml", BASENAME, lang, country.isEmpty() ? "" : "_" + country);
+      String lang = language.split(";")[0].toLowerCase();
+      String suffix = LANG_TO_FILE_SUFFIX.get(lang);
+      if (suffix == null) {
+        suffix = country.isEmpty() ? lang : lang + "_" + country;
+      }
+      String yamlFileName = String.format("%s_%s.yml", BASENAME, suffix);
       
       log.debug("Loading YAML file: {}", yamlFileName);
       

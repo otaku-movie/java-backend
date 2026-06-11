@@ -28,6 +28,12 @@ public class Areas implements Serializable {
     @TableField(value = "name_kana")
     private String nameKana;
 
+    @TableField(value = "name_zh")
+    private String nameZh;
+
+    @TableField(value = "name_en")
+    private String nameEn;
+
     @TableField(value = "parent_id")
     private Integer parentId;
 

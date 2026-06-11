@@ -23,6 +23,7 @@ import java.util.HashMap;
 import com.example.backend.service.MovieShowTimeService;
 import com.example.backend.service.MovieTicketTypeService;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.TagI18nUtils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -122,9 +123,9 @@ public class MovieShowTimeController {
         item.getSubtitleId().forEach(children -> languageSet.add(children));
 
       }
-      item.setMovieShowTimeTags(
-        movieShowTimeMapper.getMovieShowTimeTags(item.getMovieShowTimeTagsId())
-      );
+      var showTimeTags = movieShowTimeMapper.getMovieShowTimeTags(item.getMovieShowTimeTagsId());
+      TagI18nUtils.translateShowTimeTags(showTimeTags);
+      item.setMovieShowTimeTags(showTimeTags);
 
 
       return item;
@@ -158,9 +159,9 @@ public class MovieShowTimeController {
 
     MovieShowTimeDetail result = movieShowTimeMapper.movieShowTimeDetail(id);
     if (result == null) return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(), MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
-    result.setMovieShowTimeTags(
-      movieShowTimeMapper.getMovieShowTimeTags(result.getMovieShowTimeTagsId())
-    );
+    var detailShowTimeTags = movieShowTimeMapper.getMovieShowTimeTags(result.getMovieShowTimeTagsId());
+    TagI18nUtils.translateShowTimeTags(detailShowTimeTags);
+    result.setMovieShowTimeTags(detailShowTimeTags);
     result.setSubtitle(
       movieShowTimeMapper.getMovieShowTimeSubtitle(result.getSubtitleId())
     );

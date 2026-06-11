@@ -24,6 +24,7 @@ import com.example.backend.response.app.BenefitShareDetailResponse;
 import com.example.backend.response.app.MovieShareDetailResponse;
 import com.example.backend.response.app.OrderShareDetailResponse;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.TagI18nUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,7 +111,7 @@ public class AppShareController {
         .in("id", tagIds)
         .eq("deleted", 0));
     return tags.stream()
-        .map(MovieTag::getName)
+        .map(TagI18nUtils::translateMovieTagName)
         .filter(name -> name != null && !name.isEmpty())
         .collect(Collectors.toList());
   }

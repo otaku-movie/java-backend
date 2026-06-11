@@ -19,6 +19,7 @@ import com.example.backend.response.movie.MovieVersionResponse;
 import com.example.backend.service.MovieService;
 import com.example.backend.service.MovieVersionService;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.TagI18nUtils;
 import cn.dev33.satoken.stp.StpUtil;
 import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,6 +78,7 @@ public class MovieController {
     IPage<MovieResponse> list = movieMapper.movieList(query, page);
     List<MovieResponse> result =  list.getRecords().stream().map(item -> {
         List<Tags> tags = movieMapper.getMovieTags(item.getId());
+        TagI18nUtils.translateMovieTags(tags);
         List<Spec> spec = movieMapper.getMovieSpec(item.getId());
         List<HelloMovie> helloMovies = movieMapper.getHelloMovie(item.getId());
 
@@ -130,6 +132,7 @@ public class MovieController {
     }
 
     List<Tags> tags = movieMapper.getMovieTags(result.getId());
+    TagI18nUtils.translateMovieTags(tags);
     List<Spec> spec = movieMapper.getMovieSpec(result.getId());
     List<HelloMovie> helloMovies = movieMapper.getHelloMovie(result.getId());
 

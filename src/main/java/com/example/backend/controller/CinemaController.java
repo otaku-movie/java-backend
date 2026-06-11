@@ -34,6 +34,7 @@ import com.example.backend.service.BenefitService;
 import com.example.backend.service.CinemaSpecSpecService;
 import com.example.backend.utils.ManualFieldLockUtils;
 import com.example.backend.utils.MessageUtils;
+import com.example.backend.utils.TagI18nUtils;
 import com.example.backend.utils.Utils;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -246,6 +247,7 @@ public class CinemaController {
             // 获取特殊场次标签信息
             if (theaterHallShowTime.getShowTimeTagId() != null && !theaterHallShowTime.getShowTimeTagId().isEmpty()) {
               var showTimeTags = movieShowTimeMapper.getMovieShowTimeTags(theaterHallShowTime.getShowTimeTagId());
+              TagI18nUtils.translateShowTimeTags(showTimeTags);
               theaterHallShowTime.setShowTimeTags(showTimeTags);
             }
             
@@ -341,9 +343,9 @@ public class CinemaController {
       List<MovieShowTimeList> screening = screeningList
         .stream()
         .map(movie -> {
-          movie.setMovieShowTimeTags(
-            movieShowTimeMapper.getMovieShowTimeTags(movie.getMovieShowTimeTagsId())
-          );
+          var showTimeTags = movieShowTimeMapper.getMovieShowTimeTags(movie.getMovieShowTimeTagsId());
+          TagI18nUtils.translateShowTimeTags(showTimeTags);
+          movie.setMovieShowTimeTags(showTimeTags);
           movie.setSubtitle(
             movieShowTimeMapper.getMovieShowTimeSubtitle(movie.getSubtitleId())
           );

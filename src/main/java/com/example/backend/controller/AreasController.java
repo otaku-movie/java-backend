@@ -44,6 +44,8 @@ public class AreasController {
         r.setId(area.getId());
         r.setName(area.getName());
         r.setNameKana(area.getNameKana());
+        r.setNameZh(area.getNameZh());
+        r.setNameEn(area.getNameEn());
         r.setParentId(area.getParentId());
         return r;
       }).collect(Collectors.toList());

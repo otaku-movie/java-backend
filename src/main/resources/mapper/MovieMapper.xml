@@ -68,7 +68,9 @@
     <select id="getMovieTags" resultType="com.example.backend.response.movie.Tags">
         SELECT
             movie_tag.id AS id,
-            movie_tag.name AS name
+            movie_tag.name AS name,
+            movie_tag.name_zh AS nameZh,
+            movie_tag.name_en AS nameEn
         FROM
             movie_tag
         LEFT JOIN movie_tag_tags ON movie_tag.id = movie_tag_tags.movie_tag_id
