@@ -75,10 +75,10 @@ EXPOSE 5005
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 ENV JAVA_DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
-# 健康检查（使用 SpringDoc 3.x 的正确路径）
+# 健康检查：swagger/actuator 若被权限策略拦住，则用需登录接口返回 401 作为应用存活信号。
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:8080/swagger-ui/index.html || wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+  CMD sh -c 'wget --quiet --tries=1 --spider http://localhost:8080/swagger-ui/index.html || wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || { wget --quiet --tries=1 --spider http://localhost:8080/api/admin/chart; test $? -eq 6; }'
 
 # 启动应用（支持调试模式）
-# 如果设置了 JAVA_DEBUG=true，则启用远程调试
-ENTRYPOINT ["sh", "-c", "if [ \"$JAVA_DEBUG\" = \"true\" ]; then java $JAVA_OPTS $JAVA_DEBUG_OPTS -jar app.jar; else java $JAVA_OPTS -jar app.jar; fi"]
+# 使用绝对路径，避免 compose 覆盖 working_dir 后找不到 JAR。
+ENTRYPOINT ["sh", "-c", "if [ \"$JAVA_DEBUG\" = \"true\" ]; then java $JAVA_OPTS $JAVA_DEBUG_OPTS -jar /movie/server/app.jar; else java $JAVA_OPTS -jar /movie/server/app.jar; fi"]

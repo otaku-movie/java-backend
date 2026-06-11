@@ -24,7 +24,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -199,18 +198,25 @@ public class ChartController {
 
   /**
    * 核心线程也允许空闲超时的线程池：跑完聚合后空闲 60s 自动回收，不常驻线程。
-   * 最大并发 20（与 HikariCP 池大小对齐），队列用 SynchronousQueue 保证任务直接交给线程而非排队。
+   *
+   * <p>并发与拒绝策略：低核机器（如 2 核）上 {@code cpu*2} 只有 4，而一次聚合要并行提交
+   * 19 个任务。若仍用 SynchronousQueue（不排队）+ 默认 AbortPolicy，第 5 个任务起就会抛
+   * RejectedExecutionException 导致接口 500。这里改为：
+   *  - 并发下限拉到 8（保证小机器也有足够并行度跑完聚合，上限仍 20 不超过 HikariCP 池）；
+   *  - 用有界 LinkedBlockingQueue 让超出的任务排队，而不是直接拒绝；
+   *  - CallerRunsPolicy 兜底：极端情况下由调用线程自己执行，绝不丢任务。
    */
   private static ExecutorService buildChartExecutor () {
-    int max = Math.min(20, Runtime.getRuntime().availableProcessors() * 2);
+    int max = Math.min(20, Math.max(8, Runtime.getRuntime().availableProcessors() * 2));
     ThreadPoolExecutor executor = new ThreadPoolExecutor(
         max, max, 60L, TimeUnit.SECONDS,
-        new SynchronousQueue<>(),
+        new java.util.concurrent.LinkedBlockingQueue<>(64),
         r -> {
           Thread t = new Thread(r, "chart-aggregator");
           t.setDaemon(true);
           return t;
-        });
+        },
+        new ThreadPoolExecutor.CallerRunsPolicy());
     executor.allowCoreThreadTimeOut(true);
     return executor;
   }
