@@ -1,0 +1,125 @@
+# 预发布环境配置（profile=staging）
+# 用途：在本机以「尽量贴近生产」的配置联调——对象存储/域名/日志口径与 prod 一致，
+# 但数据库 / Redis / RabbitMQ 一律连本机 localhost（不连 Docker 服务名 postgres）。
+#
+# 与各环境的区别：
+# - dev ：本地开发，连 localhost，库 test_movie，日志噪音低。
+# - staging（本文件）：本地预发布，连 localhost，配置向 prod 看齐（prod 桶/正式域名）。
+# - prod：仅在 docker-compose.prod.yml 内运行，连服务名 postgres/redis/rabbitmq。
+#
+# 所有连接项都支持环境变量覆盖；默认值面向「本机」，保证 F5 可直接跑通。
+spring:
+  output:
+    ansi:
+      # 本地控制台联调，强制彩色（与 dev 一致），便于直接观察日志。
+      enabled: always
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    # 业务运行时使用 crawl schema；默认连本机预发布库 prod_movie（可用环境变量覆盖）。
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/prod_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=crawl}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgre}
+    hikari:
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:20}
+      minimum-idle: ${HIKARI_MIN_IDLE:5}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT:600000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME:1800000}
+      keepalive-time: ${HIKARI_KEEPALIVE_TIME:300000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION:0}
+  flyway:
+    # 与 prod 同口径：Flyway 在 public schema 跑（V1 建 public.*，V3 用 LIKE 镜像出 crawl.*），
+    # 业务 datasource 仍用 currentSchema=crawl。默认连本机预发布库 prod_movie。
+    url: ${SPRING_FLYWAY_URL:jdbc:postgresql://localhost:5432/prod_movie?useUnicode=true&characterEncoding=UTF-8&useSSL=false&stringtype=unspecified&reWriteBatchedInserts=true&currentSchema=public}
+    user: ${SPRING_FLYWAY_USER:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${SPRING_FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgre}}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: ${SPRING_DATA_REDIS_DATABASE:0}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:3000ms}
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE:16}
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_POOL_MIN_IDLE:2}
+          max-wait: ${REDIS_POOL_MAX_WAIT:2000ms}
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+  servlet:
+    multipart:
+      max-request-size: -1
+      max-file-size: -1
+
+server:
+  port: ${SERVER_PORT:8080}
+  address: 0.0.0.0
+
+# 对象存储：默认与 prod 一致（prod 桶 + 正式域名），便于预发布验证线上素材链路。
+storage:
+  endpoint: ${STORAGE_ENDPOINT:https://fc57c8ebc7f4ac0ad80e7f84cb52fd1d.r2.cloudflarestorage.com}
+  access-key: ${STORAGE_ACCESS_KEY:c01d0fd45cabc81cecd05d0470dc76c3}
+  secret-key: ${STORAGE_SECRET_KEY:8e109b2fbe65feda9a7dfe79179de4fa499ec0837deb9ce3cd01f3d8b972e51b}
+  region: ${STORAGE_REGION:auto}
+  bucket: ${STORAGE_BUCKET:prod-movie}
+  public-url: ${STORAGE_PUBLIC_URL:https://static.otaku-movie.com}
+  path-style-access: ${STORAGE_PATH_STYLE:false}
+
+# 兼容历史 MinioConfiguration bean（已弃用，实际上传走 storage.*）。
+minio:
+  endpoint: ${STORAGE_ENDPOINT:}
+  accessKey: ${STORAGE_ACCESS_KEY:}
+  secretKey: ${STORAGE_SECRET_KEY:}
+  bucket: ${STORAGE_BUCKET:prod-movie}
+  previewURL: ${STORAGE_PUBLIC_URL:https://static.otaku-movie.com}
+
+# 第三方登录：与 prod 一致的正式 Client ID。
+oauth:
+  google:
+    client-ids: ${OAUTH_GOOGLE_CLIENT_IDS:807320750051-d8nkip913h8tgor8dnim1f3khlk9rsnf.apps.googleusercontent.com}
+  apple:
+    client-ids: ${OAUTH_APPLE_CLIENT_IDS:}
+
+# App 启动页：可用环境变量改图换文案。
+app:
+  splash:
+    image-url: ${APP_SPLASH_IMAGE_URL:}
+    title-en: ${APP_SPLASH_TITLE_EN:シネコ}
+    title-zh: ${APP_SPLASH_TITLE_ZH:シネコ}
+    title-ja: ${APP_SPLASH_TITLE_JA:シネコ}
+    subtitle-en: ${APP_SPLASH_SUBTITLE_EN:Anime movies, in one tap}
+    subtitle-zh: ${APP_SPLASH_SUBTITLE_ZH:动漫电影，一键直达}
+    subtitle-ja: ${APP_SPLASH_SUBTITLE_JA:アニメ映画をワンタップで}
+    min-duration-ms: ${APP_SPLASH_MIN_MS:1500}
+    max-duration-ms: ${APP_SPLASH_MAX_MS:3500}
+    tap-action: ${APP_SPLASH_TAP_ACTION:}
+
+# 预发布日志：业务 INFO，框架 WARN，默认关闭 SQL 打印（排查时可临时开 p6spy）。
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.example.backend: ${LOG_LEVEL_APP:INFO}
+    org.springframework: WARN
+    org.springframework.web: WARN
+    org.springframework.boot: INFO
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    org.springframework.amqp.rabbit.connection.CachingConnectionFactory: WARN
+    org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer: WARN
+    p6spy: OFF
+    org.mybatis: WARN
+    org.apache.ibatis: WARN
+    com.baomidou.mybatisplus: WARN
+  exception-conversion-word: "%wEx"
+
+# 预发布默认开启 Swagger，便于联调。
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}

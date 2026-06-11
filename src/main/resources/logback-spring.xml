@@ -162,8 +162,8 @@
         </encoder>
     </appender>
     
-    <!-- 开发环境配置 -->
-    <springProfile name="dev">
+    <!-- 开发 / 预发布环境配置：均在本机控制台输出彩色日志 -->
+    <springProfile name="dev,staging">
         <root level="INFO">
             <appender-ref ref="CONSOLE_NORMAL"/>
             <appender-ref ref="CONSOLE_WARN"/>

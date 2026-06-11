@@ -13,14 +13,15 @@ import org.springframework.context.annotation.Profile;
  * Flyway 校验失败。这里在启动前先执行 repair，把 schema history
  * 里的 checksum 同步成当前文件的值，避免每次手动 mvn flyway:repair。</p>
  *
- * <p>prod / test 等其它 profile 仍走默认严格校验，避免线上误改脚本被忽略。</p>
+ * <p>staging 是本机 F5 预发布环境，连接 localhost/prod_movie，同样允许本地迁移脚本
+ * 在联调过程中被调整。prod / test 等其它 profile 仍走默认严格校验，避免线上误改脚本被忽略。</p>
  */
 @Configuration
 public class FlywayConfig {
 
   @Bean
-  @Profile("dev")
-  public FlywayMigrationStrategy devFlywayMigrationStrategy() {
+  @Profile({"dev", "staging"})
+  public FlywayMigrationStrategy localFlywayMigrationStrategy() {
     return flyway -> {
       flyway.repair();
       flyway.migrate();

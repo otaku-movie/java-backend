@@ -2,6 +2,25 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "free port 8080",
+      "type": "shell",
+      "command": "${workspaceFolder}\\scripts\\free-port.cmd",
+      "args": ["8080", "nopause"],
+      "options": {
+        "shell": {
+          "executable": "cmd.exe",
+          "args": ["/c"]
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "close": false
+      }
+    },
+    {
       "label": "docker: up",
       "type": "shell",
       "command": "docker-compose",

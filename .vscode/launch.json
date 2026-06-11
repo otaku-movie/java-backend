@@ -3,14 +3,39 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Spring Boot - BackendApplication (F5)",
+      "name": "Spring Boot - dev (F5)",
       "request": "launch",
       "mainClass": "com.example.backend.BackendApplication",
       "projectName": "backend",
       "args": "",
       "vmArgs": "-Dspring.profiles.active=dev",
       "console": "internalConsole",
-      "internalConsoleOptions": "openOnSessionStart"
+      "internalConsoleOptions": "openOnSessionStart",
+      "preLaunchTask": "free port 8080"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot - test",
+      "request": "launch",
+      "mainClass": "com.example.backend.BackendApplication",
+      "projectName": "backend",
+      "args": "",
+      "vmArgs": "-Dspring.profiles.active=test",
+      "console": "internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "preLaunchTask": "free port 8080"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot - staging（本地库）",
+      "request": "launch",
+      "mainClass": "com.example.backend.BackendApplication",
+      "projectName": "backend",
+      "args": "",
+      "vmArgs": "-Dspring.profiles.active=staging",
+      "console": "internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "preLaunchTask": "free port 8080"
     },
     {
       "type": "java",
