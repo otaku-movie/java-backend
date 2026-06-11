@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import javax.management.ReflectionException;
 import java.io.IOException;
@@ -108,6 +109,22 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(AsyncRequestNotUsableException.class)
   public void handleClientAbort(AsyncRequestNotUsableException ex) {
     log.debug("客户端提前断开连接，忽略响应写出失败: {}", ex.getMessage());
+  }
+
+  /**
+   * 处理静态资源/接口路径不存在（404）。
+   *
+   * <p>当请求路径匹配不到任何 Controller 时，Spring 会交给静态资源处理器，找不到资源即抛
+   * {@link NoResourceFoundException}（常见于前端漏写 /api 前缀或路径拼错）。这属于客户端
+   * 请求了不存在的地址，应返回 404 而非 500，且无需打印完整堆栈，仅记 warn 方便定位。
+   * 若继续走兜底的 {@code Exception} 处理器，会被误报为系统错误并刷整段堆栈。
+   */
+  @ExceptionHandler(NoResourceFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public RestBean<Object> handleNoResourceFound(NoResourceFoundException ex) {
+    log.warn("请求路径不存在: {} {}", ex.getHttpMethod(), ex.getResourcePath());
+    return RestBean.error(ResponseCode.RESOURCE_NOT_FOUND.getCode(),
+        MessageUtils.getMessage(MessageKeys.Error.SYSTEM));
   }
 
   /**
