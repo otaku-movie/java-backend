@@ -35,99 +35,51 @@ public class MovieShowTimeImpl  extends ServiceImpl<MovieShowTimeMapper, MovieSh
   @Autowired
   private MovieShowTimeTicketTypeMapper movieShowTimeTicketTypeMapper;
 
+  /**
+   * movie_show_time 写入互斥用的事务级咨询锁 key；爬虫导入持锁期间这两个每分钟任务跳过本轮，
+   * 杜绝两边以不同行序写同一批场次而成环死锁。**必须与爬虫端 SHOWTIME_REFRESH_LOCK_KEY 一致**
+   * （cinema-crawler/scripts/pipeline/import-data-pg.ts）。
+   */
+  private static final long SHOWTIME_REFRESH_LOCK_KEY = 480037L;
+
+  private static final DateTimeFormatter SHOWTIME_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
   @Override
   @Transactional(rollbackFor = Exception.class)
   public void updateScreeningState() {
-    // 注意：早先这里有 `ne("status", ended)` 过滤——一旦某条被错误置为 3，
-    // 后续任务再也不会回头校正。爬虫导入偶发会写入错误 status，导致
-    // "明明时间没到，前台却显示放映结束" 的脏数据。
-    // 现在拿全表（deleted=0）逐条按 start/end 重算，但只 update 状态真的
-    // 发生变化的记录，避免每分钟全表写放大。
-    QueryWrapper<MovieShowTime> queryWrapper = new QueryWrapper<>();
-    queryWrapper.eq("deleted", 0);
-    List<MovieShowTime> data = movieShowTimeMapper.selectList(queryWrapper);
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    LocalDateTime now = LocalDateTime.now();
-    List<MovieShowTime> toUpdate = data.stream().map(item -> {
-      if (item.getStartTime() == null || item.getStartTime().isEmpty()
-          || item.getEndTime() == null || item.getEndTime().isEmpty()) {
-        log.warn("场次 start_time/end_time 为空，跳过 id={}", item.getId());
-        return null;
-      }
-      try {
-        LocalDateTime start = LocalDateTime.parse(item.getStartTime(), formatter);
-        LocalDateTime end = LocalDateTime.parse(item.getEndTime(), formatter);
-        int newStatus;
-        if (now.isAfter(start) && now.isBefore(end)) {
-          newStatus = ShowTimeState.screening.getCode();
-        } else if (now.isAfter(end)) {
-          newStatus = ShowTimeState.ended.getCode();
-        } else {
-          newStatus = ShowTimeState.no_started.getCode();
-        }
-        Integer current = item.getStatus();
-        if (current != null && current == newStatus) {
-          return null;
-        }
-        item.setStatus(newStatus);
-        return item;
-      } catch (Exception e) {
-        log.warn("场次时间解析失败 id={}, startTime={}, endTime={}", item.getId(), item.getStartTime(), item.getEndTime(), e);
-        return null;
-      }
-    }).filter(item -> item != null).toList();
-    if (!toUpdate.isEmpty()) {
-      updateBatchById(toUpdate, Math.min(toUpdate.size(), 500));
+    // 与爬虫导入用同一把咨询锁串行化：导入正在写 movie_show_time 时直接跳过本轮，
+    // 下一分钟自然补算，避免行锁乱序成环死锁。
+    if (Boolean.FALSE.equals(movieShowTimeMapper.tryAdvisoryXactLock(SHOWTIME_REFRESH_LOCK_KEY))) {
+      log.info("updateScreeningState: 未取得咨询锁（导入进行中），跳过本轮");
+      return;
+    }
+    // 集合式重算：只更新「当前状态 != 应有状态」的行（稳态下每分钟仅几条跨越边界），
+    // 不再每分钟把全表载入 JVM。start_time/end_time 为定长文本，按字典序与 now 比较等价于时间比较。
+    String now = LocalDateTime.now().format(SHOWTIME_FORMATTER);
+    int screening = movieShowTimeMapper.markScreening(ShowTimeState.screening.getCode(), now);
+    int ended = movieShowTimeMapper.markEnded(ShowTimeState.ended.getCode(), now);
+    int notStarted = movieShowTimeMapper.markNotStarted(ShowTimeState.no_started.getCode(), now);
+    if (screening + ended + notStarted > 0) {
+      log.info("场次放映状态刷新: 上映中={}, 已结束={}, 未开始={}", screening, ended, notStarted);
     }
   }
 
   @Override
   @Transactional(rollbackFor = Exception.class)
   public void updatePublishAndCanSaleState() {
-    QueryWrapper<MovieShowTime> queryWrapper = new QueryWrapper<>();
-    queryWrapper.eq("deleted", 0);
-    List<MovieShowTime> data = movieShowTimeMapper.selectList(queryWrapper);
-    if (data.isEmpty()) {
+    if (Boolean.FALSE.equals(movieShowTimeMapper.tryAdvisoryXactLock(SHOWTIME_REFRESH_LOCK_KEY))) {
+      log.info("updatePublishAndCanSaleState: 未取得咨询锁（导入进行中），跳过本轮");
       return;
     }
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    LocalDateTime now = LocalDateTime.now();
-    List<MovieShowTime> toUpdate = data.stream().map(item -> {
-      boolean changed = false;
-      if (item.getPublishAt() != null && !item.getPublishAt().isEmpty()) {
-        try {
-          LocalDateTime publishAt = LocalDateTime.parse(item.getPublishAt(), formatter);
-          boolean shouldOpen = !now.isBefore(publishAt);
-          Boolean currentOpen = item.getOpen();
-          if (shouldOpen && (currentOpen == null || !currentOpen)) {
-            item.setOpen(true);
-            changed = true;
-          }
-        } catch (Exception e) {
-          log.warn("publish_at 解析失败, id={}, value={}", item.getId(), item.getPublishAt(), e);
-        }
-      }
-      Boolean originalCanSale = item.getCanSale();
-      Boolean newCanSale = originalCanSale;
-      String saleOpenAt = item.getSaleOpenAt();
-      if (saleOpenAt == null || saleOpenAt.isEmpty()) {
-        newCanSale = Boolean.TRUE;
-      } else {
-        try {
-          LocalDateTime saleOpenTime = LocalDateTime.parse(saleOpenAt, formatter);
-          newCanSale = !now.isBefore(saleOpenTime);
-        } catch (Exception e) {
-          log.warn("sale_open_at 解析失败, id={}, value={}", item.getId(), saleOpenAt, e);
-        }
-      }
-      if (newCanSale != null && (originalCanSale == null || !newCanSale.equals(originalCanSale))) {
-        item.setCanSale(newCanSale);
-        changed = true;
-      }
-      return changed ? item : null;
-    }).filter(item -> item != null).toList();
-    if (!toUpdate.isEmpty()) {
-      updateBatchById(toUpdate, toUpdate.size());
+    String now = LocalDateTime.now().format(SHOWTIME_FORMATTER);
+    int opened = movieShowTimeMapper.openByPublishAt(now);
+    int saleNoGate = movieShowTimeMapper.enableSaleWhenNoSaleOpenAt();
+    int saleOn = movieShowTimeMapper.enableSaleWhenSaleOpenAtReached(now);
+    int saleOff = movieShowTimeMapper.disableSaleWhenSaleOpenAtNotReached(now);
+    if (opened + saleNoGate + saleOn + saleOff > 0) {
+      log.info("场次公开/可售刷新: 公开+{}, 可售(无门槛)+{}, 可售(到点)+{}, 不可售(未到)+{}",
+          opened, saleNoGate, saleOn, saleOff);
     }
   }
 
