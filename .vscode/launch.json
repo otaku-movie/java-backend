@@ -9,6 +9,7 @@
       "projectName": "backend",
       "args": "",
       "vmArgs": "-Dspring.profiles.active=dev",
+      "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole",
       "internalConsoleOptions": "openOnSessionStart",
       "preLaunchTask": "free port 8080"
@@ -21,6 +22,7 @@
       "projectName": "backend",
       "args": "",
       "vmArgs": "-Dspring.profiles.active=test",
+      "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole",
       "internalConsoleOptions": "openOnSessionStart",
       "preLaunchTask": "free port 8080"
@@ -33,6 +35,7 @@
       "projectName": "backend",
       "args": "",
       "vmArgs": "-Dspring.profiles.active=staging",
+      "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole",
       "internalConsoleOptions": "openOnSessionStart",
       "preLaunchTask": "free port 8080"

@@ -125,6 +125,16 @@ oauth:
   apple:
     client-ids: ${OAUTH_APPLE_CLIENT_IDS:}
 
+app:
+  mail:
+    # SMTP 发件配置。生产环境请通过环境变量注入 MAIL_SMTP_PASS，不要把密钥写入仓库。
+    host: ${MAIL_SMTP_HOST:smtp.resend.com}
+    port: ${MAIL_SMTP_PORT:465}
+    from: ${MAIL_SMTP_FROM:no-reply@otaku-movie.com}
+    user: ${MAIL_SMTP_USER:resend}
+    pass: ${MAIL_SMTP_PASS:}
+    ssl-enable: ${MAIL_SMTP_SSL_ENABLE:true}
+
 # 入场者特典 - 用户反馈（Redis）
 benefit:
   feedback:

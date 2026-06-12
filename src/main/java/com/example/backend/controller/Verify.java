@@ -5,6 +5,7 @@ import cloud.tianai.captcha.application.vo.CaptchaResponse;
 import cloud.tianai.captcha.application.vo.ImageCaptchaVO;
 import cloud.tianai.captcha.common.response.ApiResponse;
 import cloud.tianai.captcha.validator.common.model.dto.ImageCaptchaTrack;
+import cn.hutool.extra.mail.MailAccount;
 import cn.hutool.extra.mail.MailUtil;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
@@ -19,6 +20,7 @@ import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,7 +58,25 @@ public class Verify {
   private EmailTemplateService emailTemplateService;
 
   @Resource
-  RedisTemplate redisTemplate;
+  private RedisTemplate<String, String> redisTemplate;
+
+  @Value("${app.mail.host}")
+  private String mailHost;
+
+  @Value("${app.mail.port}")
+  private Integer mailPort;
+
+  @Value("${app.mail.from}")
+  private String mailFrom;
+
+  @Value("${app.mail.user}")
+  private String mailUser;
+
+  @Value("${app.mail.pass}")
+  private String mailPass;
+
+  @Value("${app.mail.ssl-enable}")
+  private Boolean mailSslEnable;
 
   /**
    * 邮件模板预览 - 浏览器直接打开可查看效果
@@ -81,10 +101,23 @@ public class Verify {
 
     redisTemplate.opsForValue().set(key, String.valueOf(code), 60 * 5, TimeUnit.SECONDS);
 
-    MailUtil.send(to, subject, htmlContent, true);
+    MailUtil.send(createMailAccount(), to, subject, htmlContent, true);
 
     return RestBean.success(Map.of("token", uuid), MessageUtils.getMessage(MessageKeys.Success.SEND));
   }
+
+  private MailAccount createMailAccount() {
+    MailAccount account = new MailAccount();
+    account.setHost(mailHost);
+    account.setPort(mailPort);
+    account.setFrom(mailFrom);
+    account.setUser(mailUser);
+    account.setPass(mailPass);
+    account.setAuth(true);
+    account.setSslEnable(mailSslEnable);
+    return account;
+  }
+
   @PostMapping(ApiPaths.Verify.CAPTCHA)
   public CaptchaResponse<ImageCaptchaVO> verify() {
     CaptchaResponse<ImageCaptchaVO> res = imageCaptchaApplication.generateCaptcha("SLIDER");

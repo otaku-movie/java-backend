@@ -1,6 +1,8 @@
-pass = rwqezihjzeuvqatq
-host = smtp.gmail.com
-from = diy4869@gmail.com
-user = diy4869@gmail.com
+# Legacy Hutool fallback. Runtime mail sending uses app.mail.* in application.yml.
+# Keep secrets out of this file; set MAIL_SMTP_PASS in the environment instead.
+pass =
+host = smtp.resend.com
+from = no-reply@otaku-movie.com
+user = resend
 port = 465
 sslEnable = true

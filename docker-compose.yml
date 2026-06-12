@@ -86,6 +86,13 @@ services:
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=guest
       - SPRING_RABBITMQ_PASSWORD=guest
+      # 邮件发送（Resend SMTP）：与生产共用同一套配置，仅 MAIL_SMTP_PASS 需本机 .env 提供
+      - MAIL_SMTP_HOST=${MAIL_SMTP_HOST:-smtp.resend.com}
+      - MAIL_SMTP_PORT=${MAIL_SMTP_PORT:-465}
+      - MAIL_SMTP_FROM=${MAIL_SMTP_FROM:-no-reply@otaku-movie.com}
+      - MAIL_SMTP_USER=${MAIL_SMTP_USER:-resend}
+      - MAIL_SMTP_PASS=${MAIL_SMTP_PASS}
+      - MAIL_SMTP_SSL_ENABLE=${MAIL_SMTP_SSL_ENABLE:-true}
       - JAVA_DEBUG=${JAVA_DEBUG:-true}  # 是否启用远程调试，默认 true（方便调试）
     ports:
       - "8080:8080"
