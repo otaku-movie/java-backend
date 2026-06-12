@@ -260,7 +260,7 @@ public class UserController {
         ResponseCode.ERROR.getCode(),
         MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_EXPIRED)
       );
-    } else if (code != null && code != query.getCode()) {
+    } else if (!code.toString().equals(query.getCode())) {
       return RestBean.error(
         ResponseCode.ERROR.getCode(),
         MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_ERROR)
