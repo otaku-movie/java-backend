@@ -50,6 +50,9 @@ public class MovieResponse {
   /** 该预售券是否含特典 */
   Boolean hasBonus;
 
+  /** 是否有入场者特典（普通上映，benefit 表存在记录即为 true） */
+  Boolean hasBenefit;
+
   /** 是否存在重映计划（用于后台电影选择弹窗打标签/入口） */
   Boolean hasReRelease;
 }

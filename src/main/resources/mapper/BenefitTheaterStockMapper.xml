@@ -122,6 +122,6 @@
         WHERE s.deleted = 0
           AND s.benefit_id = #{benefitId}
           AND COALESCE(s.manual_sold_out, 0) = 0
-          AND (s.remaining IS NULL OR s.remaining &gt; 0)
+          AND NOT (COALESCE(s.quota, 0) &gt; 0 AND s.remaining IS NOT NULL AND s.remaining &lt;= 0)
     </select>
 </mapper>

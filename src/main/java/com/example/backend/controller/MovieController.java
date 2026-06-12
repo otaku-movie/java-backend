@@ -16,6 +16,7 @@ import com.example.backend.response.movie.MovieResponse;
 import com.example.backend.response.MovieStaffResponse;
 import com.example.backend.response.movie.Tags;
 import com.example.backend.response.movie.MovieVersionResponse;
+import com.example.backend.service.BenefitService;
 import com.example.backend.service.MovieService;
 import com.example.backend.service.MovieVersionService;
 import com.example.backend.utils.MessageUtils;
@@ -68,6 +69,8 @@ public class MovieController {
   private SpecMapper specMapper;
   @Autowired
   private MovieRateMapper movieRateMapper;
+  @Autowired
+  private BenefitService benefitService;
 
   @PostMapping(ApiPaths.Common.Movie.LIST)
   public RestBean<List<MovieResponse>> list(@RequestBody MovieListQuery query)  {
@@ -76,6 +79,11 @@ public class MovieController {
     Page<MovieResponse> page = new Page<>(query.getPage(), query.getPageSize());
 
     IPage<MovieResponse> list = movieMapper.movieList(query, page);
+    java.util.List<Integer> movieIds = list.getRecords().stream()
+        .map(MovieResponse::getId)
+        .filter(java.util.Objects::nonNull)
+        .toList();
+    java.util.Map<Integer, Boolean> benefitMap = benefitService.hasAnyBenefitsForMovies(movieIds);
     List<MovieResponse> result =  list.getRecords().stream().map(item -> {
         List<Tags> tags = movieMapper.getMovieTags(item.getId());
         TagI18nUtils.translateMovieTags(tags);
@@ -88,6 +96,7 @@ public class MovieController {
         item.setCommentCount(movieMapper.getMovieCommentCount(item.getId()));
         item.setCinemaCount(movieMapper.getAllCinemaCount(item.getId()));
         item.setTheaterCount(movieMapper.getAllTheaterCount(item.getId()));
+        item.setHasBenefit(Boolean.TRUE.equals(benefitMap.get(item.getId())));
 
         return item;
     }).toList();
@@ -142,6 +151,8 @@ public class MovieController {
     result.setCommentCount(movieMapper.getMovieCommentCount(result.getId()));
     result.setCinemaCount(movieMapper.getAllCinemaCount(result.getId()));
     result.setTheaterCount(movieMapper.getAllTheaterCount(result.getId()));
+    result.setHasBenefit(Boolean.TRUE.equals(
+        benefitService.hasAnyBenefitsForMovies(java.util.List.of(result.getId())).get(result.getId())));
 
     Presale presale = presaleMapper.selectOne(
         Wrappers.<Presale>lambdaQuery().eq(Presale::getMovieId, id).last("LIMIT 1"));
