@@ -345,6 +345,8 @@ public final class ApiPaths {
                 public static final String STOCK_SAVE = ADMIN_BASE + "/cinema/benefit/stock/save";
                 /** 用户反馈列表 - POST /api/admin/cinema/benefit/feedback/list */
                 public static final String FEEDBACK_LIST = ADMIN_BASE + "/cinema/benefit/feedback/list";
+                /** 标记用户反馈为已读 - POST /api/admin/cinema/benefit/feedback/read */
+                public static final String FEEDBACK_READ = ADMIN_BASE + "/cinema/benefit/feedback/read";
             }
         }
         
@@ -557,6 +559,8 @@ public final class ApiPaths {
             public static final String DETAIL = ADMIN_BASE + "/benefit/detail";
             /** 保存阶段 - POST /api/admin/benefit/save */
             public static final String SAVE = ADMIN_BASE + "/benefit/save";
+            /** 仅更新影院限定（轻量，不影响阶段其它字段）- POST /api/admin/benefit/cinemaLimit/save */
+            public static final String CINEMA_LIMIT_SAVE = ADMIN_BASE + "/benefit/cinemaLimit/save";
             /** 删除阶段 - DELETE /api/admin/benefit/remove */
             public static final String REMOVE = ADMIN_BASE + "/benefit/remove";
             /** 清除某特典在某影院的反馈 Redis 缓存 - POST /api/admin/benefit/feedback/cache/reset */

@@ -14,6 +14,8 @@ public class BenefitFeedbackListItemResponse {
   private Integer benefitId;
   private String benefitName;
   private Integer feedbackType;
+  /** 后台是否已读：0=未读 1=已读 */
+  private Integer isRead;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
   private Date createTime;
 }

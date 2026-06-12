@@ -26,6 +26,10 @@ public class BenefitUserFeedback {
   @TableField("feedback_type")
   private Integer feedbackType;
 
+  /** 后台是否已读：0=未读 1=已读 */
+  @TableField("is_read")
+  private Integer isRead;
+
   @JsonIgnore
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   private Date createTime;

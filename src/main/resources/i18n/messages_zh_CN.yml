@@ -49,6 +49,7 @@ error:
     itemRequired: "请选择特典阶段"
     stockDuplicate: "该影院该阶段已分配过库存，请通过编辑修改数量"
     stockNotFound: "特典库存记录不存在或已删除"
+    stockCinemaNotInLimit: "该影院不在此特典的影院限定范围内，请先在阶段编辑的「影院限定」中添加该影院"
   showtime:
     notFound: "场次不存在或已被删除"
   seat:

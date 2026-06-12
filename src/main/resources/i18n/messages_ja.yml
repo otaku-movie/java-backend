@@ -49,6 +49,7 @@ error:
     itemRequired: "特典フェーズを選択してください"
     stockDuplicate: "この劇場・フェーズには既に在庫を割り当て済みです。編集で数量を変更してください"
     stockNotFound: "特典在庫レコードが存在しないか、削除されています"
+    stockCinemaNotInLimit: "この劇場は特典の劇場限定の範囲外です。先にフェーズ編集の「劇場限定」で追加してください"
   showtime:
     notFound: "上映時間が存在しないか、既に削除されています"
   seat:

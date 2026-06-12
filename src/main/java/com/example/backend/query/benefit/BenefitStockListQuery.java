@@ -11,4 +11,6 @@ public class BenefitStockListQuery extends PaginationQuery {
   private Integer benefitId;
   /** 按影院ID筛选 */
   private Integer cinemaId;
+  /** 按影院名称模糊搜索 */
+  private String cinemaName;
 }

@@ -49,6 +49,7 @@ error:
     itemRequired: "Please select a benefit phase"
     stockDuplicate: "Stock already allocated for this cinema and phase, please edit the existing row to change quantity"
     stockNotFound: "Benefit stock record does not exist or has been deleted"
+    stockCinemaNotInLimit: "This cinema is not within the benefit's cinema restriction. Please add it in the phase's \"Cinema Limit\" first"
   showtime:
     notFound: "Showtime does not exist or has been deleted"
   seat:

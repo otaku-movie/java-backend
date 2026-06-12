@@ -153,6 +153,8 @@ public final class MessageKeys {
         public static final String BENEFIT_STOCK_DUPLICATE = "error.benefit.stockDuplicate";
         /** 特典库存记录不存在（id 无效或已删除） */
         public static final String BENEFIT_STOCK_NOT_FOUND = "error.benefit.stockNotFound";
+        /** 该影院不在特典的影院限定范围内，请先在阶段编辑中添加该影院 */
+        public static final String BENEFIT_STOCK_CINEMA_NOT_IN_LIMIT = "error.benefit.stockCinemaNotInLimit";
         /** 数据范围为院线时必须选择品牌 */
         public static final String ADMIN_USER_DATA_SCOPE_CHAIN_BRAND =
             "error.admin.user.dataScopeChainBrand";

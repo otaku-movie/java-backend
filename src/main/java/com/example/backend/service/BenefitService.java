@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.entity.Benefit;
@@ -400,11 +401,17 @@ public class BenefitService {
 
   /** 字典 benefitStockStatus：1充足 2少量 3极少 4已领完 5未知 6用户反馈领完 */
   private static int computeBenefitStockDisplayStatus(int manualSoldOut, Integer remaining, Integer quota, boolean soldOutByFeedback) {
+    // 运营手动 / 用户反馈领完：权威「已领完」，与剩余数无关
     if (manualSoldOut == 1) return 4;
     if (soldOutByFeedback) return 6;
-    if (remaining == null) return 5;
-    if (remaining <= 0) return 4;
     int q = quota != null && quota > 0 ? quota : 0;
+    // 剩余未上报：未知
+    if (remaining == null) return 5;
+    if (remaining <= 0) {
+      // 没有有效配额（库存从未被维护）时，剩余 0 仅为占位，按「未知」展示而非「已领完」；
+      // 仅当配额 > 0 且剩余减到 0 才是真正「已领完」。
+      return q <= 0 ? 5 : 4;
+    }
     if (q <= 0) return 1;
     double ratio = remaining / (double) q;
     if (ratio >= 0.3) return 1;
@@ -498,6 +505,25 @@ public class BenefitService {
     return b.getId();
   }
 
+  /**
+   * 仅更新某特典的「影院限定」，不动其它字段。
+   * cinemaIds 为空 => 不限定（cinemaLimitType=0）；非空 => 限定（cinemaLimitType=1）。
+   */
+  @Transactional(rollbackFor = Exception.class)
+  public void updateBenefitCinemaLimit(com.example.backend.query.benefit.BenefitCinemaLimitSaveQuery query) {
+    if (query.getBenefitId() == null) {
+      throw new IllegalArgumentException(MessageUtils.getMessage(MessageKeys.Error.BENEFIT_ITEM_REQUIRED));
+    }
+    Benefit b = benefitMapper.selectById(query.getBenefitId());
+    if (b == null) {
+      throw new IllegalArgumentException(MessageUtils.getMessage(MessageKeys.Error.BENEFIT_STOCK_NOT_FOUND));
+    }
+    boolean hasCinemaIds = query.getCinemaIds() != null && !query.getCinemaIds().isEmpty();
+    b.setCinemaLimitType(hasCinemaIds ? 1 : 0);
+    b.setCinemaIds(hasCinemaIds ? JSON.toJSONString(query.getCinemaIds()) : null);
+    benefitMapper.updateById(b);
+  }
+
   @Transactional(rollbackFor = Exception.class)
   public void removeBenefit(Integer id) {
     if (id == null) return;
@@ -510,6 +536,15 @@ public class BenefitService {
     LambdaQueryWrapper<BenefitTheaterStock> wrapper = new LambdaQueryWrapper<>();
     if (query.getCinemaId() != null) wrapper.eq(BenefitTheaterStock::getCinemaId, query.getCinemaId());
     if (query.getBenefitId() != null) wrapper.eq(BenefitTheaterStock::getBenefitId, query.getBenefitId());
+    if (StringUtils.hasText(query.getCinemaName())) {
+      List<Integer> matchedCinemaIds = cinemaMapper.selectList(
+        new LambdaQueryWrapper<Cinema>().like(Cinema::getName, query.getCinemaName().trim()))
+        .stream().map(Cinema::getId).toList();
+      if (matchedCinemaIds.isEmpty()) {
+        return new Page<>(page.getCurrent(), page.getSize(), 0);
+      }
+      wrapper.in(BenefitTheaterStock::getCinemaId, matchedCinemaIds);
+    }
     wrapper.orderByDesc(BenefitTheaterStock::getId);
     IPage<BenefitTheaterStock> result = benefitTheaterStockMapper.selectPage(page, wrapper);
     List<BenefitStockListItemResponse> list = result.getRecords().stream().map(stock -> {
@@ -546,12 +581,36 @@ public class BenefitService {
       if (query.getCinemaId() == null) {
         throw new IllegalArgumentException(MessageUtils.getMessage(MessageKeys.Validator.BenefitStock.CINEMA_ID_REQUIRED));
       }
+      // 影院限定校验：该特典若设置了影院限定（cinemaLimitType=1），只能给白名单内的影院分配库存；
+      // 限定为空（不限定）则不校验。需要新增范围外影院时，应先到阶段编辑的「影院限定」中添加。
+      Benefit limitBenefit = benefitMapper.selectById(query.getBenefitId());
+      if (limitBenefit != null
+        && limitBenefit.getCinemaLimitType() != null
+        && limitBenefit.getCinemaLimitType() == 1) {
+        List<Integer> whitelist = parseIntegerList(limitBenefit.getCinemaIds());
+        if (!whitelist.isEmpty() && !whitelist.contains(query.getCinemaId())) {
+          throw new IllegalArgumentException(
+            MessageUtils.getMessage(MessageKeys.Error.BENEFIT_STOCK_CINEMA_NOT_IN_LIMIT));
+        }
+      }
       stock = benefitTheaterStockMapper.selectOne(
         new LambdaQueryWrapper<BenefitTheaterStock>()
           .eq(BenefitTheaterStock::getCinemaId, query.getCinemaId())
           .eq(BenefitTheaterStock::getBenefitId, query.getBenefitId()));
       if (stock != null) {
-        throw new IllegalArgumentException(MessageUtils.getMessage(MessageKeys.Error.BENEFIT_STOCK_DUPLICATE));
+        // 该影院已分配过：视为「追加分配」，在原有配额/剩余基础上累加，不影响已领走的部分。
+        if (query.getQuota() != null) {
+          int baseQuota = stock.getQuota() != null ? stock.getQuota() : 0;
+          stock.setQuota(baseQuota + query.getQuota());
+        }
+        Integer addRemaining = query.getRemaining() != null ? query.getRemaining() : query.getQuota();
+        if (addRemaining != null) {
+          int baseRemaining = stock.getRemaining() != null ? stock.getRemaining() : 0;
+          stock.setRemaining(baseRemaining + addRemaining);
+        }
+        if (query.getManualSoldOut() != null) stock.setManualSoldOut(query.getManualSoldOut());
+        benefitTheaterStockMapper.updateById(stock);
+        return;
       }
     }
     if (stock == null) {
@@ -677,6 +736,7 @@ public class BenefitService {
     if (query.getCinemaId() != null) wrapper.eq(BenefitUserFeedback::getCinemaId, query.getCinemaId());
     if (query.getBenefitId() != null) wrapper.eq(BenefitUserFeedback::getBenefitId, query.getBenefitId());
     if (query.getFeedbackType() != null) wrapper.eq(BenefitUserFeedback::getFeedbackType, query.getFeedbackType());
+    if (query.getIsRead() != null) wrapper.eq(BenefitUserFeedback::getIsRead, query.getIsRead());
     wrapper.orderByDesc(BenefitUserFeedback::getId);
     IPage<BenefitUserFeedback> result = benefitUserFeedbackMapper.selectPage(page, wrapper);
     Set<Integer> cinemaIds = result.getRecords().stream().map(BenefitUserFeedback::getCinemaId).collect(Collectors.toSet());
@@ -700,11 +760,28 @@ public class BenefitService {
       r.setBenefitId(f.getBenefitId());
       r.setBenefitName(benefitNameMap.get(f.getBenefitId()));
       r.setFeedbackType(f.getFeedbackType());
+      r.setIsRead(f.getIsRead());
       r.setCreateTime(f.getCreateTime());
       return r;
     }).toList();
     Page<BenefitFeedbackListItemResponse> out = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
     out.setRecords(list);
     return out;
+  }
+
+  /**
+   * 后台标记反馈为已读：按特典 / 影院维度，把未读（is_read=0）批量置为已读。
+   * benefitId 与 cinemaId 至少传一个，二者都传则取交集。
+   *
+   * @return 本次置为已读的条数
+   */
+  public int markFeedbackRead(Integer benefitId, Integer cinemaId) {
+    if (benefitId == null && cinemaId == null) return 0;
+    LambdaUpdateWrapper<BenefitUserFeedback> wrapper = new LambdaUpdateWrapper<>();
+    if (benefitId != null) wrapper.eq(BenefitUserFeedback::getBenefitId, benefitId);
+    if (cinemaId != null) wrapper.eq(BenefitUserFeedback::getCinemaId, cinemaId);
+    wrapper.eq(BenefitUserFeedback::getIsRead, 0);
+    wrapper.set(BenefitUserFeedback::getIsRead, 1);
+    return benefitUserFeedbackMapper.update(null, wrapper);
   }
 }

@@ -7,6 +7,7 @@ import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.ResponseCode;
 import com.example.backend.query.benefit.BenefitFeedbackListQuery;
+import com.example.backend.query.benefit.BenefitFeedbackReadQuery;
 import com.example.backend.query.benefit.BenefitFeedbackResetQuery;
 import com.example.backend.query.benefit.BenefitListQuery;
 import com.example.backend.query.benefit.BenefitMovieListQuery;
@@ -76,6 +77,16 @@ public class BenefitController {
     return RestBean.success(id, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
 
+  /** 仅更新影院限定（库存分配页「管理影院限定」用，不影响阶段其它字段） */
+  @SaCheckLogin
+  @CheckPermission(code = "benefit.save")
+  @PostMapping(ApiPaths.Admin.Benefit.CINEMA_LIMIT_SAVE)
+  public RestBean<String> cinemaLimitSave(
+    @Valid @RequestBody com.example.backend.query.benefit.BenefitCinemaLimitSaveQuery query) {
+    benefitService.updateBenefitCinemaLimit(query);
+    return RestBean.success(null, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
+  }
+
   @SaCheckLogin
   @CheckPermission(code = "benefit.remove")
   @DeleteMapping(ApiPaths.Admin.Benefit.REMOVE)
@@ -109,6 +120,14 @@ public class BenefitController {
     if (query == null) query = new BenefitFeedbackListQuery();
     IPage<BenefitFeedbackListItemResponse> page = benefitService.listFeedbackForAdmin(query);
     return RestBean.success(page.getRecords(), query.getPage(), page.getTotal(), query.getPageSize());
+  }
+
+  @SaCheckLogin
+  @PostMapping(ApiPaths.Admin.Cinema.Benefit.FEEDBACK_READ)
+  public RestBean<Integer> markFeedbackRead(@RequestBody(required = false) BenefitFeedbackReadQuery body) {
+    if (body == null) body = new BenefitFeedbackReadQuery();
+    int updated = benefitService.markFeedbackRead(body.getBenefitId(), body.getCinemaId());
+    return RestBean.success(updated, MessageUtils.getMessage(MessageKeys.Admin.SAVE_SUCCESS));
   }
 
   /** 按电影查询影院特典汇总：每家影院特典数量、剩余、用户反馈数（供后台影院/运营查看） */
