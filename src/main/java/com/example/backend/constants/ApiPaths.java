@@ -105,6 +105,8 @@ public final class ApiPaths {
             private Benefit() {}
             /** 按电影查询特典列表 - GET /api/app/benefit/list?movieId= */
             public static final String LIST = APP_BASE + "/benefit/list";
+            /** 按电影分组的特典汇总列表 - GET /api/app/benefit/movie/list */
+            public static final String MOVIE_LIST = APP_BASE + "/benefit/movie/list";
             /** 用户提交特典反馈（已领完等）- POST /api/app/benefit/feedback */
             public static final String FEEDBACK_SUBMIT = APP_BASE + "/benefit/feedback";
             /** 按特典查询可领影院分页 - GET /api/app/benefit/{benefitId}/cinemas */
@@ -182,6 +184,18 @@ public final class ApiPaths {
             public static final String SAVE = ADMIN_BASE + "/movie/save";
             /** 删除电影 - DELETE /api/admin/movie/remove */
             public static final String REMOVE = ADMIN_BASE + "/movie/remove";
+            /** 重复电影候选组 - POST /api/admin/movie/duplicates */
+            public static final String DUPLICATES = ADMIN_BASE + "/movie/duplicates";
+            /** 手动搜索可合并电影 - POST /api/admin/movie/mergeSearch */
+            public static final String MERGE_SEARCH = ADMIN_BASE + "/movie/mergeSearch";
+            /** 合并详情对比（批量按 id 拉取候选电影完整信息）- POST /api/admin/movie/mergeDetail */
+            public static final String MERGE_DETAIL = ADMIN_BASE + "/movie/mergeDetail";
+            /** 合并重复电影 - POST /api/admin/movie/merge */
+            public static final String MERGE = ADMIN_BASE + "/movie/merge";
+            /** 待确认重复匹配 - POST /api/admin/movie/pendingMatches */
+            public static final String PENDING_MATCHES = ADMIN_BASE + "/movie/pendingMatches";
+            /** 处理待确认重复匹配 - POST /api/admin/movie/pendingMatch/resolve */
+            public static final String PENDING_MATCH_RESOLVE = ADMIN_BASE + "/movie/pendingMatch/resolve";
             /** 重映管理 - POST /api/admin/movie/reRelease/save */
             public static final String RE_RELEASE_SAVE = ADMIN_BASE + "/movie/reRelease/save";
             /** 电影等级 - POST /api/admin/movie/level/save */

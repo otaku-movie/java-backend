@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.backend.mapper.MovieMergeMapper">
+
+    <resultMap id="DuplicateItemMap" type="com.example.backend.response.movie.MovieDuplicateItem">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="movieKey" column="movie_key"/>
+        <result property="tmdbId" column="tmdb_id"/>
+        <result property="deleted" column="deleted"/>
+        <result property="kind" column="kind"/>
+        <result property="releaseDate" column="release_date"/>
+        <result property="showCount" column="show_count"/>
+        <result property="referenceSummary" column="reference_summary"/>
+    </resultMap>
+
+    <resultMap id="GroupKeyMap" type="com.example.backend.response.movie.MovieDuplicateGroupKey">
+        <result property="groupType" column="group_type"/>
+        <result property="groupValue" column="group_value"/>
+    </resultMap>
+
+    <resultMap id="PendingMatchRowMap" type="com.example.backend.response.movie.MoviePendingMatchRow">
+        <id property="id" column="id"/>
+        <result property="candidateMovieId" column="candidate_movie_id"/>
+        <result property="matchedMovieId" column="matched_movie_id"/>
+        <result property="candidateTitle" column="candidate_title"/>
+        <result property="matchedTitle" column="matched_title"/>
+        <result property="confidence" column="confidence"/>
+        <result property="matchReason" column="match_reason"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="referenceSummarySql">
+        concat_ws(', ',
+          'show=' || (SELECT count(*) FROM movie_show_time x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'reRelease=' || (SELECT count(*) FROM re_release x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'benefit=' || (SELECT count(*) FROM benefit x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'presale=' || (SELECT count(*) FROM presale x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'comment=' || (SELECT count(*) FROM movie_comment x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'rate=' || (SELECT count(*) FROM movie_rate x WHERE x.movie_id = m.id),
+          'staff=' || (SELECT count(*) FROM movie_staff x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'character=' || (SELECT count(*) FROM movie_character x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'spec=' || (SELECT count(*) FROM movie_spec x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'tag=' || (SELECT count(*) FROM movie_tag_tags x WHERE x.movie_id = m.id AND x.deleted = 0),
+          'version=' || (SELECT count(*) FROM movie_version x WHERE x.movie_id = m.id AND x.deleted = 0)
+        )
+    </sql>
+
+    <!--
+      候选「分组键」：同 tmdb_id 或 同名字（lower+trim），只看 kind='movie'，避免把 ODS 混进来。
+
+      仅当组内仍有「未被合并掉」的成员 >= 2（且至少 1 行存活）时才算重复组。
+      「已合并掉」= 软删 且 (movie_key 带 V31 的 ':merged-' 后缀 或 出现在 movie_merge_log 的 loser)，
+      这类行不再计入「仍需合并」的数量——否则合并后剩「1 存活 + 1 已合并」会让该组一直残留显示。
+      注意：deleted=1 但未经合并（退役/孤儿，仍可能带场次）的行不算已合并，仍计入，保留可再合并能力。
+    -->
+    <sql id="groupKeysSql">
+        WITH flagged AS (
+          SELECT mv.id,
+                 mv.tmdb_id,
+                 mv.name,
+                 mv.deleted,
+                 (mv.deleted = 1 AND (
+                     mv.movie_key LIKE '%:merged-%'
+                     OR EXISTS (SELECT 1 FROM movie_merge_log ml WHERE ml.loser_movie_id = mv.id)
+                  )) AS merged_away
+            FROM movie mv
+           WHERE mv.kind = 'movie'
+        )
+        SELECT 'same_tmdb' AS group_type, tmdb_id::text AS group_value
+          FROM flagged
+         WHERE tmdb_id IS NOT NULL
+         GROUP BY tmdb_id
+        HAVING count(*) FILTER (WHERE deleted = 0) >= 1
+           AND count(*) FILTER (WHERE NOT merged_away) >= 2
+        UNION ALL
+        SELECT 'same_name' AS group_type, lower(btrim(name)) AS group_value
+          FROM flagged
+         WHERE btrim(coalesce(name, '')) &lt;&gt; ''
+         GROUP BY lower(btrim(name))
+        HAVING count(*) FILTER (WHERE deleted = 0) >= 1
+           AND count(*) FILTER (WHERE NOT merged_away) >= 2
+    </sql>
+
+    <select id="countDuplicateGroupKeys" resultType="long">
+        SELECT count(*) FROM ( <include refid="groupKeysSql"/> ) g
+    </select>
+
+    <select id="listDuplicateGroupKeys" resultMap="GroupKeyMap">
+        SELECT g.group_type, g.group_value
+          FROM ( <include refid="groupKeysSql"/> ) g
+         ORDER BY g.group_type, g.group_value
+         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="listGroupItems" resultMap="DuplicateItemMap">
+        SELECT m.id, m.name, m.movie_key, m.tmdb_id, m.deleted, m.kind,
+               to_char(m.release_date, 'YYYY-MM-DD') AS release_date,
+               (SELECT count(*) FROM movie_show_time st
+                 WHERE st.movie_id = m.id AND st.deleted = 0) AS show_count,
+               <include refid="referenceSummarySql"/> AS reference_summary
+          FROM movie m
+         WHERE m.kind = 'movie'
+           AND (
+             (#{groupType} = 'same_tmdb' AND m.tmdb_id::text = #{groupValue})
+             OR (#{groupType} = 'same_name' AND lower(btrim(m.name)) = #{groupValue})
+           )
+         ORDER BY (m.tmdb_id IS NOT NULL) DESC, m.deleted ASC, m.id ASC
+    </select>
+
+    <select id="searchMovies" resultMap="DuplicateItemMap">
+        SELECT m.id, m.name, m.movie_key, m.tmdb_id, m.deleted, m.kind,
+               to_char(m.release_date, 'YYYY-MM-DD') AS release_date,
+               (SELECT count(*) FROM movie_show_time st
+                 WHERE st.movie_id = m.id AND st.deleted = 0) AS show_count,
+               <include refid="referenceSummarySql"/> AS reference_summary
+          FROM movie m
+         WHERE m.kind = 'movie'
+           AND (
+             m.name ILIKE ('%' || #{keyword} || '%')
+             OR m.movie_key = #{keyword}
+             <if test="keywordNum != null">
+               OR m.id = #{keywordNum}
+               OR m.tmdb_id = #{keywordNum}
+             </if>
+           )
+         ORDER BY m.deleted ASC, (m.tmdb_id IS NOT NULL) DESC, m.id ASC
+         LIMIT 50
+    </select>
+
+    <select id="getItemById" resultMap="DuplicateItemMap">
+        SELECT m.id, m.name, m.movie_key, m.tmdb_id, m.deleted, m.kind,
+               to_char(m.release_date, 'YYYY-MM-DD') AS release_date,
+               (SELECT count(*) FROM movie_show_time st
+                 WHERE st.movie_id = m.id AND st.deleted = 0) AS show_count,
+               <include refid="referenceSummarySql"/> AS reference_summary
+          FROM movie m
+         WHERE m.id = #{id}
+    </select>
+
+    <!-- ===== 详情对比页 ===== -->
+    <resultMap id="MergeDetailMap" type="com.example.backend.response.movie.MovieMergeDetail">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="originalName" column="original_name"/>
+        <result property="movieKey" column="movie_key"/>
+        <result property="tmdbId" column="tmdb_id"/>
+        <result property="deleted" column="deleted"/>
+        <result property="kind" column="kind"/>
+        <result property="releaseDate" column="release_date"/>
+        <result property="runtime" column="runtime"/>
+        <result property="cover" column="cover"/>
+        <result property="description" column="description"/>
+        <result property="levelId" column="level_id"/>
+        <result property="levelName" column="level_name"/>
+        <association property="counts"
+                     javaType="com.example.backend.response.movie.MovieMergeDetail$Counts">
+            <result property="show" column="c_show"/>
+            <result property="reRelease" column="c_rerelease"/>
+            <result property="benefit" column="c_benefit"/>
+            <result property="presale" column="c_presale"/>
+            <result property="comment" column="c_comment"/>
+            <result property="rate" column="c_rate"/>
+            <result property="staff" column="c_staff"/>
+            <result property="character" column="c_character"/>
+            <result property="spec" column="c_spec"/>
+            <result property="tag" column="c_tag"/>
+            <result property="version" column="c_version"/>
+        </association>
+    </resultMap>
+
+    <select id="getMergeDetailBase" resultMap="MergeDetailMap">
+        SELECT m.id, m.name, m.original_name, m.movie_key, m.tmdb_id, m.deleted, m.kind,
+               to_char(m.release_date, 'YYYY-MM-DD') AS release_date,
+               m.time AS runtime,
+               COALESCE(NULLIF(m.cover_url, ''), m.cover) AS cover,
+               m.description,
+               m.level_id AS level_id,
+               lv.name AS level_name,
+               (SELECT count(*) FROM movie_show_time x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_show,
+               (SELECT count(*) FROM re_release x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_rerelease,
+               (SELECT count(*) FROM benefit x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_benefit,
+               (SELECT count(*) FROM presale x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_presale,
+               (SELECT count(*) FROM movie_comment x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_comment,
+               (SELECT count(*) FROM movie_rate x WHERE x.movie_id = m.id) AS c_rate,
+               (SELECT count(*) FROM movie_staff x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_staff,
+               (SELECT count(*) FROM movie_character x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_character,
+               (SELECT count(*) FROM movie_spec x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_spec,
+               (SELECT count(*) FROM movie_tag_tags x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_tag,
+               (SELECT count(*) FROM movie_version x WHERE x.movie_id = m.id AND x.deleted = 0) AS c_version
+          FROM movie m
+          LEFT JOIN level lv ON m.level_id = lv.id
+         WHERE m.id = #{id}
+    </select>
+
+    <select id="listVersions"
+            resultType="com.example.backend.response.movie.MovieMergeDetail$VersionBrief">
+        SELECT DISTINCT mv.version_code AS version_code,
+               l.name AS language
+          FROM movie_version mv
+          LEFT JOIN language l ON mv.language_id = l.id
+         WHERE mv.movie_id = #{id} AND mv.deleted = 0
+         ORDER BY mv.version_code
+         LIMIT #{limit}
+    </select>
+
+    <select id="listTagNames" resultType="java.lang.String">
+        SELECT movie_tag.name
+          FROM movie_tag_tags
+          LEFT JOIN movie_tag ON movie_tag_tags.movie_tag_id = movie_tag.id
+         WHERE movie_tag_tags.deleted = 0 AND movie_tag_tags.movie_id = #{id}
+           AND movie_tag.name IS NOT NULL
+         ORDER BY movie_tag.id
+         LIMIT #{limit}
+    </select>
+
+    <select id="listSpecNames" resultType="java.lang.String">
+        SELECT DISTINCT cinema_spec.name
+          FROM movie_spec
+          LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
+         WHERE movie_spec.deleted = 0 AND movie_spec.movie_id = #{id}
+           AND cinema_spec.name IS NOT NULL
+         ORDER BY cinema_spec.name
+         LIMIT #{limit}
+    </select>
+
+    <select id="listShowtimeByCinema"
+            resultType="com.example.backend.response.movie.MovieMergeDetail$ShowtimeByCinema">
+        SELECT st.cinema_id AS cinema_id,
+               c.name AS cinema_name,
+               count(*) AS count,
+               min(left(st.start_time, 10)) AS first_date,
+               max(left(st.start_time, 10)) AS last_date
+          FROM movie_show_time st
+          LEFT JOIN cinema c ON st.cinema_id = c.id
+         WHERE st.movie_id = #{id} AND st.deleted = 0
+         GROUP BY st.cinema_id, c.name
+         ORDER BY count(*) DESC, st.cinema_id
+         LIMIT #{limit}
+    </select>
+
+    <select id="listStaffBrief"
+            resultType="com.example.backend.response.movie.MovieMergeDetail$StaffBrief">
+        SELECT staff.name AS name,
+               "position".name AS position
+          FROM movie_staff
+          LEFT JOIN staff ON movie_staff.staff_id = staff.id
+          LEFT JOIN "position" ON movie_staff.position_id = "position".id
+         WHERE movie_staff.deleted = 0 AND movie_staff.movie_id = #{id}
+         ORDER BY movie_staff.position_id, movie_staff.staff_id
+         LIMIT #{limit}
+    </select>
+
+    <select id="listCharacterNames" resultType="java.lang.String">
+        SELECT character.name
+          FROM movie_character
+          LEFT JOIN character ON movie_character.character_id = character.id
+         WHERE movie_character.deleted = 0 AND movie_character.movie_id = #{id}
+           AND character.name IS NOT NULL
+         ORDER BY movie_character.character_id
+         LIMIT #{limit}
+    </select>
+
+    <select id="countPendingMatches" resultType="long">
+        SELECT count(*)
+          FROM pending_movie_match p
+          JOIN movie candidate ON candidate.id = p.candidate_movie_id
+          JOIN movie matched ON matched.id = p.matched_movie_id
+         WHERE p.status = 'PENDING'
+           AND NOT (
+             candidate.deleted = 1
+             AND (
+               candidate.movie_key LIKE '%:merged-%'
+               OR EXISTS (
+                 SELECT 1 FROM movie_merge_log ml
+                  WHERE ml.loser_movie_id = candidate.id
+               )
+             )
+           )
+           AND NOT (
+             matched.deleted = 1
+             AND (
+               matched.movie_key LIKE '%:merged-%'
+               OR EXISTS (
+                 SELECT 1 FROM movie_merge_log ml
+                  WHERE ml.loser_movie_id = matched.id
+               )
+             )
+           )
+    </select>
+
+    <select id="listPendingMatches" resultMap="PendingMatchRowMap">
+        SELECT p.id, p.candidate_movie_id, p.matched_movie_id, p.candidate_title, p.matched_title,
+               p.confidence, p.match_reason, p.status,
+               to_char(p.create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time,
+               to_char(p.update_time, 'YYYY-MM-DD HH24:MI:SS') AS update_time
+          FROM pending_movie_match p
+          JOIN movie candidate ON candidate.id = p.candidate_movie_id
+          JOIN movie matched ON matched.id = p.matched_movie_id
+         WHERE p.status = 'PENDING'
+           AND NOT (
+             candidate.deleted = 1
+             AND (
+               candidate.movie_key LIKE '%:merged-%'
+               OR EXISTS (
+                 SELECT 1 FROM movie_merge_log ml
+                  WHERE ml.loser_movie_id = candidate.id
+               )
+             )
+           )
+           AND NOT (
+             matched.deleted = 1
+             AND (
+               matched.movie_key LIKE '%:merged-%'
+               OR EXISTS (
+                 SELECT 1 FROM movie_merge_log ml
+                  WHERE ml.loser_movie_id = matched.id
+               )
+             )
+           )
+         ORDER BY p.confidence DESC, p.update_time DESC, p.id DESC
+         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- table 来自 service 白名单常量，非用户输入，${} 安全 -->
+    <update id="repointMovieId">
+        UPDATE ${table}
+           SET movie_id = #{survivorId}
+         WHERE movie_id = #{loserId}
+    </update>
+
+    <delete id="precleanMovieRate">
+        DELETE FROM movie_rate r
+         WHERE r.movie_id = #{loserId}
+           AND EXISTS (
+             SELECT 1 FROM movie_rate s
+              WHERE s.movie_id = #{survivorId}
+                AND s.user_id = r.user_id
+           )
+    </delete>
+
+    <update id="precleanPresale">
+        UPDATE presale
+           SET deleted = 1, update_time = CURRENT_TIMESTAMP
+         WHERE movie_id = #{loserId} AND deleted = 0
+           AND EXISTS (
+             SELECT 1 FROM presale s
+              WHERE s.movie_id = #{survivorId} AND s.deleted = 0
+           )
+    </update>
+
+    <update id="precleanReRelease">
+        UPDATE re_release l
+           SET deleted = 1, update_time = CURRENT_TIMESTAMP
+         WHERE l.movie_id = #{loserId} AND l.deleted = 0
+           AND COALESCE(l.display_name_override, '') &lt;&gt; ''
+           AND EXISTS (
+             SELECT 1 FROM re_release s
+              WHERE s.movie_id = #{survivorId} AND s.deleted = 0
+                AND COALESCE(s.display_name_override, '') = COALESCE(l.display_name_override, '')
+           )
+    </update>
+
+    <delete id="precleanMovieStaff">
+        DELETE FROM movie_staff l
+         WHERE l.movie_id = #{loserId}
+           AND EXISTS (
+             SELECT 1 FROM movie_staff s
+              WHERE s.movie_id = #{survivorId}
+                AND s.staff_id IS NOT DISTINCT FROM l.staff_id
+                AND s.position_id IS NOT DISTINCT FROM l.position_id
+           )
+    </delete>
+
+    <delete id="precleanMovieCharacter">
+        DELETE FROM movie_character l
+         WHERE l.movie_id = #{loserId}
+           AND EXISTS (
+             SELECT 1 FROM movie_character s
+              WHERE s.movie_id = #{survivorId}
+                AND s.character_id IS NOT DISTINCT FROM l.character_id
+           )
+    </delete>
+
+    <!-- table / keyCols 来自 service 白名单常量，非用户输入，${} 安全。
+         保留 id 最小的一行，其余软删；IS NOT DISTINCT FROM 让 NULL 也能正确归并。 -->
+    <update id="dedupRelationByKeys">
+        UPDATE ${table} t
+           SET deleted = 1
+         WHERE t.movie_id = #{survivorId}
+           AND t.deleted = 0
+           AND EXISTS (
+             SELECT 1 FROM ${table} t2
+              WHERE t2.movie_id = t.movie_id
+                AND t2.deleted = 0
+                AND t2.id &lt; t.id
+                <foreach collection="keyCols" item="col">
+                  AND t2.${col} IS NOT DISTINCT FROM t.${col}
+                </foreach>
+           )
+    </update>
+
+    <!-- 合并把输家场次重指到 survivor 后，可能出现同一物理场次（同影院+同厅+同开始时间）
+         的多条记录（合并前分属两部电影、状态分别停在 on_sale / pre_sale）。这里按物理键去重：
+         每组保留「可售优先 → 开放优先 → 最近更新优先 → id 最大」的那条，其余软删。 -->
+    <update id="dedupSurvivorShowTimes">
+        UPDATE movie_show_time
+           SET deleted = 1, update_time = CURRENT_TIMESTAMP
+         WHERE id IN (
+           SELECT id FROM (
+             SELECT id,
+                    row_number() OVER (
+                      PARTITION BY cinema_id, theater_hall_id, start_time
+                      ORDER BY (can_sale IS TRUE) DESC,
+                               (open IS TRUE) DESC,
+                               update_time DESC NULLS LAST,
+                               id DESC
+                    ) AS rn
+               FROM movie_show_time
+              WHERE movie_id = #{survivorId}
+                AND deleted = 0
+           ) ranked
+           WHERE ranked.rn > 1
+         )
+    </update>
+
+    <update id="softDeleteMovie">
+        UPDATE movie
+           SET deleted = 1, update_time = CURRENT_TIMESTAMP
+         WHERE id = #{id}
+    </update>
+
+    <update id="reactivateAndRename">
+        UPDATE movie
+           SET deleted = 0,
+               name = COALESCE(NULLIF(btrim(#{newName}), ''), name),
+               update_time = CURRENT_TIMESTAMP
+         WHERE id = #{id}
+    </update>
+
+    <!--
+      详情对比页「逐项应用」：仅覆盖 o 中非 null 的字段。
+      name 由 reactivateAndRename 通过 newName 处理，这里不再重复设置。
+      cover 写回展示优先列 cover_url（详情页读 COALESCE(cover_url, cover)）。
+    -->
+    <update id="applySurvivorOverrides">
+        UPDATE movie
+        <set>
+            <if test="o.originalName != null">original_name = #{o.originalName},</if>
+            <if test="o.releaseDate != null and o.releaseDate.trim() != ''">
+                release_date = to_date(#{o.releaseDate}, 'YYYY-MM-DD'),
+            </if>
+            <if test="o.runtime != null">"time" = #{o.runtime},</if>
+            <if test="o.cover != null">cover_url = #{o.cover},</if>
+            <if test="o.description != null">description = #{o.description},</if>
+            <if test="o.tmdbId != null">tmdb_id = #{o.tmdbId},</if>
+            <if test="o.levelId != null">level_id = #{o.levelId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{survivorId}
+    </update>
+
+    <insert id="insertMergeLog">
+        INSERT INTO movie_merge_log
+          (survivor_movie_id, loser_movie_id, survivor_movie_key, loser_movie_key,
+           survivor_tmdb_id, loser_tmdb_id, survivor_name, loser_name,
+           operator_user_id, note, create_time)
+        VALUES
+          (#{survivor.id}, #{loser.id}, #{survivor.movieKey}, #{loser.movieKey},
+           #{survivor.tmdbId}, #{loser.tmdbId}, #{survivor.name}, #{loser.name},
+           #{operatorUserId}, #{note}, CURRENT_TIMESTAMP)
+    </insert>
+
+    <insert id="upsertMergeAlias">
+        INSERT INTO movie_merge_alias
+          (alias_title, survivor_movie_id, survivor_movie_key, survivor_tmdb_id,
+           source, deleted, create_time, update_time)
+        VALUES
+          (#{aliasTitle}, #{survivor.id}, #{survivor.movieKey}, #{survivor.tmdbId},
+           'admin_merge', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT (lower(btrim(alias_title))) WHERE deleted = 0 DO UPDATE SET
+          survivor_movie_id = EXCLUDED.survivor_movie_id,
+          survivor_movie_key = EXCLUDED.survivor_movie_key,
+          survivor_tmdb_id = EXCLUDED.survivor_tmdb_id,
+          update_time = CURRENT_TIMESTAMP
+    </insert>
+
+    <update id="resolvePendingMatch">
+        UPDATE pending_movie_match
+           SET status = #{status},
+               decided_by = #{operatorUserId},
+               decided_at = CURRENT_TIMESTAMP,
+               update_time = CURRENT_TIMESTAMP
+         WHERE id = #{id}
+           AND status = 'PENDING'
+    </update>
+
+</mapper>
