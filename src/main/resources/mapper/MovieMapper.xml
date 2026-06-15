@@ -415,7 +415,7 @@
 
     <!-- 批量获取电影上映规格（IMAX/4DX 等）：来源 movie_spec → cinema_spec -->
     <select id="getSpecsByMovieIds" resultType="com.example.backend.response.app.MovieSpecRow">
-        SELECT
+        SELECT DISTINCT
             movie_spec.movie_id AS movieId,
             cinema_spec.id      AS id,
             cinema_spec.name    AS name,

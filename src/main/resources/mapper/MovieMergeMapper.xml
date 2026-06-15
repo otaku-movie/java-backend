@@ -426,6 +426,20 @@
          )
     </update>
 
+    <!-- movie_spec 是 (movie_id, spec_id) 集合表，无 id 主键，不能走 dedupRelationByKeys。
+         合并把输家规格重指到 survivor 后会出现同一 spec_id 多行，导致 app 详情规格标签重复。
+         这里按物理行 ctid 去重：每个 spec_id 仅保留一行，其余物理删除。 -->
+    <delete id="dedupSurvivorSpecs">
+        DELETE FROM movie_spec a
+         USING movie_spec b
+         WHERE a.movie_id = #{survivorId}
+           AND b.movie_id = a.movie_id
+           AND b.spec_id  = a.spec_id
+           AND a.deleted = 0
+           AND b.deleted = 0
+           AND a.ctid &gt; b.ctid
+    </delete>
+
     <update id="softDeleteMovie">
         UPDATE movie
            SET deleted = 1, update_time = CURRENT_TIMESTAMP

@@ -165,7 +165,8 @@ public class MovieMergeService {
    * 与详情页「合并后结果」的并集去重口径一致：
    * 版本按 (版本码, 语言)、标签按 标签。
    * staff / 角色是复合主键表，需在重指向前清理冲突，不能放在这里。
-   * 计数型（场次/评论/评分/规格）按外键累加，不去重。
+   * 规格是无 id 主键的集合表，重指向后单独按 (movie_id, spec_id) 去重。
+   * 评论/评分等计数型关系按外键累加，不在这里去重。
    */
   private static final List<Map.Entry<String, List<String>>> DEDUP_RELATIONS = List.of(
     Map.entry("movie_version", List.of("version_code", "language_id")),
@@ -185,6 +186,11 @@ public class MovieMergeService {
     int removedShows = mapper.dedupSurvivorShowTimes(survivorId);
     if (removedShows > 0) {
       log.info("merge dedup: survivor={} table=movie_show_time removed={}", survivorId, removedShows);
+    }
+    // movie_spec 无 id 主键，按 (movie_id, spec_id) 用 ctid 去重，避免详情页规格标签重复。
+    int removedSpecs = mapper.dedupSurvivorSpecs(survivorId);
+    if (removedSpecs > 0) {
+      log.info("merge dedup: survivor={} table=movie_spec removed={}", survivorId, removedSpecs);
     }
   }
 

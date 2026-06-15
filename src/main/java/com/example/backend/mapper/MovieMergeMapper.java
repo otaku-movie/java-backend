@@ -159,6 +159,12 @@ public interface MovieMergeMapper {
    */
   int dedupSurvivorShowTimes(@Param("survivorId") Integer survivorId);
 
+  /**
+   * 合并后对 survivor 的规格按 (movie_id, spec_id) 去重（物理行 ctid 保留其一）。
+   * movie_spec 是无 id 主键的集合表，不能走 {@link #dedupRelationByKeys}，故单独处理。
+   */
+  int dedupSurvivorSpecs(@Param("survivorId") Integer survivorId);
+
   /** 软删某行（deleted=1）。 */
   int softDeleteMovie(@Param("id") Integer id);
 
