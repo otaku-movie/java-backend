@@ -20,6 +20,7 @@
         <result property="updateTime" column="update_time"/>
         <result property="parentReplyId" column="parent_reply_id"/>
         <result property="commentId" column="movie_comment_id"/>
+        <result property="spoiler" column="spoiler"/>
     </resultMap>
     <select id="replyList" resultMap="replyList">
         SELECT
@@ -33,6 +34,7 @@
             movie_reply.create_time AS create_time,
             movie_reply.update_time AS update_time,
             movie_reply.movie_comment_id AS movie_comment_id,
+            movie_reply.spoiler AS spoiler,
             commentUser.name AS comment_user_name, -- 评论用户的用户名
             commentUser.cover AS comment_user_avatar,
             replyUser.name AS reply_user_name, -- 回复用户的用户名

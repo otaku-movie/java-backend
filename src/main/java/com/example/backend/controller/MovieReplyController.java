@@ -48,6 +48,8 @@ class MovieReplySaveQuery {
   //  @NotNull
   Integer commentUserId;
   Integer replyUserId;
+  /** 是否含剧透（前端回复时声明） */
+  Boolean spoiler;
 }
 
 @RestController
@@ -120,6 +122,7 @@ public class MovieReplyController {
     data.setMovieId(query.getMovieId());
     data.setParentReplyId(query.getParentReplyId());
     data.setCommentUserId(Utils.getUserId());
+    data.setSpoiler(Boolean.TRUE.equals(query.getSpoiler()) ? 1 : 0);
 
     if (query.getParentReplyId().split("-").length > 1) {
       data.setReplyUserId(query.getReplyUserId());

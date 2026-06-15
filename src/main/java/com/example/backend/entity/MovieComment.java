@@ -28,6 +28,10 @@ public class MovieComment {
   @TableField("movie_id")
   Integer movieId;
 
+  // 是否含剧透：0=否 1=是
+  @TableField("spoiler")
+  Integer spoiler;
+
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   @TableField(value = "create_time", fill = FieldFill.INSERT)
   Date createTime;

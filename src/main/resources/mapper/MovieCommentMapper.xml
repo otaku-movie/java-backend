@@ -10,6 +10,7 @@
         <result property="commentUserName" column="comment_user_name"/>
         <result property="commentUserAvatar" column="comment_user_avatar"/>
         <result property="movieId" column="movie_id"/>
+        <result property="spoiler" column="spoiler"/>
         <result property="like" column="like"/>
         <result property="dislikeCount" column="dislike_count"/>
         <result property="replyCount" column="reply_count"/>
@@ -25,6 +26,7 @@
             movie_comment.content as content,
             movie_comment.comment_user_id as comment_user_id,
             movie_comment.movie_id as movie_id,
+            movie_comment.spoiler as spoiler,
             movie_comment.like_count as like_count,
             movie_comment.unlike_count as dislike_count,
             movie_comment.create_time as create_time,
@@ -55,6 +57,7 @@
             movie_comment.comment_user_id as comment_user_id,
             movie_comment.comment_user_id as comment_user_id,
             movie_comment.movie_id as movie_id,
+            movie_comment.spoiler as spoiler,
             movie_comment.like_count as like_count,
             movie_comment.unlike_count as dislike_count,
             movie_comment.create_time as create_time,

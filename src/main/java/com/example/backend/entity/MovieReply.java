@@ -25,6 +25,10 @@ public class MovieReply extends MovieReplyResponse {
   @TableField("movie_id")
   Integer movieId;
 
+  // 是否含剧透：0=否 1=是
+  @TableField("spoiler")
+  Integer spoiler;
+
   // 父级回复id
   @TableField("parent_reply_id")
   String parentReplyId;

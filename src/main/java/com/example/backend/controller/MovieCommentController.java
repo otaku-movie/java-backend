@@ -50,6 +50,9 @@ class MovieCommentSaveQuery {
 
   @NotNull(message = "{validator.movieComment.movieId.required}")
   Integer movieId;
+
+  /** 是否含剧透（前端发布时声明） */
+  Boolean spoiler;
 }
 
 @Data
@@ -132,6 +135,7 @@ public class MovieCommentController {
     data.setMovieId(query.getMovieId());
     data.setContent(query.getContent());
     data.setCommentUserId(Utils.getUserId());
+    data.setSpoiler(Boolean.TRUE.equals(query.getSpoiler()) ? 1 : 0);
 
     if (query.getId() == null) {
       movieCommentMapper.insert(data);

@@ -22,6 +22,8 @@ public class CommentDetail {
   Integer likeCount;
   Integer replyCount;
   Integer movieId;
+  // 是否含剧透：0=否 1=是
+  Integer spoiler;
   double rate;
   List<MovieReplyResponse> reply;
 }

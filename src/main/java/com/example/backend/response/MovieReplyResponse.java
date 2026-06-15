@@ -23,6 +23,8 @@ public class MovieReplyResponse {
   Integer likeCount;
   Integer dislikeCount;
   String parentReplyId;
+  // 是否含剧透：0=否 1=是
+  Integer spoiler;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
   Date createTime;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
