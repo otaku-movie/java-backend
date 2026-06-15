@@ -205,6 +205,8 @@
                 <result property="versionCode" column="version_code"/>
                 <!-- 放映类型：dict_item.id，2D/3D。详情页也要展示，列表页已有该字段。 -->
                 <result property="dimensionType" column="dimension_type"/>
+                <!-- 特殊场次名/活动名（来自标题装饰，普通场次为空）。 -->
+                <result property="eventTitle" column="event_title"/>
                 <!-- 影院官方购票链接：app 端「购票」按钮直接外跳。NULL 时由前端回退处理。 -->
                 <result property="reservationUrl" column="reservation_url"/>
                 <!-- 爬虫透传的售票状态（on_sale/few/sold_out/pre_sale/sale_ended/closed/unknown）。
@@ -242,6 +244,7 @@
             movie_show_time.show_time_tag_id,
             movie_show_time.movie_version_id,
             movie_show_time.dimension_type,
+            movie_show_time.event_title,
             -- 原版 / 配音版：importer 写入 movie_show_time.dub_version（1=オリジナル版, 2=吹き替え版）。
             -- 旧数据若仍走 movie_version.version_code，则作为 fallback。
             COALESCE(movie_show_time.dub_version, movie_version.version_code) AS version_code,
@@ -277,7 +280,7 @@
                 AND TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') &lt;= #{query.startTimeTo}
             </if>
         GROUP BY
-            date, movie_show_time.id, cinema.id, cinema.name, cinema.full_address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name", movie_show_time.spec_ids, movie_show_time.subtitle_id, movie_show_time.show_time_tag_id, movie_show_time.movie_version_id, movie_show_time.dimension_type, movie_show_time.dub_version, movie_version.version_code
+            date, movie_show_time.id, cinema.id, cinema.name, cinema.full_address, cinema.tel, movie_show_time.start_time, movie_show_time.end_time, theater_hall.id, theater_hall."name", movie_show_time.spec_ids, movie_show_time.subtitle_id, movie_show_time.show_time_tag_id, movie_show_time.movie_version_id, movie_show_time.dimension_type, movie_show_time.event_title, movie_show_time.dub_version, movie_version.version_code
         ORDER BY
             date, movie_show_time.start_time
     </select>

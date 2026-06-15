@@ -52,6 +52,10 @@ public class MovieShowTime {
   @TableField("movie_version_id")
   Integer movieVersionId;
 
+  /** 特殊场次名/活动名（来自标题装饰，普通场次为空）。 */
+  @TableField("event_title")
+  String eventTitle;
+
   /** 关联重映计划（为空表示普通上映场次） */
   @TableField("re_release_id")
   Integer reReleaseId;

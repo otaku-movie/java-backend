@@ -270,6 +270,22 @@ public class CinemaController {
             }
           }
           
+          // 同一物理场次（同厅 + 开始/结束时间 + 维度 + 版本 + 规格）爬虫可能落库多条，
+          // 典型表现是「预售中(pre_sale)」与「有票(on_sale)」各一条，导致前端出现重复场次。
+          // 这里按"可购票优先"去重：同一 key 只保留售票状态优先级最高的一条。
+          java.util.LinkedHashMap<String, com.example.backend.response.app.TheaterHallShowTime> uniqueShows =
+              new java.util.LinkedHashMap<>();
+          for (var st : dateGroup.getData()) {
+            String dedupKey = st.getTheaterHallId() + "|" + st.getStartTime() + "|" + st.getEndTime()
+                + "|" + st.getDimensionType() + "|" + st.getVersionCode() + "|" + st.getSpecName();
+            var existing = uniqueShows.get(dedupKey);
+            if (existing == null
+                || saleStatusRank(st.getSaleStatus()) < saleStatusRank(existing.getSaleStatus())) {
+              uniqueShows.put(dedupKey, st);
+            }
+          }
+          dateGroup.setData(new ArrayList<>(uniqueShows.values()));
+
           // 按照开始时间排序
           dateGroup.getData().sort((t1, t2) -> {
             String startTime1 = t1.getStartTime();
@@ -285,6 +301,26 @@ public class CinemaController {
 
     return RestBean.success(list, MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
   }
+
+  /**
+   * 同一物理场次去重时的售票状态优先级：返回值越小越优先保留。
+   * 可购票状态（on_sale/few/无状态）优先于不可购票状态（预售/售罄/停售/关闭/未知），
+   * 使前端在重复落库时展示可操作的那一条。
+   */
+  private static int saleStatusRank(String status) {
+    if (status == null) return 2;
+    switch (status.trim()) {
+      case "on_sale": return 0;
+      case "few": return 1;
+      case "": return 2;
+      case "sold_out": return 3;
+      case "pre_sale": return 4;
+      case "sale_ended": return 5;
+      case "closed": return 6;
+      default: return 7;
+    }
+  }
+
   @GetMapping(ApiPaths.Common.Cinema.SCREENING)
   public RestBean<Object> screening (@RequestParam("id") Integer id, @RequestParam("date") String date,
                                      @RequestParam(value = "use30HourFormat", required = false) Boolean use30HourFormat) {

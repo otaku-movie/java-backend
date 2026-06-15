@@ -19,6 +19,7 @@
         <result property="specId" column="spec_id"></result>
         <result property="specName" column="spec_name"></result>
         <result property="dimensionType" column="dimension_type"></result>
+        <result property="eventTitle" column="event_title"></result>
         <result property="reReleaseId" column="re_release_id"></result>
         <result property="seatCount" column="seat_count"></result>
         <result property="selectedSeatCount" column="selected_seat_count"></result>
@@ -320,6 +321,7 @@
             theater_hall.id as theater_hall_id,
             theater_hall."name" as theater_hall_name,
             cinema_spec."name" as spec_name,
+            movie_show_time.event_title,
             movie_version.version_code
         FROM movie_show_time
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id

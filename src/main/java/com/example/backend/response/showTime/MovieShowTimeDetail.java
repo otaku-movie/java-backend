@@ -34,6 +34,8 @@ public class MovieShowTimeDetail {
   String specName;
   /** 放映类型：dict_item.id 或 code (2D/3D) */
   Integer dimensionType;
+  /** 特殊场次名/活动名（来自标题装饰，普通场次为空）。 */
+  String eventTitle;
   Integer movieVersionId;
   Integer versionCode;  // 配音版本ID（字典值）
   /** 关联重映计划（为空表示普通上映场次） */

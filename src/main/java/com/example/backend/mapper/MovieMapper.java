@@ -59,6 +59,10 @@ public interface MovieMapper extends BaseMapper<Movie> {
     List<com.example.backend.response.movie.HelloMovie> getHelloMoviesByMovieIds(List<Integer> movieIds);
     // 批量获取監督（监督）信息，position.name = '監督'
     List<MovieDirectorRow> getDirectorsByMovieIds(List<Integer> movieIds);
+    // 批量获取出演演员，position.name LIKE '%出演%'（含「出演」「声の出演」）
+    List<MovieCastRow> getCastByMovieIds(List<Integer> movieIds);
+    // 批量获取电影上映规格（IMAX/4DX 等），来源 movie_spec
+    List<com.example.backend.response.app.MovieSpecRow> getSpecsByMovieIds(List<Integer> movieIds);
     IPage<com.example.backend.response.app.MovieComingSoonResponse> getMovieComingSoon(AppMovieListQuery query, IPage<MovieMapper> page);
 
     List<MovieStaffResponse> movieStaffList(Integer id);

@@ -39,6 +39,8 @@ public class AppBeforeMovieShowTimeResponse {
    * 列表卡片需要直接展示"该场次带 X 字幕"提示，避免单看时间无法判断是字幕版还是吹替版。
    */
   private String subtitleNames;
+  /** 特殊场次名/活动名（来自标题装饰，普通场次为空）。 */
+  private String eventTitle;
 
   public Integer getCinemaId() { return cinemaId; }
   public void setCinemaId(Integer cinemaId) { this.cinemaId = cinemaId; }
@@ -92,4 +94,6 @@ public class AppBeforeMovieShowTimeResponse {
   public void setSaleStatus(String saleStatus) { this.saleStatus = saleStatus; }
   public String getSubtitleNames() { return subtitleNames; }
   public void setSubtitleNames(String subtitleNames) { this.subtitleNames = subtitleNames; }
+  public String getEventTitle() { return eventTitle; }
+  public void setEventTitle(String eventTitle) { this.eventTitle = eventTitle; }
 }

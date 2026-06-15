@@ -346,10 +346,15 @@
                  LEFT JOIN movie ON movie_show_time.movie_id = movie.id
                  LEFT JOIN level ON movie.level_id = level.id
                  LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
+                 AND (presale.end_time IS NULL OR presale.end_time &gt;= CURRENT_TIMESTAMP)
         WHERE movie_show_time.deleted = 0
           AND movie_show_time.start_time::timestamp &gt;= CURRENT_TIMESTAMP
           AND movie_show_time.open = TRUE
           AND movie.kind = 'movie'
+          <if test="query.name != null and !query.name.equals('')">
+              AND (movie.name ILIKE '%' || #{query.name} || '%'
+                   OR movie.original_name ILIKE '%' || #{query.name} || '%')
+          </if>
         GROUP BY movie.id, movie.name, movie.cover, movie.start_date, level.name, presale.id
         ORDER BY COUNT(DISTINCT movie_show_time.id) DESC,
                  MIN(movie_show_time.start_time::timestamp) ASC
@@ -387,6 +392,42 @@
             #{movieId}
         </foreach>
         ORDER BY movie_staff.movie_id, movie_staff.staff_id
+    </select>
+
+    <!-- 批量获取出演演员：position.name 含「出演」（覆盖「出演」「声の出演」） -->
+    <select id="getCastByMovieIds" resultType="com.example.backend.response.app.MovieCastRow">
+        SELECT
+            movie_staff.movie_id AS movieId,
+            staff.id            AS id,
+            staff.name          AS name,
+            staff.cover         AS cover
+        FROM movie_staff
+        LEFT JOIN staff    ON movie_staff.staff_id   = staff.id
+        LEFT JOIN position ON movie_staff.position_id = position.id
+        WHERE movie_staff.deleted = 0
+          AND position.name LIKE '%出演%'
+          AND movie_staff.movie_id IN
+        <foreach collection="movieIds" item="movieId" open="(" separator="," close=")">
+            #{movieId}
+        </foreach>
+        ORDER BY movie_staff.movie_id, movie_staff.staff_id
+    </select>
+
+    <!-- 批量获取电影上映规格（IMAX/4DX 等）：来源 movie_spec → cinema_spec -->
+    <select id="getSpecsByMovieIds" resultType="com.example.backend.response.app.MovieSpecRow">
+        SELECT
+            movie_spec.movie_id AS movieId,
+            cinema_spec.id      AS id,
+            cinema_spec.name    AS name,
+            cinema_spec.description AS description
+        FROM movie_spec
+        LEFT JOIN cinema_spec ON movie_spec.spec_id = cinema_spec.id
+        WHERE cinema_spec.deleted = 0
+          AND movie_spec.movie_id IN
+        <foreach collection="movieIds" item="movieId" open="(" separator="," close=")">
+            #{movieId}
+        </foreach>
+        ORDER BY movie_spec.movie_id, cinema_spec.id
     </select>
     <select id="getMovieComingSoon" resultType="com.example.backend.response.app.MovieComingSoonResponse">
         WITH candidate AS (
@@ -434,9 +475,14 @@
                 AND movie_show_time.open = TRUE
                 AND movie_show_time.start_time::timestamp > CURRENT_TIMESTAMP
             LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
+                 AND (presale.end_time IS NULL OR presale.end_time &gt;= CURRENT_TIMESTAMP)
             WHERE
                 movie.deleted = 0
               AND movie.kind = 'movie'
+              <if test="query.name != null and !query.name.equals('')">
+                  AND (movie.name ILIKE '%' || #{query.name} || '%'
+                       OR movie.original_name ILIKE '%' || #{query.name} || '%')
+              </if>
               AND (
                     <!--
                       start_date 既可能是精确日期，也可能是模糊日式标签（2026年秋 / 2026年 /
@@ -581,6 +627,7 @@
         <result property="specIds" column="spec_ids" typeHandler="com.example.backend.typeHandler.IntegerArrayTypeHandler"></result>
         <result property="reReleaseId" column="re_release_id"></result>
         <result property="reReleaseVersionInfo" column="re_release_version_info"></result>
+        <result property="eventTitle" column="event_title"></result>
         <result property="reservationUrl" column="reservation_url"></result>
         <result property="saleStatus" column="sale_status"></result>
         <result property="subtitleNames" column="subtitle_names"></result>
@@ -610,6 +657,7 @@
             theater_hall.name AS theater_hall_name,
             movie_show_time.re_release_id AS re_release_id,
             re_release.version_info AS re_release_version_info,
+            movie_show_time.event_title AS event_title,
             (
                 SELECT string_agg(cs.name, '、' ORDER BY array_position(movie_show_time.spec_ids, cs.id))
                 FROM cinema_spec cs

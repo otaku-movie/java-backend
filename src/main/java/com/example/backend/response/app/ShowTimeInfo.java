@@ -45,6 +45,8 @@ public class ShowTimeInfo {
    * subtitleNames 只携带显示名，便于列表场景免去逐场 join 的成本。
    */
   private List<String> subtitleNames;
+  /** 特殊场次名/活动名（来自标题装饰，普通场次为空）。 */
+  private String eventTitle;
 
   public Integer getId() { return id; }
   public void setId(Integer id) { this.id = id; }
@@ -90,4 +92,6 @@ public class ShowTimeInfo {
   public void setSaleStatus(String saleStatus) { this.saleStatus = saleStatus; }
   public List<String> getSubtitleNames() { return subtitleNames; }
   public void setSubtitleNames(List<String> subtitleNames) { this.subtitleNames = subtitleNames; }
+  public String getEventTitle() { return eventTitle; }
+  public void setEventTitle(String eventTitle) { this.eventTitle = eventTitle; }
 }

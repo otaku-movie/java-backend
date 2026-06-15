@@ -55,6 +55,14 @@ public class AppMovieController {
     if (query.getPage() != null && query.getPage() == 1) {
       String today = LocalDate.now().toString();
       List<NowMovieShowingResponse> reReleases = reReleaseMapper.activeNowShowing(today);
+      // 有搜索关键字时，重映条目也需按片名过滤，避免搜索结果混入无关重映
+      String kw = query.getName() == null ? "" : query.getName().trim();
+      if (!kw.isEmpty() && reReleases != null) {
+        String kwLower = kw.toLowerCase();
+        reReleases = reReleases.stream()
+          .filter(m -> m.getName() != null && m.getName().toLowerCase().contains(kwLower))
+          .toList();
+      }
       if (reReleases != null && !reReleases.isEmpty()) {
         // 不再按 movieId 去重：重映条目需要在列表里可见（即使该电影也在普通上映中）
         List<NowMovieShowingResponse> merged = new ArrayList<>();
@@ -106,6 +114,42 @@ public class AppMovieController {
           movie.setDirector(directorMap.getOrDefault(movie.getId(), Collections.emptyList()))
       );
 
+      // 第五步.55：批量获取出演演员并按 movieId 分组塞回
+      List<com.example.backend.response.app.MovieCastRow> castRows =
+          movieMapper.getCastByMovieIds(movieIds);
+      Map<Integer, List<com.example.backend.response.Staff>> castMap = castRows.stream()
+          .collect(Collectors.groupingBy(
+              com.example.backend.response.app.MovieCastRow::getMovieId,
+              Collectors.mapping(row -> {
+                com.example.backend.response.Staff s = new com.example.backend.response.Staff();
+                s.setId(row.getId());
+                s.setName(row.getName());
+                s.setCover(row.getCover());
+                return s;
+              }, Collectors.toList())
+          ));
+      list.getRecords().forEach(movie ->
+          movie.setCast(castMap.getOrDefault(movie.getId(), Collections.emptyList()))
+      );
+
+      // 第五步.6：批量获取上映规格（IMAX/4DX 等）并按 movieId 分组塞回
+      List<com.example.backend.response.app.MovieSpecRow> specRows =
+          movieMapper.getSpecsByMovieIds(movieIds);
+      Map<Integer, List<com.example.backend.response.Spec>> specMap = specRows.stream()
+          .collect(Collectors.groupingBy(
+              com.example.backend.response.app.MovieSpecRow::getMovieId,
+              Collectors.mapping(row -> {
+                com.example.backend.response.Spec s = new com.example.backend.response.Spec();
+                s.setId(row.getId());
+                s.setName(row.getName());
+                s.setDescription(row.getDescription());
+                return s;
+              }, Collectors.toList())
+          ));
+      list.getRecords().forEach(movie ->
+          movie.setSpec(specMap.getOrDefault(movie.getId(), Collections.emptyList()))
+      );
+
       // 普通上映/重映的特典需要区分：普通上映只看 re_release_id 为空；重映看对应 re_release_id
       List<Integer> normalMovieIds = list.getRecords().stream()
         .filter(m -> m.getIsReRelease() == null || !m.getIsReRelease() || m.getReReleaseId() == null)
@@ -154,6 +198,15 @@ public class AppMovieController {
     if (query.getPage() != null && query.getPage() == 1) {
       String today = LocalDate.now().toString();
       List<MovieComingSoonResponse> reReleases = reReleaseMapper.upcomingComingSoon(today);
+      // 有搜索关键字时，重映条目也需按片名（含原名）过滤
+      String kw = query.getName() == null ? "" : query.getName().trim();
+      if (!kw.isEmpty() && reReleases != null) {
+        String kwLower = kw.toLowerCase();
+        reReleases = reReleases.stream()
+          .filter(m -> (m.getName() != null && m.getName().toLowerCase().contains(kwLower))
+            || (m.getOriginalName() != null && m.getOriginalName().toLowerCase().contains(kwLower)))
+          .toList();
+      }
       if (reReleases != null && !reReleases.isEmpty()) {
         Set<Integer> existingMovieIds = new HashSet<>();
         Set<String> existingNames = new HashSet<>();
@@ -370,6 +423,7 @@ public class AppMovieController {
           showTime.setReReleaseVersionInfo(item.getReReleaseVersionInfo());
           showTime.setReservationUrl(item.getReservationUrl());
           showTime.setSaleStatus(item.getSaleStatus());
+          showTime.setEventTitle(item.getEventTitle());
           // 字幕语言：mapper 已按 subtitle_id 原顺序「、」拼好；这里 split 成 List 供前端 chip 直接渲染
           showTime.setSubtitleNames(
               item.getSubtitleNames() != null && !item.getSubtitleNames().isEmpty()
