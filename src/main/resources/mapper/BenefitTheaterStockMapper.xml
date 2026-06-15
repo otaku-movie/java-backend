@@ -20,6 +20,9 @@
         <if test="q.prefectureId != null">
             AND c.prefecture_id = #{q.prefectureId}
         </if>
+        <if test="q.cityId != null">
+            AND c.city_id = #{q.cityId}
+        </if>
         <if test="q.keyword != null and q.keyword != ''">
             AND c.name ILIKE '%' || #{q.keyword} || '%'
         </if>
@@ -73,10 +76,22 @@
                         WHERE
                         <include refid="mstFutureMatch"/>
                     ) AS nearest_show_time,
+                    (
+                        SELECT string_agg(to_char(t.st, 'YYYY-MM-DD HH24:MI:SS'), ',' ORDER BY t.st)
+                        FROM (
+                            SELECT DISTINCT mst.start_time::timestamp AS st
+                            FROM movie_show_time mst
+                            WHERE
+                            <include refid="mstFutureMatch"/>
+                            ORDER BY mst.start_time::timestamp ASC
+                            LIMIT 5
+                        ) t
+                    ) AS upcoming_show_times,
                 </when>
                 <otherwise>
                     0 AS show_time_count,
                     NULL::timestamp AS nearest_show_time,
+                    NULL::text AS upcoming_show_times,
                 </otherwise>
             </choose>
             <choose>
@@ -99,15 +114,43 @@
         <choose>
             <when test="q.sort == 'distance'">
                 ORDER BY
+                    <if test="q.favoriteUserId != null">
+                    CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM user_favorite_cinema ufc
+                        WHERE ufc.user_id = #{q.favoriteUserId}
+                          AND ufc.cinema_id = c.id
+                          AND ufc.deleted = 0
+                    ) THEN 0 ELSE 1 END,
+                    </if>
                     CASE WHEN c.latitude IS NULL OR c.longitude IS NULL THEN 1 ELSE 0 END,
                     distanceMeters ASC NULLS LAST,
                     c.id ASC
             </when>
             <when test="q.sort == 'default'">
-                ORDER BY c.id ASC
+                ORDER BY
+                    <if test="q.favoriteUserId != null">
+                    CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM user_favorite_cinema ufc
+                        WHERE ufc.user_id = #{q.favoriteUserId}
+                          AND ufc.cinema_id = c.id
+                          AND ufc.deleted = 0
+                    ) THEN 0 ELSE 1 END,
+                    </if>
+                    c.id ASC
             </when>
             <otherwise>
                 ORDER BY
+                    <if test="q.favoriteUserId != null">
+                    CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM user_favorite_cinema ufc
+                        WHERE ufc.user_id = #{q.favoriteUserId}
+                          AND ufc.cinema_id = c.id
+                          AND ufc.deleted = 0
+                    ) THEN 0 ELSE 1 END,
+                    </if>
                     CASE WHEN s.remaining IS NULL THEN 1 ELSE 0 END,
                     s.remaining DESC NULLS LAST,
                     c.id ASC

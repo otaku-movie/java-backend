@@ -19,9 +19,12 @@ public class BenefitCinemaAvailabilityQuery {
   private boolean whitelistEnabled;
   private Integer regionId;
   private Integer prefectureId;
+  private Integer cityId;
   private String keyword;
   /** remainingDesc | default | distance */
   private String sort;
   private Double latitude;
   private Double longitude;
+  /** 当前登录用户 id。非空时，该用户收藏的影院在分页结果中全局置顶。 */
+  private Integer favoriteUserId;
 }

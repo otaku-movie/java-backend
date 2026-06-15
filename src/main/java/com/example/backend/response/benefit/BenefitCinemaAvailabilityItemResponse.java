@@ -33,4 +33,6 @@ public class BenefitCinemaAvailabilityItemResponse {
   /** 最近一场开映时间 */
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Tokyo")
   private Date nearestShowTime;
+  /** 最近若干场开映时间（"yyyy-MM-dd HH:mm:ss"，升序，最多 5 场），供列表展示多场 */
+  private java.util.List<String> upcomingShowTimes;
 }

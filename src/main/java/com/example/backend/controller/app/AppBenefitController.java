@@ -6,9 +6,11 @@ import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
 import com.example.backend.entity.RestBean;
 import com.example.backend.query.benefit.BenefitFeedbackSubmitQuery;
+import com.example.backend.query.benefit.BenefitMovieListQuery;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.backend.response.benefit.BenefitCinemaAvailabilityItemResponse;
 import com.example.backend.response.benefit.BenefitDetailResponse;
+import com.example.backend.response.benefit.BenefitMovieListItemResponse;
 import com.example.backend.service.BenefitService;
 import com.example.backend.utils.MessageUtils;
 import jakarta.validation.Valid;
@@ -28,6 +30,19 @@ public class AppBenefitController {
   @Autowired
   private BenefitService benefitService;
 
+  /** 按电影分组的特典入口列表（匿名）：给 H5/App 的「特典」Tab 使用。 */
+  @GetMapping(ApiPaths.App.Benefit.MOVIE_LIST)
+  public RestBean<List<BenefitMovieListItemResponse>> movieList(@ModelAttribute BenefitMovieListQuery query) {
+    if (query == null) query = new BenefitMovieListQuery();
+    int ps = query.getPageSize() != null && query.getPageSize() > 0
+      ? Math.min(query.getPageSize(), 100)
+      : 20;
+    query.setPage(query.getPage() != null && query.getPage() > 0 ? query.getPage() : 1);
+    query.setPageSize(ps);
+    IPage<BenefitMovieListItemResponse> page = benefitService.listBenefitMoviesForAdmin(query);
+    return RestBean.success(page.getRecords(), query.getPage(), page.getTotal(), query.getPageSize());
+  }
+
   @GetMapping(ApiPaths.App.Benefit.LIST)
   public RestBean<List<BenefitDetailResponse>> list(@RequestParam Integer movieId,
                                                     @RequestParam(required = false) Integer reReleaseId) {
@@ -45,6 +60,7 @@ public class AppBenefitController {
     @RequestParam(required = false) Integer reReleaseId,
     @RequestParam(required = false) Integer regionId,
     @RequestParam(required = false) Integer prefectureId,
+    @RequestParam(required = false) Integer cityId,
     @RequestParam(required = false) String keyword,
     @RequestParam(required = false, defaultValue = "remainingDesc") String sort,
     @RequestParam(required = false) Double latitude,
@@ -56,7 +72,7 @@ public class AppBenefitController {
     int ps = pageSize != null && pageSize > 0 ? Math.min(pageSize, 100) : 20;
     Integer currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
     IPage<BenefitCinemaAvailabilityItemResponse> result = benefitService.pageCinemasForBenefitApp(
-      benefitId, reReleaseId, regionId, prefectureId, keyword, sort, latitude, longitude, p, ps, currentUserId);
+      benefitId, reReleaseId, regionId, prefectureId, cityId, keyword, sort, latitude, longitude, p, ps, currentUserId);
     return RestBean.success(result.getRecords(), (int) result.getCurrent(), result.getTotal(), (int) result.getSize());
   }
 

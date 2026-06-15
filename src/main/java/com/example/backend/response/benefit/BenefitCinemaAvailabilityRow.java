@@ -24,4 +24,6 @@ public class BenefitCinemaAvailabilityRow {
   private Integer showTimeCount;
   /** 最近一场开映时间 */
   private Date nearestShowTime;
+  /** 最近若干场开映时间，逗号分隔的 "yyyy-MM-dd HH:mm:ss" 文本（按时间升序，最多 5 场） */
+  private String upcomingShowTimes;
 }

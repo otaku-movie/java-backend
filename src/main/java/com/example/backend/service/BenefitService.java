@@ -295,6 +295,7 @@ public class BenefitService {
     Integer reReleaseId,
     Integer regionId,
     Integer prefectureId,
+    Integer cityId,
     String keyword,
     String sort,
     Double latitude,
@@ -331,10 +332,12 @@ public class BenefitService {
     q.setReReleaseId(b.getReReleaseId());
     q.setRegionId(regionId);
     q.setPrefectureId(prefectureId);
+    q.setCityId(cityId);
     q.setKeyword(StringUtils.hasText(keyword) ? keyword.trim() : null);
     q.setSort(sortNorm);
     q.setLatitude(latitude);
     q.setLongitude(longitude);
+    q.setFavoriteUserId(currentUserId);
 
     int limitType = b.getCinemaLimitType() != null ? b.getCinemaLimitType() : 0;
     List<Integer> whitelist = parseIntegerList(b.getCinemaIds());
@@ -386,6 +389,14 @@ public class BenefitService {
       }
       it.setShowTimeCount(row.getShowTimeCount());
       it.setNearestShowTime(row.getNearestShowTime());
+      if (StringUtils.hasText(row.getUpcomingShowTimes())) {
+        List<String> ups = new ArrayList<>();
+        for (String part : row.getUpcomingShowTimes().split(",")) {
+          String tt = part.trim();
+          if (!tt.isEmpty()) ups.add(tt);
+        }
+        it.setUpcomingShowTimes(ups);
+      }
       items.add(it);
     }
 
