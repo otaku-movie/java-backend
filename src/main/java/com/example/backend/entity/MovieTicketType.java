@@ -71,6 +71,22 @@ public class MovieTicketType implements Serializable {
     @TableField(value = "order_num")
     private Integer orderNum;
 
+    /** 人群票档大类：adult / member / college …（爬虫 PriceCategory） */
+    @TableField(value = "audience_category")
+    private String audienceCategory;
+
+    /** 票价性质：base=常设价 promo=服务日/折扣价 */
+    @TableField(value = "price_kind")
+    private String priceKind;
+
+    /** 服务日代码：wednesday / monday_member …（爬虫 ServiceDayCode） */
+    @TableField(value = "service_day_code")
+    private String serviceDayCode;
+
+    /** 是否会员限定（展示/预览用，不代替下单验资） */
+    @TableField(value = "member_required")
+    private Boolean memberRequired;
+
     /**
      *
      */

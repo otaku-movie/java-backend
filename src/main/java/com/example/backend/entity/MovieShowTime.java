@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-@TableName("movie_show_time")
+@TableName(value = "movie_show_time", autoResultMap = true)
 public class MovieShowTime {
   @TableId(value = "id", type = IdType.AUTO)
   Integer id;

@@ -833,6 +833,10 @@ public final class ApiPaths {
             public static final String SELECT_SEAT_LIST = COMMON_BASE + "/movie_show_time/select_seat/list";
             /** 场次可用票种列表（App 选票页）- POST /api/movie_show_time/ticketType/list */
             public static final String TICKET_TYPE_LIST = COMMON_BASE + "/movie_show_time/ticketType/list";
+            /** 场次票价预览（单场）- GET /api/movie_show_time/price-preview */
+            public static final String PRICE_PREVIEW = COMMON_BASE + "/movie_show_time/price-preview";
+            /** 场次票价预览（批量，≤50）- POST /api/movie_show_time/price-preview/batch */
+            public static final String PRICE_PREVIEW_BATCH = COMMON_BASE + "/movie_show_time/price-preview/batch";
         }
         
         /**

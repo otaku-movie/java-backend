@@ -31,6 +31,7 @@ import com.example.backend.response.app.GetCinemaMovieShowTimeListResponse;
 import com.example.backend.response.cinema.CinemaScreeningResponse;
 import com.example.backend.response.cinema.MovieShowingResponse;
 import com.example.backend.service.BenefitService;
+import com.example.backend.service.CinemaServiceDayService;
 import com.example.backend.service.CinemaSpecSpecService;
 import com.example.backend.utils.ManualFieldLockUtils;
 import com.example.backend.utils.MessageUtils;
@@ -147,6 +148,8 @@ public class CinemaController {
   private BenefitService benefitService;
   @Autowired
   private com.example.backend.service.FavoriteCinemaService favoriteCinemaService;
+  @Autowired
+  private CinemaServiceDayService cinemaServiceDayService;
 
   @PostMapping(ApiPaths.Common.Cinema.LIST)
   public RestBean<List<CinemaResponse>> list(@RequestBody CinemaListQuery query)  {
@@ -295,6 +298,11 @@ public class CinemaController {
             if (startTime2 == null) return -1;
             return startTime1.compareTo(startTime2);
           });
+
+          if (list.getCinemaId() != null && dateGroup.getDate() != null) {
+            dateGroup.setServiceDays(
+                cinemaServiceDayService.listForDate(list.getCinemaId(), dateGroup.getDate()));
+          }
         }
       }
     }

@@ -15,6 +15,8 @@ import com.example.backend.query.MovieShowTimeListQuery;
 import com.example.backend.query.MovieShowTimeQuery;
 import com.example.backend.response.MovieShowTimeList;
 import com.example.backend.response.showTime.MovieShowTimeDetail;
+import com.example.backend.response.showTime.ShowTimePricePreviewResponse;
+import com.example.backend.service.ShowTimePricePreviewService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -76,6 +78,13 @@ class ShowTimeTicketTypeListQuery {
   private Integer movieShowTimeId;
 }
 
+/** 场次票价预览批量请求 */
+@Data
+class ShowTimePricePreviewBatchQuery {
+  @NotEmpty
+  private List<Integer> movieShowTimeIds;
+}
+
 @RestController
 public class MovieShowTimeController {
   @Autowired
@@ -98,6 +107,32 @@ public class MovieShowTimeController {
 
   @Autowired
   private ReReleaseMapper reReleaseMapper;
+
+  @Autowired
+  private ShowTimePricePreviewService showTimePricePreviewService;
+
+  /** 场次票价预览（单场，供选座头等） */
+  @GetMapping(ApiPaths.Common.ShowTime.PRICE_PREVIEW)
+  public RestBean<ShowTimePricePreviewResponse> pricePreview(@RequestParam Integer id) {
+    if (id == null) {
+      return RestBean.error(ResponseCode.PARAMETER_ERROR.getCode(),
+          MessageUtils.getMessage(MessageKeys.Admin.PARAMETER_ERROR));
+    }
+    return RestBean.success(showTimePricePreviewService.preview(id),
+        MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+  }
+
+  /** 场次票价预览（批量，供场次列表卡片） */
+  @PostMapping(ApiPaths.Common.ShowTime.PRICE_PREVIEW_BATCH)
+  public RestBean<List<ShowTimePricePreviewResponse>> pricePreviewBatch(
+      @RequestBody @Validated ShowTimePricePreviewBatchQuery query) {
+    if (query == null || query.getMovieShowTimeIds() == null) {
+      return RestBean.success(Collections.emptyList(),
+          MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+    }
+    return RestBean.success(showTimePricePreviewService.previewBatch(query.getMovieShowTimeIds()),
+        MessageUtils.getMessage(MessageKeys.Admin.GET_SUCCESS));
+  }
 
   /** 获取该场次可用票种列表（App 选票页调用） */
   @PostMapping(ApiPaths.Common.ShowTime.TICKET_TYPE_LIST)
