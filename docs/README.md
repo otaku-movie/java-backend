@@ -8,6 +8,12 @@
 - [README.md](../README.md) - 后端模块主文档
 - [仓库级文档索引](../../docs/README.md) - App / 面试题 / 权益与特典 / 权限 / **影院爬虫** 等（与 `java-backend/docs` 平级的 `docs/`）
 
+### 💴 票价与票种
+- [PRICE_STRATEGY.md](./PRICE_STRATEGY.md) - 票价叠加公式、数据模型与下单接口
+- [PRICE_QUOTE_DESIGN.md](./PRICE_QUOTE_DESIGN.md) - **票价预览/报价**（场次列表、选票种、会员价；非比价）
+- [TICKET_TYPE_REQUIREMENTS.md](./TICKET_TYPE_REQUIREMENTS.md) - 票种需求与排期设计
+- [PRICING_RULES.md](./PRICING_RULES.md) - 票价叠加规则简表
+
 ### 📖 API 文档
 - [APIFOX_README.md](./api/APIFOX_README.md) - Apifox 接口文档生成说明
 - [README_CREDIT_CARD_API.md](./api/README_CREDIT_CARD_API.md) - 信用卡 API 文档
