@@ -25,6 +25,8 @@ public class ChartResponse {
   List<DailyTransactionAmount> dailyTransactionAmount;
   /** 按注册/登录平台（Google / Apple / Email 等）聚合的用户数 */
   List<LoginPlatformStatistics> loginPlatformStatistics;
+  /** 按注册来源客户端（h5 / ios / android）聚合的用户数 */
+  List<LoginPlatformStatistics> registerSourceStatistics;
   /** 今日各影院品牌场次聚合，饼图。 */
   List<BrandShowtimeStatistics> todayBrandShowtimes;
   /** 今日场次 Top 10 影院，横向条形图。 */

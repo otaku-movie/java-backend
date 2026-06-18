@@ -134,4 +134,13 @@
         GROUP BY platform
         ORDER BY user_count DESC
     </select>
+    <select id="registerSourceStatistics" resultMap="loginPlatformStatistics">
+        SELECT
+            COALESCE(NULLIF(TRIM(register_source), ''), 'unknown') AS platform,
+            COUNT(*) AS user_count
+        FROM users
+        WHERE deleted = 0
+        GROUP BY COALESCE(NULLIF(TRIM(register_source), ''), 'unknown')
+        ORDER BY user_count DESC
+    </select>
 </mapper>

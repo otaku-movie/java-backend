@@ -30,4 +30,10 @@ public class OAuthLoginQuery {
 
   /** 同上，姓氏。 */
   private String lastName;
+
+  /** OAuth 首次建号时的注册来源：h5 / ios / android */
+  private String registerSource;
+
+  /** 本次登录来源：h5 / ios / android（每次登录更新 last_login_source） */
+  private String loginSource;
 }

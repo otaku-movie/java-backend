@@ -35,4 +35,10 @@ public class UserSaveQuery {
 
   /** App 设备 ID，用于 refreshToken 绑定；旧版可为空 */
   String deviceId;
+
+  /** 注册来源：h5 / ios / android（见 RegisterSource） */
+  String registerSource;
+
+  /** 登录来源（注册成功后的首次会话同样写入） */
+  String loginSource;
 }

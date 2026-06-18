@@ -28,6 +28,10 @@ public interface UserMapper extends BaseMapper<User> {
 
   /** 按注册/登录平台聚合用户数（基于 user_oauth_binding），用于多平台登录数据统计图表 */
   List<LoginPlatformStatistics> loginPlatformStatistics();
+
+  /** 按 users.register_source 聚合（h5 / ios / android / unknown） */
+  List<LoginPlatformStatistics> registerSourceStatistics();
+
   @Select("""
         SELECT COUNT(*) 
         FROM (

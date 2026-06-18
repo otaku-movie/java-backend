@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
+import com.example.backend.constants.RegisterSource;
 import com.example.backend.entity.RestBean;
 import com.example.backend.entity.User;
 import com.example.backend.entity.UserOAuthBinding;
@@ -50,6 +51,8 @@ class UserLoginQuery {
   @NotEmpty(message = "{validator.login.password.required}")
   String password;
   String deviceId;
+  /** 登录来源：h5 / ios / android */
+  String loginSource;
 }
 
 @Data
@@ -144,6 +147,7 @@ public class UserController {
       loginResponse.setCreateTime(result.getCreateTime());
       loginResponse.setCover(result.getCover());
       loginResponse = refreshTokenService.issueLoginResponse(result, safeDeviceId(query.getDeviceId()));
+      touchLoginActivity(result.getId(), resolveLoginSource(query.getLoginSource(), null));
 
       return RestBean.success( loginResponse, messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS));
     } else  {
@@ -166,7 +170,8 @@ public class UserController {
   @PostMapping(ApiPaths.Common.User.GOOGLE_LOGIN)
   public RestBean<AppLoginResponse> googleLogin(@RequestBody @Validated OAuthLoginQuery query) {
     OAuthIdTokenVerifier.OAuthProfile profile = oAuthIdTokenVerifier.verifyGoogle(query.getIdToken());
-    User user = findOrCreateOAuthUser(profile);
+    User user = findOrCreateOAuthUser(profile, query.getRegisterSource());
+    touchLoginActivity(user.getId(), resolveLoginSource(query.getLoginSource(), query.getRegisterSource()));
     return RestBean.success(
         refreshTokenService.issueLoginResponse(user, query.getDeviceId()),
         messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS)
@@ -179,7 +184,8 @@ public class UserController {
     // Apple 只在首次登录返回 fullName，客户端会原样回传给后端，这里补到 profile 上
     // 供后续 findOrCreateOAuthUser 创建用户/绑定时使用。
     applyOAuthFallbackName(profile, query.getFirstName(), query.getLastName());
-    User user = findOrCreateOAuthUser(profile);
+    User user = findOrCreateOAuthUser(profile, query.getRegisterSource());
+    touchLoginActivity(user.getId(), resolveLoginSource(query.getLoginSource(), query.getRegisterSource()));
     return RestBean.success(
         refreshTokenService.issueLoginResponse(user, query.getDeviceId()),
         messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS)
@@ -200,7 +206,8 @@ public class UserController {
   public RestBean<AppLoginResponse> twitterLogin(@RequestBody @Validated TwitterLoginQuery query) {
     try {
       OAuthIdTokenVerifier.OAuthProfile profile = xOAuthService.fetchProfile(query.getAccessToken());
-      User user = findOrCreateOAuthUser(profile);
+      User user = findOrCreateOAuthUser(profile, query.getRegisterSource());
+      touchLoginActivity(user.getId(), resolveLoginSource(query.getLoginSource(), query.getRegisterSource()));
       return RestBean.success(
           refreshTokenService.issueLoginResponse(user, query.getDeviceId()),
           messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS)
@@ -248,6 +255,7 @@ public class UserController {
     user.setName(query.getName());
     user.setEmail(query.getEmail());
     user.setPassword(PasswordUtil.encode(query.getPassword()));
+    user.setRegisterSource(RegisterSource.normalize(query.getRegisterSource()));
 
 
     // 验证邮箱是否有效
@@ -284,6 +292,9 @@ public class UserController {
       User result = userMapper.selectOne(queryWrapper);
 
       if (result != null) {
+        touchLoginActivity(
+            result.getId(),
+            resolveLoginSource(query.getLoginSource(), query.getRegisterSource()));
         loginResponse = refreshTokenService.issueLoginResponse(result, safeDeviceId(query.getDeviceId()));
 
         return RestBean.success(loginResponse, messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS));
@@ -387,7 +398,7 @@ public class UserController {
    * OAuth 登录登录态查找：优先按 (provider, subject) 命中绑定；否则按 email 关联已有
    * 账号或创建新账号，最后写/更新一条 user_oauth_binding 记录。
    */
-  private User findOrCreateOAuthUser(OAuthIdTokenVerifier.OAuthProfile profile) {
+  private User findOrCreateOAuthUser(OAuthIdTokenVerifier.OAuthProfile profile, String registerSource) {
     UserOAuthBinding binding = userOAuthBindingMapper.selectOne(
         new QueryWrapper<UserOAuthBinding>()
             .eq("provider", profile.getProvider())
@@ -417,6 +428,7 @@ public class UserController {
       user.setEmail(profile.getEmail());
       user.setName(resolveOAuthDisplayName(profile));
       user.setCover(profile.getPicture());
+      user.setRegisterSource(RegisterSource.normalize(registerSource));
       userMapper.insert(user);
       user = userMapper.selectById(user.getId());
     }
@@ -459,5 +471,23 @@ public class UserController {
     update.setPicture(profile.getPicture());
     update.setLastLoginAt(now);
     userOAuthBindingMapper.updateById(update);
+  }
+
+  private String resolveLoginSource(String loginSource, String registerSource) {
+    if (loginSource != null && !loginSource.isBlank()) {
+      return RegisterSource.normalize(loginSource);
+    }
+    return RegisterSource.normalize(registerSource);
+  }
+
+  private void touchLoginActivity(Integer userId, String loginSource) {
+    if (userId == null) return;
+    userMapper.update(
+        null,
+        new UpdateWrapper<User>()
+            .set("last_login_source", RegisterSource.normalize(loginSource))
+            .set("last_login_at", new java.util.Date())
+            .eq("id", userId)
+            .eq("deleted", 0));
   }
 }

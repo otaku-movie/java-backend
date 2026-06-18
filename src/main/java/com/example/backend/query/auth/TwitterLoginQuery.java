@@ -17,4 +17,10 @@ public class TwitterLoginQuery {
 
   @NotEmpty
   private String deviceId;
+
+  /** OAuth 首次建号时的注册来源：h5 / ios / android */
+  private String registerSource;
+
+  /** 本次登录来源：h5 / ios / android */
+  private String loginSource;
 }

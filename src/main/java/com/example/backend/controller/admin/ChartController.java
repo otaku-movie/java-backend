@@ -149,6 +149,7 @@ public class ChartController {
     CompletableFuture<?> dailyTxn = async(() -> movieOrderMapper.DailyTransactionAmount(
         OrderState.order_succeed.getCode(), PayState.payment_successful.getCode()));
     CompletableFuture<?> loginPlatform = async(userMapper::loginPlatformStatistics);
+    CompletableFuture<?> registerSource = async(userMapper::registerSourceStatistics);
 
     CompletableFuture<Long> brandCount = async(chartMapper::countBrands);
     CompletableFuture<Long> theaterHallCount = async(chartMapper::countTheaterHalls);
@@ -163,7 +164,7 @@ public class ChartController {
 
     CompletableFuture.allOf(
         userCount, movieCount, cinemaCount, showTimeCount,
-        statisticsUserData, dailyScreenings, dailyOrders, dailyTxn, loginPlatform,
+        statisticsUserData, dailyScreenings, dailyOrders, dailyTxn, loginPlatform, registerSource,
         brandCount, theaterHallCount, tmdbMatched, todayShowtimeCount,
         todayBrandShowtimes, todayTopCinemas, next7Days, todayPrefecture, dataQuality, kpiTrends
     ).join();
@@ -178,6 +179,7 @@ public class ChartController {
     r.setDailyOrderStatistics((java.util.List) dailyOrders.join());
     r.setDailyTransactionAmount((java.util.List) dailyTxn.join());
     r.setLoginPlatformStatistics((java.util.List) loginPlatform.join());
+    r.setRegisterSourceStatistics((java.util.List) registerSource.join());
 
     r.setBrandCount(brandCount.join());
     r.setTheaterHallCount(theaterHallCount.join());

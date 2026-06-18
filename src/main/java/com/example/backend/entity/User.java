@@ -27,6 +27,18 @@ public class User {
   @TableField("email")
   String email;
 
+  /** 注册来源：h5 / ios / android / unknown（见 {@link com.example.backend.constants.RegisterSource}） */
+  @TableField("register_source")
+  String registerSource;
+
+  /** 最近一次登录来源，取值同 register_source */
+  @TableField("last_login_source")
+  String lastLoginSource;
+
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+9")
+  @TableField("last_login_at")
+  Date lastLoginAt;
+
   /** platform / chain / cinema，见 {@link com.example.backend.enumerate.DataScope} */
   @TableField("data_scope")
   String dataScope;
