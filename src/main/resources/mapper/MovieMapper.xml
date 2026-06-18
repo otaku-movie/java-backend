@@ -326,6 +326,30 @@
     </resultMap>
 
     <select id="nowMovieShowing" resultMap="nowMovieShowing">
+        WITH active_showtimes AS (
+            SELECT
+                mst.id,
+                mst.movie_id,
+                mst.start_time::timestamp AS start_ts
+            FROM movie_show_time mst
+            INNER JOIN movie m ON m.id = mst.movie_id AND m.kind = 'movie'
+            WHERE mst.deleted = 0
+              AND mst.open = TRUE
+              <!-- ISO 格式 varchar 可直接比较；配合 idx_mst_open_future_start 走索引，避免全表 cast -->
+              AND mst.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
+              <if test="query.name != null and !query.name.equals('')">
+                  AND (m.name ILIKE '%' || #{query.name} || '%'
+                       OR m.original_name ILIKE '%' || #{query.name} || '%')
+              </if>
+        ),
+        movie_stats AS (
+            SELECT
+                movie_id,
+                COUNT(*) AS show_time_count,
+                MIN(start_ts) AS show_time
+            FROM active_showtimes
+            GROUP BY movie_id
+        )
         SELECT
             movie.id,
             movie.name,
@@ -340,24 +364,14 @@
                 WHERE ps.presale_id = presale.id
                   AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
             )) AS has_bonus,
-            COUNT(DISTINCT movie_show_time.id) AS show_time_count,
-            MIN(movie_show_time.start_time::timestamp) AS show_time
-        FROM movie_show_time
-                 LEFT JOIN movie ON movie_show_time.movie_id = movie.id
-                 LEFT JOIN level ON movie.level_id = level.id
-                 LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
-                 AND (presale.end_time IS NULL OR presale.end_time &gt;= CURRENT_TIMESTAMP)
-        WHERE movie_show_time.deleted = 0
-          AND movie_show_time.start_time::timestamp &gt;= CURRENT_TIMESTAMP
-          AND movie_show_time.open = TRUE
-          AND movie.kind = 'movie'
-          <if test="query.name != null and !query.name.equals('')">
-              AND (movie.name ILIKE '%' || #{query.name} || '%'
-                   OR movie.original_name ILIKE '%' || #{query.name} || '%')
-          </if>
-        GROUP BY movie.id, movie.name, movie.cover, movie.start_date, level.name, presale.id
-        ORDER BY COUNT(DISTINCT movie_show_time.id) DESC,
-                 MIN(movie_show_time.start_time::timestamp) ASC
+            ms.show_time_count,
+            ms.show_time
+        FROM movie_stats ms
+        INNER JOIN movie ON movie.id = ms.movie_id
+        LEFT JOIN level ON movie.level_id = level.id
+        LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
+            AND (presale.end_time IS NULL OR presale.end_time &gt;= CURRENT_TIMESTAMP)
+        ORDER BY ms.show_time_count DESC, ms.show_time ASC
     </select>
 
     <!-- 批量获取Hello Movie信息 -->
