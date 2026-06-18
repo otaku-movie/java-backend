@@ -21,19 +21,32 @@
             theater_hall.cinema_id,
             theater_hall.cinema_spec_id,
             theater_hall.seat_naming_rules,
-            cinema_spec.name AS cinema_spec_name,
-            (
-            SELECT
-                COUNT(seat.show)
-            FROM seat
-            WHERE
-                seat.deleted = 0 AND
-                seat.theater_hall_id = theater_hall.id AND
-                seat.show = TRUE
+            -- 规格：爬虫写入 spec_ids[]；后台手工厅走 cinema_spec_id。两者合并展示。
+            COALESCE(
+                (
+                    SELECT string_agg(cs.name, '、' ORDER BY array_position(theater_hall.spec_ids, cs.id))
+                    FROM cinema_spec cs
+                    WHERE theater_hall.spec_ids IS NOT NULL
+                      AND cardinality(theater_hall.spec_ids) > 0
+                      AND cs.id = ANY(theater_hall.spec_ids)
+                      AND cs.deleted = 0
+                ),
+                cinema_spec.name
+            ) AS cinema_spec_name,
+            -- 座位数：有选座配置时以 seat 表为准；否则回落爬虫写入的 seat_count。
+            GREATEST(
+                COALESCE((
+                    SELECT COUNT(seat.id)
+                    FROM seat
+                    WHERE seat.deleted = 0
+                      AND seat.theater_hall_id = theater_hall.id
+                      AND seat.show = TRUE
+                ), 0),
+                COALESCE(theater_hall.seat_count, 0)
             ) AS seat_count
         FROM
             theater_hall
-        LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id
+        LEFT JOIN cinema_spec ON theater_hall.cinema_spec_id = cinema_spec.id AND cinema_spec.deleted = 0
         <where>
             theater_hall.deleted = 0
             <if test="query.name != null and !query.name.equals('')">
