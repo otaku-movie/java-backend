@@ -15,6 +15,7 @@ import com.example.backend.response.movie.MoviePendingMatch;
 import com.example.backend.response.movie.MoviePendingMatchRow;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,11 @@ public class MovieMergeService {
 
   @Autowired
   private MovieMergeMapper mapper;
+
+  /** 合并会批量更新 movie_show_time 等表，并发请求易触发死锁，串行化合并操作。 */
+  private static final Object MERGE_LOCK = new Object();
+
+  private static final int MERGE_DEADLOCK_MAX_RETRIES = 3;
 
   /**
    * 所有带 movie_id 外键、需要在合并时重指向的业务表。
@@ -227,6 +233,23 @@ public class MovieMergeService {
    */
   @Transactional(rollbackFor = Exception.class)
   public MovieMergeResult merge(MovieMergeQuery query) {
+    synchronized (MERGE_LOCK) {
+      for (int attempt = 1; attempt <= MERGE_DEADLOCK_MAX_RETRIES; attempt++) {
+        try {
+          return doMerge(query);
+        } catch (DeadlockLoserDataAccessException e) {
+          if (attempt == MERGE_DEADLOCK_MAX_RETRIES) {
+            throw e;
+          }
+          log.warn("movie merge deadlock, retry {}/{}: survivor={} losers={}",
+              attempt, MERGE_DEADLOCK_MAX_RETRIES, query.getSurvivorId(), query.getLoserIds(), e);
+        }
+      }
+      throw new IllegalStateException("movie merge retry exhausted");
+    }
+  }
+
+  private MovieMergeResult doMerge(MovieMergeQuery query) {
     Integer survivorId = query.getSurvivorId();
     Set<Integer> losers = new LinkedHashSet<>(query.getLoserIds());
     losers.remove(survivorId);
