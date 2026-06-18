@@ -12,6 +12,7 @@ DO $$
 DECLARE
   s text;
   hall_name_col text;
+  cinema_filter text;
 BEGIN
   FOREACH s IN ARRAY ARRAY['crawl', 'public']
   LOOP
@@ -32,6 +33,22 @@ BEGIN
            END
       INTO hall_name_col;
 
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = s
+         AND table_name = 'cinema'
+         AND column_name = 'cinema_key'
+    ) THEN
+      cinema_filter := 'c.cinema_key LIKE ''grand-cinema-sunshine:%%''';
+    ELSIF to_regclass(format('%I.brand', s)) IS NOT NULL THEN
+      cinema_filter := format(
+        'c.brand_id IN (SELECT id FROM %I.brand WHERE name = ''グランドシネマサンシャイン'' AND deleted = 0)',
+        s
+      );
+    ELSE
+      CONTINUE;
+    END IF;
+
     EXECUTE format($sql$
       UPDATE %I.theater_hall th
          SET deleted = 1,
@@ -40,12 +57,12 @@ BEGIN
        WHERE th.cinema_id = c.id
          AND th.deleted = 0
          AND th.%I IS NOT NULL
-         AND c.cinema_key LIKE 'grand-cinema-sunshine:%%'
+         AND %s
          AND (
            th.%I IN ('シアター44', 'シアター4')
            OR th.%I ~ '^シアター\d+$'
            OR th.%I ~ '^スクリーン\d+$'
          )
-    $sql$, s, s, hall_name_col, hall_name_col, hall_name_col, hall_name_col);
+    $sql$, s, s, hall_name_col, cinema_filter, hall_name_col, hall_name_col, hall_name_col);
   END LOOP;
 END $$;
