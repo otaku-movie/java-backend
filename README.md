@@ -20,3 +20,4 @@
 - 📊 [测试报告](./docs/reports/) - 各类功能测试报告
 - ⚡ [性能测试](./docs/performance/) - 压力测试说明
 - 🛠️ [开发文档](./docs/development/) - 改进建议等
+- 📝 [Git 提交规范](./docs/COMMIT_CONVENTION.md) - Conventional Commits + 正文列表（`npm install` 后启用 Husky 校验）

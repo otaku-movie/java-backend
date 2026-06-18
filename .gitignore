@@ -46,3 +46,7 @@ backups/
 # 生产环境变量（含密钥，禁止提交）
 .env
 .env.prod
+
+# Node（commitlint / husky）
+node_modules/
+package-lock.json
