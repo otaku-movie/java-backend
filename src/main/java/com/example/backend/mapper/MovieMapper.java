@@ -85,6 +85,15 @@ public interface MovieMapper extends BaseMapper<Movie> {
     );
 
     /**
+     * 场次列表轻量索引：仅 cinema_id / start_time / 排序字段，供 summary 与按影院分页；
+     * 详情由 {@link #getMovieShowTime} 按 {@code cinemaIds} 二次加载。
+     */
+    List<AppBeforeMovieShowTimeResponse> getMovieShowTimeOutline(
+      getMovieShowTimeQuery query,
+      Integer showTimeState
+    );
+
+    /**
      * 该电影（含 reReleaseId 区分）全部未来场次实际出现过的 distinct 字幕语言 id。
      * 用于「按实际场次动态返回」的字幕筛选项——只按 movieId/reReleaseId/时间限定，
      * 不应用字幕/标签/地区等其它筛选，保证选项是该电影的固定全集、不会自我消除。

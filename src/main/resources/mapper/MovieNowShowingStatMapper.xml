@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.MovieNowShowingStatMapper">
+
+    <update id="rebuildAll">
+        TRUNCATE crawl.movie_now_showing_stat;
+        INSERT INTO crawl.movie_now_showing_stat (movie_id, show_time_count, next_show_time, refreshed_at)
+        SELECT
+            mst.movie_id,
+            COUNT(*)::INTEGER,
+            MIN(mst.start_time::timestamp),
+            CURRENT_TIMESTAMP
+        FROM movie_show_time mst
+        INNER JOIN movie m ON m.id = mst.movie_id AND m.kind = 'movie'
+        WHERE mst.deleted = 0
+          AND mst.open = TRUE
+          AND mst.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
+        GROUP BY mst.movie_id
+    </update>
+
+</mapper>

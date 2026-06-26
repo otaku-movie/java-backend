@@ -31,6 +31,9 @@ public class ScheduledTasksController {
   @Autowired
   private MovieOrderService movieOrderService;
 
+  @Autowired
+  private com.example.backend.service.MovieNowShowingStatService movieNowShowingStatService;
+
   @Value("${order.payment-timeout:900}")
   private int orderPaymentTimeoutSeconds;
 
@@ -95,6 +98,20 @@ public class ScheduledTasksController {
   @Scheduled(cron = "0 * * * * ?")
   public void updateMovieSeatSelectionState() {
     log.debug("updateMovieSeatSelectionState: placeholder, no-op.");
+  }
+
+  /**
+   * 定时任务：刷新正在上映场次统计（供 nowShowing 列表读取）。
+   * 每 3 分钟全量重建，避免 API 每次扫描数万条场次记录。
+   */
+  @Scheduled(fixedDelay = 180_000L, initialDelay = 60_000L)
+  public void refreshNowShowingStat() {
+    RlsContextUtil.applyPlatformScope();
+    try {
+      movieNowShowingStatService.refreshIfIdle();
+    } finally {
+      RlsContextUtil.clearRls();
+    }
   }
 
   /**

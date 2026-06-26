@@ -38,4 +38,6 @@ public class getMovieShowTimeQuery extends PaginationQuery {
   Boolean use30HourFormat; // 是否使用30小时制（24:00-29:59 表示第二天的 00:00-05:59），默认 false（24小时制）
   // 当前登录用户 id（由 Controller 注入，未登录为 null）。用于「收藏影院置顶」排序。
   Integer userId;
+  /** 详情查询：仅拉取指定影院（分页后的当前页），避免一次加载全量场次。 */
+  List<Integer> cinemaIds;
 }

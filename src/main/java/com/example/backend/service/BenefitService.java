@@ -134,17 +134,102 @@ public class BenefitService {
                                        Integer reReleaseId,
                                        Integer dimensionType, List<Integer> specIds) {
     if (movieId == null || cinemaId == null || showDateStr == null) return false;
-    List<Benefit> benefits = listBenefitsByMovieAndDate(movieId, reReleaseId, showDateStr);
-    for (Benefit b : benefits) {
-      BenefitTheaterStock stock = benefitTheaterStockMapper.selectOne(
+    return Boolean.TRUE.equals(hasBenefitsForShowtimesBatch(List.of(
+        new ShowtimeBenefitKey(movieId, cinemaId, showDateStr, reReleaseId))).get(
+        showtimeBenefitCacheKey(movieId, cinemaId, showDateStr, reReleaseId)));
+  }
+
+  /** 场次列表批量判断是否有特典，避免逐场 N+1 查询。 */
+  public Map<String, Boolean> hasBenefitsForShowtimesBatch(List<ShowtimeBenefitKey> items) {
+    Map<String, Boolean> out = new HashMap<>();
+    if (items == null || items.isEmpty()) {
+      return out;
+    }
+    Set<Integer> movieIds = new HashSet<>();
+    Set<Integer> cinemaIds = new HashSet<>();
+    for (ShowtimeBenefitKey item : items) {
+      if (item.movieId() == null || item.cinemaId() == null || item.showDateStr() == null) {
+        continue;
+      }
+      String key = showtimeBenefitCacheKey(item.movieId(), item.cinemaId(), item.showDateStr(), item.reReleaseId());
+      out.putIfAbsent(key, false);
+      movieIds.add(item.movieId());
+      cinemaIds.add(item.cinemaId());
+    }
+    if (movieIds.isEmpty()) {
+      return out;
+    }
+
+    List<Benefit> benefits = benefitMapper.selectList(
+        new LambdaQueryWrapper<Benefit>().in(Benefit::getMovieId, movieIds));
+    if (benefits.isEmpty()) {
+      return out;
+    }
+
+    Set<Integer> benefitIds = benefits.stream().map(Benefit::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+    List<BenefitTheaterStock> stocks = benefitTheaterStockMapper.selectList(
         new LambdaQueryWrapper<BenefitTheaterStock>()
-          .eq(BenefitTheaterStock::getCinemaId, cinemaId)
-          .eq(BenefitTheaterStock::getBenefitId, b.getId()));
-      if (stock != null && (stock.getRemaining() == null || stock.getRemaining() > 0)) {
-        return true;
+            .in(BenefitTheaterStock::getCinemaId, cinemaIds)
+            .in(BenefitTheaterStock::getBenefitId, benefitIds));
+    Map<String, BenefitTheaterStock> stockByCinemaBenefit = new HashMap<>();
+    for (BenefitTheaterStock stock : stocks) {
+      if (stock.getCinemaId() == null || stock.getBenefitId() == null) {
+        continue;
+      }
+      stockByCinemaBenefit.put(stock.getCinemaId() + "_" + stock.getBenefitId(), stock);
+    }
+
+    for (ShowtimeBenefitKey item : items) {
+      if (item.movieId() == null || item.cinemaId() == null || item.showDateStr() == null) {
+        continue;
+      }
+      String key = showtimeBenefitCacheKey(item.movieId(), item.cinemaId(), item.showDateStr(), item.reReleaseId());
+      if (Boolean.TRUE.equals(out.get(key))) {
+        continue;
+      }
+      for (Benefit benefit : benefits) {
+        if (!item.movieId().equals(benefit.getMovieId())) {
+          continue;
+        }
+        if (!benefitActiveOnDate(benefit, item.showDateStr())) {
+          continue;
+        }
+        if (!reReleaseMatches(benefit.getReReleaseId(), item.reReleaseId())) {
+          continue;
+        }
+        BenefitTheaterStock stock = stockByCinemaBenefit.get(item.cinemaId() + "_" + benefit.getId());
+        if (stock != null && (stock.getRemaining() == null || stock.getRemaining() > 0)) {
+          out.put(key, true);
+          break;
+        }
       }
     }
-    return false;
+    return out;
+  }
+
+  public static String showtimeBenefitCacheKey(Integer movieId, Integer cinemaId, String showDateStr,
+                                               Integer reReleaseId) {
+    return movieId + "_" + cinemaId + "_" + showDateStr + "_" + (reReleaseId == null ? "n" : reReleaseId);
+  }
+
+  public record ShowtimeBenefitKey(Integer movieId, Integer cinemaId, String showDateStr, Integer reReleaseId) {}
+
+  private static boolean benefitActiveOnDate(Benefit benefit, String dateStr) {
+    if (benefit == null || dateStr == null) {
+      return false;
+    }
+    if (benefit.getStartDate() != null && benefit.getStartDate().compareTo(dateStr) > 0) {
+      return false;
+    }
+    String end = benefit.getEndDate();
+    return end == null || end.isEmpty() || end.compareTo(dateStr) >= 0;
+  }
+
+  private static boolean reReleaseMatches(Integer benefitReReleaseId, Integer queryReReleaseId) {
+    if (queryReReleaseId == null) {
+      return benefitReReleaseId == null;
+    }
+    return queryReReleaseId.equals(benefitReReleaseId);
   }
 
   public List<Benefit> listBenefitsByMovieAndDate(Integer movieId, Integer reReleaseId, String dateStr) {

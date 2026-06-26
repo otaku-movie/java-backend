@@ -326,34 +326,9 @@
     </resultMap>
 
     <select id="nowMovieShowing" resultMap="nowMovieShowing">
-        WITH active_showtimes AS (
-            SELECT
-                mst.id,
-                mst.movie_id,
-                mst.start_time::timestamp AS start_ts
-            FROM movie_show_time mst
-            INNER JOIN movie m ON m.id = mst.movie_id AND m.kind = 'movie'
-            WHERE mst.deleted = 0
-              AND mst.open = TRUE
-              <!-- ISO 格式 varchar 可直接比较；配合 idx_mst_open_future_start 走索引，避免全表 cast -->
-              AND mst.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
-              <if test="query.name != null and !query.name.equals('')">
-                  AND (m.name ILIKE '%' || #{query.name} || '%'
-                       OR m.original_name ILIKE '%' || #{query.name} || '%')
-              </if>
-        ),
-        movie_stats AS (
-            SELECT
-                movie_id,
-                COUNT(*) AS show_time_count,
-                MIN(start_ts) AS show_time
-            FROM active_showtimes
-            GROUP BY movie_id
-        )
         SELECT
             movie.id,
             movie.name,
-            <!-- 优先返回 Cloudflare R2 上的 WebP 海报；NULL 时兜底 raw URL。 -->
             COALESCE(movie.cover_url, movie.cover) AS cover,
             movie.start_date,
             level.name AS level_name,
@@ -364,14 +339,20 @@
                 WHERE ps.presale_id = presale.id
                   AND (COALESCE(ps.bonus_title, '') != '' OR ps.bonus_included = true)
             )) AS has_bonus,
-            ms.show_time_count,
-            ms.show_time
-        FROM movie_stats ms
-        INNER JOIN movie ON movie.id = ms.movie_id
+            stat.show_time_count,
+            stat.next_show_time AS show_time
+        FROM movie_now_showing_stat stat
+        INNER JOIN movie ON movie.id = stat.movie_id
         LEFT JOIN level ON movie.level_id = level.id
         LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
             AND (presale.end_time IS NULL OR presale.end_time &gt;= CURRENT_TIMESTAMP)
-        ORDER BY ms.show_time_count DESC, ms.show_time ASC
+        <where>
+            <if test="query.name != null and !query.name.equals('')">
+                AND (movie.name ILIKE '%' || #{query.name} || '%'
+                     OR movie.original_name ILIKE '%' || #{query.name} || '%')
+            </if>
+        </where>
+        ORDER BY stat.show_time_count DESC, stat.next_show_time ASC
     </select>
 
     <!-- 批量获取Hello Movie信息 -->
@@ -451,8 +432,8 @@
                 movie.level_id, movie.status, movie.start_date, movie.end_date,
                 movie.time, movie.watched_count, movie.want_to_see_count,
                 level.name AS levelName,
-                COUNT(DISTINCT movie_show_time.id) AS presaleShowTimeCount,
-                MIN(movie_show_time.start_time::timestamp) AS earliestShowTime,
+                COALESCE(MAX(stat.show_time_count), 0) AS presaleShowTimeCount,
+                MAX(stat.next_show_time) AS earliestShowTime,
                 presale.id AS presaleId,
                 (presale.id IS NOT NULL) AS hasPresaleTicket,
                 (EXISTS (
@@ -484,10 +465,7 @@
                 ) AS dedupe_key
             FROM "movie"
             LEFT JOIN level ON movie.level_id = level.id
-            LEFT JOIN movie_show_time ON movie.id = movie_show_time.movie_id
-                AND movie_show_time.deleted = 0
-                AND movie_show_time.open = TRUE
-                AND movie_show_time.start_time::timestamp > CURRENT_TIMESTAMP
+            LEFT JOIN movie_now_showing_stat stat ON stat.movie_id = movie.id
             LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
                  AND (presale.end_time IS NULL OR presale.end_time &gt;= CURRENT_TIMESTAMP)
             WHERE
@@ -647,9 +625,119 @@
         <result property="subtitleNames" column="subtitle_names"></result>
         <result property="favorite" column="is_favorite"></result>
     </resultMap>
+
+    <!-- 轻量索引：无 spec/字幕/影厅子查询，用于 summary + 影院分页 -->
+    <select id="getMovieShowTimeOutline" resultMap="getMovieShowTime">
+        SELECT
+            movie_show_time.movie_id AS movie_id,
+            cinema.id AS cinema_id,
+            movie_show_time.id AS id,
+            movie_show_time.start_time AS start_time,
+            movie_show_time.re_release_id AS re_release_id,
+            (fav.id IS NOT NULL) AS is_favorite,
+            <if test="query.latitude != null and query.longitude != null">
+                (
+                    6371000 * acos(
+                        cos(radians(#{query.latitude}))
+                        * cos(radians(cinema.latitude))
+                        * cos(radians(cinema.longitude) - radians(#{query.longitude}))
+                        + sin(radians(#{query.latitude}))
+                        * sin(radians(cinema.latitude))
+                    )
+                ) AS distance
+            </if>
+            <if test="query.latitude == null or query.longitude == null">
+                NULL AS distance
+            </if>
+        FROM
+            movie_show_time
+                LEFT JOIN cinema ON movie_show_time.cinema_id = cinema."id"
+                LEFT JOIN movie_version ON movie_version.id = movie_show_time.movie_version_id AND movie_version.deleted = 0
+                LEFT JOIN user_favorite_cinema fav
+                    ON fav.cinema_id = cinema.id
+                    AND fav.deleted = 0
+                    AND fav.user_id = #{query.userId}
+        WHERE
+            movie_show_time.deleted = 0
+             AND movie_show_time.status = #{showTimeState}
+             AND movie_show_time.movie_id = #{query.movieId}
+            <choose>
+                <when test="query.reReleaseId != null">
+                    AND movie_show_time.re_release_id = #{query.reReleaseId}
+                </when>
+                <otherwise>
+                    AND movie_show_time.re_release_id IS NULL
+                </otherwise>
+            </choose>
+             AND movie_show_time.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
+             AND cinema.deleted = 0
+        <if test="query.regionId != null">
+            AND cinema.region_id = #{query.regionId}
+        </if>
+        <if test="query.prefectureId != null">
+            AND cinema.prefecture_id = #{query.prefectureId}
+        </if>
+        <if test="query.cityId != null">
+            AND cinema.city_id = #{query.cityId}
+        </if>
+        <if test="query.brandId != null and query.brandId.size() > 0">
+            AND cinema.brand_id IN
+            <foreach collection="query.brandId" item="bid" open="(" separator="," close=")">#{bid}</foreach>
+        </if>
+        <if test="query.subtitleId != null">
+            AND #{query.subtitleId} = ANY(movie_show_time.subtitle_id)
+        </if>
+        <if test="query.specId != null and query.specId.size() > 0">
+            AND movie_show_time.spec_ids &amp;&amp; ARRAY[
+            <foreach collection="query.specId" item="id" separator=",">#{id}</foreach>
+            ]
+        </if>
+        <if test="query.showTimeTagId != null">
+            AND #{query.showTimeTagId} = ANY(movie_show_time.show_time_tag_id)
+        </if>
+        <if test="query.dimensionType != null">
+            AND movie_show_time.dimension_type = #{query.dimensionType}
+        </if>
+        <if test="query.versionCode != null">
+            AND COALESCE(movie_show_time.dub_version, movie_version.version_code) = #{query.versionCode}
+        </if>
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (
+                cinema.name LIKE '%' || #{query.keyword} || '%'
+                OR cinema.full_address LIKE '%' || #{query.keyword} || '%'
+            )
+        </if>
+        <if test="query.startTimeFrom != null and query.startTimeFrom != ''">
+            AND TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') &gt;= #{query.startTimeFrom}
+        </if>
+        <if test="query.startTimeTo != null and query.startTimeTo != ''">
+            AND TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') &lt;= #{query.startTimeTo}
+        </if>
+        <if test="query.latitude != null and query.longitude != null and query.radius != null">
+            AND cinema.latitude IS NOT NULL
+            AND cinema.longitude IS NOT NULL
+            AND (
+                6371000 * acos(
+                    cos(radians(#{query.latitude}))
+                    * cos(radians(cinema.latitude))
+                    * cos(radians(cinema.longitude) - radians(#{query.longitude}))
+                    + sin(radians(#{query.latitude}))
+                    * sin(radians(cinema.latitude))
+                )
+            ) &lt;= #{query.radius}
+        </if>
+        <if test="query.userId != null or (query.latitude != null and query.longitude != null)">
+            ORDER BY
+            <trim suffixOverrides=",">
+                <if test="query.userId != null"> is_favorite DESC, </if>
+                <if test="query.latitude != null and query.longitude != null"> distance ASC </if>
+            </trim>
+        </if>
+    </select>
+
     <select id="getMovieShowTime" resultMap="getMovieShowTime">
 
-        SELECT DISTINCT
+        SELECT
             movie_show_time.movie_id AS movie_id,
             movie_show_time.spec_ids AS spec_ids,
             movie_show_time.reservation_params_json->>'reservation_url' AS reservation_url,
@@ -692,21 +780,9 @@
             -- 原版 / 配音版：importer 写入 movie_show_time.dub_version（1=オリジナル版, 2=吹き替え版）。
             -- 旧数据若仍走 movie_version.version_code，则作为 fallback。
             COALESCE(movie_show_time.dub_version, movie_version.version_code) AS version_code,
-            (
-                SELECT COUNT(seat.id)
-                FROM seat
-                WHERE seat.theater_hall_id = theater_hall.id
-                AND seat.deleted = 0
-                AND seat.show = TRUE
-            ) AS total_seats,
-            (
-                SELECT COUNT(select_seat.id)
-                FROM select_seat
-                LEFT JOIN movie_order ON movie_order.id = select_seat.movie_order_id
-                WHERE select_seat.movie_show_time_id = movie_show_time.id
-                AND select_seat.deleted = 0
-                AND movie_order.order_state = 2
-            ) AS selected_seats,
+            -- 列表页优先用爬虫 sale_status；座位数在选座页再算，避免每行 correlated COUNT。
+            0 AS total_seats,
+            0 AS selected_seats,
             <if test="query.latitude != null and query.longitude != null">
                 (
                     6371000 * acos(
@@ -743,7 +819,7 @@
                     AND movie_show_time.re_release_id IS NULL
                 </otherwise>
             </choose>
-             AND movie_show_time.start_time::timestamp >= now()
+             AND movie_show_time.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
              AND cinema.deleted = 0
         <if test="query.regionId != null">
             AND cinema.region_id = #{query.regionId}
@@ -812,6 +888,10 @@
                 )
             ) &lt;= #{query.radius}
         </if>
+        <if test="query.cinemaIds != null and query.cinemaIds.size() > 0">
+            AND cinema.id IN
+            <foreach collection="query.cinemaIds" item="cid" open="(" separator="," close=")">#{cid}</foreach>
+        </if>
         <if test="query.userId != null or (query.latitude != null and query.longitude != null)">
             ORDER BY
             <trim suffixOverrides=",">
@@ -842,7 +922,7 @@
                   AND mst.re_release_id IS NULL
               </otherwise>
           </choose>
-          AND mst.start_time::timestamp >= now()
+          AND mst.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
     </select>
 
     <!-- 动态筛选项：该电影全部未来场次实际出现过的 distinct 上映标签 id。语义同上。 -->
@@ -860,6 +940,6 @@
                   AND mst.re_release_id IS NULL
               </otherwise>
           </choose>
-          AND mst.start_time::timestamp >= now()
+          AND mst.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
     </select>
 </mapper>

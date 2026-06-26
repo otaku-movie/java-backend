@@ -285,20 +285,15 @@ public class AppMovieController {
     // 进而保证「按影院分页」时收藏的影院排在最前。未登录则为 null，排序不变。
     query.setUserId(favoriteCinemaService.currentUserIdOrNull());
 
-    // 注意：这里 *不* 把 IPage 传给 mapper —— 见 MovieMapper#getMovieShowTime 上的说明。
-    // 详情页"场次列表"是按影院分页（一页 = N 家影院的所有场次），而 mybatis-plus
-    // 的分页插件只能给 SQL 末尾追加 LIMIT N，会把所有名额塞给 cinema.id 最小的那家。
-    List<AppBeforeMovieShowTimeResponse> list = movieMapper.getMovieShowTime(query, ShowTimeState.no_started.getCode());
+    // 详情页"场次列表"是按影院分页：先轻量拉全量索引算 summary/分页，再只查当前页影院详情。
+    List<AppBeforeMovieShowTimeResponse> outline = movieMapper.getMovieShowTimeOutline(query, ShowTimeState.no_started.getCode());
 
-    // 在做"按影院维度分页切片"之前，先用全量数据计算每个日期的 summary：
-    //   - cinemaCount：当日去重的影院数
-    //   - showTimeCount：当日的场次总数
-    // 这样无论 app 端拉到第几页，顶部摘要条都能展示准确总数，而不是只统计已加载部分。
+    // 在做"按影院维度分页切片"之前，先用全量索引计算每个日期的 summary：
     final boolean use30HourForSummary =
         query.getUse30HourFormat() != null && query.getUse30HourFormat();
     Map<String, Set<Integer>> dateCinemaIds = new LinkedHashMap<>();
     Map<String, Integer> dateShowTimeCount = new LinkedHashMap<>();
-    for (AppBeforeMovieShowTimeResponse item : list) {
+    for (AppBeforeMovieShowTimeResponse item : outline) {
       String startTime = item.getStartTime();
       if (startTime == null || startTime.length() < 10) {
         continue;
@@ -335,7 +330,7 @@ public class AppMovieController {
     // 取出前 pageSize 个 cinema_id，再过滤 list 只保留这些影院的场次。
     int pageNum = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
     int pageSize = query.getPageSize() == null || query.getPageSize() < 1 ? 10 : query.getPageSize();
-    LinkedHashSet<Integer> orderedCinemaIds = list.stream()
+    LinkedHashSet<Integer> orderedCinemaIds = outline.stream()
         .map(AppBeforeMovieShowTimeResponse::getCinemaId)
         .filter(Objects::nonNull)
         .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -343,9 +338,23 @@ public class AppMovieController {
         .skip((long) (pageNum - 1) * pageSize)
         .limit(pageSize)
         .collect(Collectors.toCollection(LinkedHashSet::new));
-    list = list.stream()
-        .filter(item -> item.getCinemaId() != null && pagedCinemaIdSet.contains(item.getCinemaId()))
-        .collect(Collectors.toList());
+
+    List<AppBeforeMovieShowTimeResponse> list = pagedCinemaIdSet.isEmpty()
+        ? List.of()
+        : movieMapper.getMovieShowTime(
+            withCinemaIds(query, new ArrayList<>(pagedCinemaIdSet)),
+            ShowTimeState.no_started.getCode());
+
+    List<BenefitService.ShowtimeBenefitKey> benefitKeys = list.stream()
+        .filter(item -> item.getMovieId() != null && item.getCinemaId() != null
+            && item.getStartTime() != null && item.getStartTime().length() >= 10)
+        .map(item -> new BenefitService.ShowtimeBenefitKey(
+            item.getMovieId(),
+            item.getCinemaId(),
+            item.getStartTime().substring(0, 10),
+            item.getReReleaseId()))
+        .toList();
+    Map<String, Boolean> showtimeBenefitMap = benefitService.hasBenefitsForShowtimesBatch(benefitKeys);
 
     // 如果使用30小时制，先将时间转换为30小时制，然后再分组
     if (query.getUse30HourFormat() != null && query.getUse30HourFormat()) {
@@ -431,9 +440,9 @@ public class AppMovieController {
                   : new ArrayList<>());
           String showDateStr = item.getStartTime() != null && item.getStartTime().length() >= 10
               ? item.getStartTime().substring(0, 10) : null;
-          List<Integer> specIds = item.getSpecIds() != null ? item.getSpecIds() : Collections.emptyList();
-          showTime.setHasBenefits(benefitService.hasBenefitsForShowtime(
-              item.getMovieId(), item.getCinemaId(), showDateStr, item.getReReleaseId(), item.getDimensionType(), specIds));
+          String benefitKey = BenefitService.showtimeBenefitCacheKey(
+              item.getMovieId(), item.getCinemaId(), showDateStr, item.getReReleaseId());
+          showTime.setHasBenefits(Boolean.TRUE.equals(showtimeBenefitMap.get(benefitKey)));
           return showTime;
         })
         .sorted((t1, t2) -> {
@@ -512,6 +521,11 @@ public class AppMovieController {
   }
 
   /** 片名去空白、小写，用于「即将上映」主列表与重映合并时的同名去重。 */
+  private static getMovieShowTimeQuery withCinemaIds(getMovieShowTimeQuery source, List<Integer> cinemaIds) {
+    source.setCinemaIds(cinemaIds);
+    return source;
+  }
+
   private static String normalizeMovieNameKey(String name) {
     if (name == null) {
       return null;

@@ -271,7 +271,7 @@
             <if test="query.versionCode != null">
                 AND COALESCE(movie_show_time.dub_version, movie_version.version_code) = #{query.versionCode}
             </if>
-            AND movie_show_time.start_time::timestamp >= now()
+            AND movie_show_time.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
             <!-- 时间范围筛选（只比较时间部分 HH:mm，不考虑日期） -->
             <if test="query.startTimeFrom != null and query.startTimeFrom != ''">
                 AND TO_CHAR(movie_show_time.start_time::timestamp, 'HH24:MI') >= #{query.startTimeFrom}

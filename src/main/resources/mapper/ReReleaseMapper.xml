@@ -117,7 +117,7 @@
         LEFT JOIN movie_show_time mst ON mst.re_release_id = re_release.id
             AND mst.deleted = 0
             AND mst.open = TRUE
-            AND mst.start_time::timestamp > CURRENT_TIMESTAMP
+            AND mst.start_time &gt;= to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
         LEFT JOIN presale ON presale.movie_id = movie.id AND presale.deleted = 0
         WHERE
             re_release.deleted = 0
