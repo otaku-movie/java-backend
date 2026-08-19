@@ -630,6 +630,8 @@ public final class ApiPaths {
             public static final String TWITTER_LOGIN = COMMON_BASE + "/user/twitterLogin";
             /** 用户注册 - POST /api/user/register */
             public static final String REGISTER = COMMON_BASE + "/user/register";
+            /** 重置密码 - POST /api/user/resetPassword */
+            public static final String RESET_PASSWORD = COMMON_BASE + "/user/resetPassword";
             /** 更新用户信息 - POST /api/user/updateUserInfo */
             public static final String UPDATE_INFO = COMMON_BASE + "/user/updateUserInfo";
             /** 用户详情 - GET /api/user/detail */

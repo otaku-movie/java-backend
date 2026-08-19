@@ -11,8 +11,10 @@ success:
 error:
   systemError: "System error"
   userNotFound: "User not found"
+  passwordIncorrect: "Incorrect password"
   loginExpired: "Login expired, please login again"
   parameterError: "Parameter error"
+  sendFailed: "Failed to send verification code. Please try again later"
   repeat: "{0} already exists"
   notPermission: "No permission"
   timeConflict: "Time conflict"

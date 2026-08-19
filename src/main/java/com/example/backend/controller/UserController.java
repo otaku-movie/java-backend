@@ -4,7 +4,6 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.constants.ApiPaths;
 import com.example.backend.constants.MessageKeys;
@@ -33,6 +32,7 @@ import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +76,23 @@ class UserDetail extends User{
   boolean hasPassword;
   /** 已绑定的第三方身份列表（已脱敏：不返回 subject / rawProfile）。 */
   java.util.List<OAuthBindingItem> oauthBindings;
+}
+
+@Data
+class ResetPasswordQuery {
+  @NotEmpty(message = "{validator.login.email.required}")
+  @Email(message = "{validator.login.email.notEmail}")
+  String email;
+
+  @NotEmpty(message = "{validator.saveUser.code.required}")
+  @Size(min = 6, max = 6, message = "{validator.saveUser.code.length}")
+  String code;
+
+  @NotEmpty(message = "{validator.saveUser.token.required}")
+  String token;
+
+  @NotEmpty(message = "{validator.saveUser.password.required}")
+  String password;
 }
 
 @Data
@@ -150,9 +167,11 @@ public class UserController {
       touchLoginActivity(result.getId(), resolveLoginSource(query.getLoginSource(), null));
 
       return RestBean.success( loginResponse, messageUtils.getMessage(MessageKeys.Common.User.LOGIN_SUCCESS));
-    } else  {
+    }
+    if (result == null) {
       return RestBean.error(ResponseCode.ERROR.getCode(), messageUtils.getMessage(MessageKeys.Common.User.NOT_FOUND));
     }
+    return RestBean.error(ResponseCode.ERROR.getCode(), messageUtils.getMessage(MessageKeys.Common.User.PASSWORD_INCORRECT));
   }
 
   @PostMapping(ApiPaths.Common.User.REFRESH)
@@ -304,6 +323,41 @@ public class UserController {
     }
     return null;
   }
+
+  @PostMapping(ApiPaths.Common.User.RESET_PASSWORD)
+  public RestBean<Null> resetPassword(@RequestBody @Validated ResetPasswordQuery query) {
+    String key = RedisType.verifyCode.getCode() + ':' + query.getToken();
+    Object code = redisTemplate.opsForValue().get(key);
+
+    if (code == null) {
+      return RestBean.error(
+          ResponseCode.ERROR.getCode(),
+          MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_EXPIRED)
+      );
+    }
+    if (!code.toString().equals(query.getCode())) {
+      return RestBean.error(
+          ResponseCode.ERROR.getCode(),
+          MessageUtils.getMessage(MessageKeys.Validator.SaveUser.CODE_ERROR)
+      );
+    }
+
+    User user = userMapper.selectOne(new QueryWrapper<User>()
+        .eq("email", query.getEmail())
+        .eq("deleted", 0)
+        .select("id", "password"));
+    if (user == null) {
+      return RestBean.error(ResponseCode.ERROR.getCode(), messageUtils.getMessage(MessageKeys.Common.User.NOT_FOUND));
+    }
+
+    userMapper.update(null, new UpdateWrapper<User>()
+        .set("password", PasswordUtil.encode(query.getPassword()))
+        .eq("id", user.getId()));
+
+    redisTemplate.delete(key);
+    return RestBean.success(null, messageUtils.getMessage(MessageKeys.Success.SAVE));
+  }
+
   @SaCheckLogin
   @GetMapping(ApiPaths.Common.User.DETAIL)
   public RestBean<Object> detail () {

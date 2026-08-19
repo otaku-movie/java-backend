@@ -11,8 +11,10 @@ success:
 error:
   systemError: "系统错误"
   userNotFound: "用户不存在"
+  passwordIncorrect: "密码错误"
   loginExpired: "登录已过期，请重新登录"
   parameterError: "参数错误"
+  sendFailed: "验证码发送失败，请稍后重试"
   repeat: "{0}已存在"
   notPermission: "没有权限"
   timeConflict: "时间冲突"

@@ -12,6 +12,8 @@ import com.example.backend.constants.MessageKeys;
 import com.example.backend.service.EmailTemplateService;
 import com.example.backend.entity.RestBean;
 import com.example.backend.enumerate.RedisType;
+import com.example.backend.enumerate.ResponseCode;
+import com.example.backend.exception.BusinessException;
 import com.example.backend.utils.MessageUtils;
 import com.fasterxml.uuid.Generators;
 import jakarta.annotation.Resource;
@@ -101,9 +103,29 @@ public class Verify {
 
     redisTemplate.opsForValue().set(key, String.valueOf(code), 60 * 5, TimeUnit.SECONDS);
 
-    MailUtil.send(createMailAccount(), to, subject, htmlContent, true);
+    log.info("发送验证码邮件: to={}", maskEmail(to));
+    try {
+      MailUtil.send(createMailAccount(), to, subject, htmlContent, true);
+    } catch (Exception e) {
+      redisTemplate.delete(key);
+      log.error("验证码邮件发送失败: to={}", maskEmail(to), e);
+      throw new BusinessException(ResponseCode.ERROR, MessageKeys.Error.SEND_FAILED, e);
+    }
 
     return RestBean.success(Map.of("token", uuid), MessageUtils.getMessage(MessageKeys.Success.SEND));
+  }
+
+  private static String maskEmail(String email) {
+    if (email == null || !email.contains("@")) {
+      return "***";
+    }
+    int at = email.indexOf('@');
+    String local = email.substring(0, at);
+    String domain = email.substring(at);
+    if (local.length() <= 2) {
+      return local.charAt(0) + "***" + domain;
+    }
+    return local.substring(0, 2) + "***" + domain;
   }
 
   private MailAccount createMailAccount() {

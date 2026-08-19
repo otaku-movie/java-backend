@@ -71,10 +71,14 @@ public final class MessageKeys {
         public static final String SYSTEM = "error.systemError";
         /** 用户不存在 - 用户相关 */
         public static final String USER_NOT_FOUND = "error.userNotFound";
+        /** 密码错误 - 认证相关 */
+        public static final String PASSWORD_INCORRECT = "error.passwordIncorrect";
         /** 登录已过期 - 认证相关 */
         public static final String LOGIN_EXPIRED = "error.loginExpired";
         /** 参数错误 - 通用 */
         public static final String PARAMETER = "error.parameterError";
+        /** 邮件/验证码发送失败 */
+        public static final String SEND_FAILED = "error.sendFailed";
         /** 重复错误 - 通用 */
         public static final String REPEAT = "error.repeat";
         /** 没有权限 - 权限相关 */
@@ -246,6 +250,8 @@ public final class MessageKeys {
             public static final String LOGIN_EXPIRED = Error.LOGIN_EXPIRED;
             /** 用户不存在 - 用户相关 */
             public static final String NOT_FOUND = Error.USER_NOT_FOUND;
+            /** 密码错误 - POST /api/user/login */
+            public static final String PASSWORD_INCORRECT = Error.PASSWORD_INCORRECT;
             /** 邮箱已存在 - POST /api/user/register */
             public static final String EMAIL_REPEAT = Error.EMAIL_REPEAT;
         }

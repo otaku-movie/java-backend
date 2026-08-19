@@ -11,8 +11,10 @@ success:
 error:
   systemError: "システムエラー"
   userNotFound: "ユーザーが見つかりません"
+  passwordIncorrect: "パスワードが正しくありません"
   loginExpired: "ログインの有効期限が切れました。再ログインしてください"
   parameterError: "パラメータエラー"
+  sendFailed: "認証コードの送信に失敗しました。しばらくしてから再度お試しください"
   repeat: "{0}は既に存在します"
   notPermission: "権限がありません"
   timeConflict: "時間が重複しています"

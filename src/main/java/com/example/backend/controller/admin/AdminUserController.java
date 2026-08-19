@@ -96,10 +96,15 @@ public class AdminUserController {
     queryWrapper.select(
         "id", "cover", "name", "email", "create_time", "data_scope", "brand_id", "password");
     User result = userMapper.selectOne(queryWrapper);
-    if (result == null || !PasswordUtil.matches(query.getPassword(), result.getPassword())) {
+    if (result == null) {
       return RestBean.error(
           ResponseCode.ERROR.getCode(),
           MessageUtils.getMessage(MessageKeys.Common.User.NOT_FOUND));
+    }
+    if (!PasswordUtil.matches(query.getPassword(), result.getPassword())) {
+      return RestBean.error(
+          ResponseCode.ERROR.getCode(),
+          MessageUtils.getMessage(MessageKeys.Common.User.PASSWORD_INCORRECT));
     }
     // 老的无盐 md5 密码：校验通过后自动升级为 BCrypt
     if (PasswordUtil.needsUpgrade(result.getPassword())) {
