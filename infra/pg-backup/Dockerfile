@@ -9,7 +9,7 @@ RUN apk add --no-cache \
         coreutils \
         findutils \
         tzdata \
-        postgresql17-client \
+        postgresql16-client \
         aws-cli
 
 ENV TZ=Asia/Tokyo \

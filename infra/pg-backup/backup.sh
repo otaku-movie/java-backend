@@ -24,6 +24,7 @@ psql_exec() {
     -U "${PGUSER}" \
     -d "${PGDATABASE}" \
     -v ON_ERROR_STOP=1 \
+    -q \
     -At \
     -c "$1"
 }
